@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 
-namespace Dreamcore_Horror_Game_API_Server;
+namespace Dreamcore_Horror_Game_API_Server.Models;
 
 public partial class Server
 {
