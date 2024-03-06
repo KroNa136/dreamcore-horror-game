@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Dreamcore_Horror_Game_API_Server.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dreamcore_Horror_Game_API_Server;
