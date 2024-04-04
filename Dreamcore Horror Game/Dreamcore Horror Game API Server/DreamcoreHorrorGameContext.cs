@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Dreamcore_Horror_Game_API_Server.Models;
+using Dreamcore_Horror_Game_API_Server.Models.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dreamcore_Horror_Game_API_Server;
@@ -26,8 +26,6 @@ public partial class DreamcoreHorrorGameContext : DbContext
 
     public virtual DbSet<Creature> Creatures { get; set; }
 
-    public virtual DbSet<ExperienceLevel> ExperienceLevels { get; set; }
-
     public virtual DbSet<GameMode> GameModes { get; set; }
 
     public virtual DbSet<GameSession> GameSessions { get; set; }
@@ -40,9 +38,7 @@ public partial class DreamcoreHorrorGameContext : DbContext
 
     public virtual DbSet<Server> Servers { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=dreamcore_horror_game;Username=postgres;Password=root");
+    public virtual DbSet<XpLevel> XpLevels { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -142,7 +138,9 @@ public partial class DreamcoreHorrorGameContext : DbContext
 
             entity.ToTable("creatures");
 
-            entity.HasIndex(e => e.RequiredExperienceLevelId, "fki_creatures_fkey_required_experience_level_id");
+            entity.HasIndex(e => e.RequiredXpLevelId, "fki_creatures_fkey_required_experience_level_id");
+
+            entity.HasIndex(e => e.RequiredXpLevelId, "fki_creatures_pkey_required_xp_level_id");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -152,25 +150,12 @@ public partial class DreamcoreHorrorGameContext : DbContext
                 .HasColumnName("asset_name");
             entity.Property(e => e.Health).HasColumnName("health");
             entity.Property(e => e.MovementSpeed).HasColumnName("movement_speed");
-            entity.Property(e => e.RequiredExperienceLevelId).HasColumnName("required_experience_level_id");
+            entity.Property(e => e.RequiredXpLevelId).HasColumnName("required_xp_level_id");
 
-            entity.HasOne(d => d.RequiredExperienceLevel).WithMany(p => p.Creatures)
-                .HasForeignKey(d => d.RequiredExperienceLevelId)
+            entity.HasOne(d => d.RequiredXpLevel).WithMany(p => p.Creatures)
+                .HasForeignKey(d => d.RequiredXpLevelId)
                 .OnDelete(DeleteBehavior.Restrict)
-                .HasConstraintName("creatures_fkey_required_experience_level_id");
-        });
-
-        modelBuilder.Entity<ExperienceLevel>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("experience_levels_pkey");
-
-            entity.ToTable("experience_levels");
-
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
-            entity.Property(e => e.Number).HasColumnName("number");
-            entity.Property(e => e.RequiredExperiencePoints).HasColumnName("required_experience_points");
+                .HasConstraintName("creatures_pkey_required_xp_level_id");
         });
 
         modelBuilder.Entity<GameMode>(entity =>
@@ -228,7 +213,9 @@ public partial class DreamcoreHorrorGameContext : DbContext
 
             entity.ToTable("players");
 
-            entity.HasIndex(e => e.ExperienceLevelId, "fki_players_fkey_experience_level_id");
+            entity.HasIndex(e => e.XpLevelId, "fki_players_fkey_experience_level_id");
+
+            entity.HasIndex(e => e.XpLevelId, "fki_players_fkey_xp_level_id");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -238,8 +225,6 @@ public partial class DreamcoreHorrorGameContext : DbContext
             entity.Property(e => e.Email)
                 .HasMaxLength(255)
                 .HasColumnName("email");
-            entity.Property(e => e.ExperienceLevelId).HasColumnName("experience_level_id");
-            entity.Property(e => e.ExperiencePoints).HasColumnName("experience_points");
             entity.Property(e => e.IsOnline).HasColumnName("is_online");
             entity.Property(e => e.Password)
                 .HasMaxLength(255)
@@ -249,11 +234,13 @@ public partial class DreamcoreHorrorGameContext : DbContext
             entity.Property(e => e.Username)
                 .HasMaxLength(255)
                 .HasColumnName("username");
+            entity.Property(e => e.Xp).HasColumnName("xp");
+            entity.Property(e => e.XpLevelId).HasColumnName("xp_level_id");
 
-            entity.HasOne(d => d.ExperienceLevel).WithMany(p => p.Players)
-                .HasForeignKey(d => d.ExperienceLevelId)
+            entity.HasOne(d => d.XpLevel).WithMany(p => p.Players)
+                .HasForeignKey(d => d.XpLevelId)
                 .OnDelete(DeleteBehavior.Restrict)
-                .HasConstraintName("players_fkey_experience_level_id");
+                .HasConstraintName("players_fkey_xp_level_id");
         });
 
         modelBuilder.Entity<PlayerSession>(entity =>
@@ -271,12 +258,14 @@ public partial class DreamcoreHorrorGameContext : DbContext
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
                 .HasColumnName("id");
+            entity.Property(e => e.AllyReviveCount).HasColumnName("ally_revive_count");
             entity.Property(e => e.EndTimestamp).HasColumnName("end_timestamp");
             entity.Property(e => e.GameSessionId).HasColumnName("game_session_id");
             entity.Property(e => e.IsCompleted).HasColumnName("is_completed");
             entity.Property(e => e.IsWon).HasColumnName("is_won");
             entity.Property(e => e.PlayedAsCreature).HasColumnName("played_as_creature");
             entity.Property(e => e.PlayerId).HasColumnName("player_id");
+            entity.Property(e => e.SelfReviveCount).HasColumnName("self_revive_count");
             entity.Property(e => e.StartTimestamp).HasColumnName("start_timestamp");
             entity.Property(e => e.TimeAlive).HasColumnName("time_alive");
             entity.Property(e => e.UsedCreatureId).HasColumnName("used_creature_id");
@@ -323,6 +312,19 @@ public partial class DreamcoreHorrorGameContext : DbContext
             entity.Property(e => e.IpAddress).HasColumnName("ip_address");
             entity.Property(e => e.IsOnline).HasColumnName("is_online");
             entity.Property(e => e.PlayerCapacity).HasColumnName("player_capacity");
+        });
+
+        modelBuilder.Entity<XpLevel>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("experience_levels_pkey");
+
+            entity.ToTable("xp_levels");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.Number).HasColumnName("number");
+            entity.Property(e => e.RequiredXp).HasColumnName("required_xp");
         });
 
         OnModelCreatingPartial(modelBuilder);

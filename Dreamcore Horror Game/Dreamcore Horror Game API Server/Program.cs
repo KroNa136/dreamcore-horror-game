@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace Dreamcore_Horror_Game_API_Server
 {
     public class Program
@@ -6,16 +8,17 @@ namespace Dreamcore_Horror_Game_API_Server
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            string? dbConnectionString = builder.Configuration.GetConnectionString("Default");
+
+            if (dbConnectionString != null)
+                builder.Services.AddDbContext<DreamcoreHorrorGameContext>(options => options.UseNpgsql(dbConnectionString));
+
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -25,7 +28,6 @@ namespace Dreamcore_Horror_Game_API_Server
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
 
             app.MapControllers();
 
