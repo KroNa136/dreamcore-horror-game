@@ -11,7 +11,7 @@ public partial class Developer
 
     public string Password { get; set; } = null!;
 
-    public Guid? DeveloperAccessLevelId { get; set; }
+    public Guid DeveloperAccessLevelId { get; set; }
 
-    public virtual DeveloperAccessLevel? DeveloperAccessLevel { get; set; }
+    public virtual DeveloperAccessLevel DeveloperAccessLevel { get; set; } = null!;
 }
