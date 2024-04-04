@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Dreamcore_Horror_Game_API_Server.Models.Database;
+﻿using Dreamcore_Horror_Game_API_Server.Models.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dreamcore_Horror_Game_API_Server;
@@ -25,6 +23,10 @@ public partial class DreamcoreHorrorGameContext : DbContext
     public virtual DbSet<CollectedArtifact> CollectedArtifacts { get; set; }
 
     public virtual DbSet<Creature> Creatures { get; set; }
+
+    public virtual DbSet<Developer> Developers { get; set; }
+
+    public virtual DbSet<DeveloperAccessLevel> DeveloperAccessLevels { get; set; }
 
     public virtual DbSet<GameMode> GameModes { get; set; }
 
@@ -156,6 +158,45 @@ public partial class DreamcoreHorrorGameContext : DbContext
                 .HasForeignKey(d => d.RequiredXpLevelId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("creatures_pkey_required_xp_level_id");
+        });
+
+        modelBuilder.Entity<Developer>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("developers_pkey");
+
+            entity.ToTable("developers");
+
+            entity.HasIndex(e => e.DeveloperAccessLevelId, "fki_developers_fkey_developer_access_level_id");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.DeveloperAccessLevelId).HasColumnName("developer_access_level_id");
+            entity.Property(e => e.Login)
+                .HasMaxLength(255)
+                .HasColumnName("login");
+            entity.Property(e => e.Password)
+                .HasMaxLength(255)
+                .HasColumnName("password");
+
+            entity.HasOne(d => d.DeveloperAccessLevel).WithMany(p => p.Developers)
+                .HasForeignKey(d => d.DeveloperAccessLevelId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("developers_fkey_developer_access_level_id");
+        });
+
+        modelBuilder.Entity<DeveloperAccessLevel>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("developer_access_levels_pkey");
+
+            entity.ToTable("developer_access_levels");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(255)
+                .HasColumnName("name");
         });
 
         modelBuilder.Entity<GameMode>(entity =>
