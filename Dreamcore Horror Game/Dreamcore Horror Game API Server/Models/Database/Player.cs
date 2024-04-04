@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Dreamcore_Horror_Game_API_Server.Models;
+namespace Dreamcore_Horror_Game_API_Server.Models.Database;
 
 public partial class Player
 {
@@ -19,9 +19,9 @@ public partial class Player
 
     public bool IsOnline { get; set; }
 
-    public Guid ExperienceLevelId { get; set; }
+    public Guid XpLevelId { get; set; }
 
-    public short ExperiencePoints { get; set; }
+    public short Xp { get; set; }
 
     public short AbilityPoints { get; set; }
 
@@ -31,7 +31,7 @@ public partial class Player
 
     public virtual ICollection<CollectedArtifact> CollectedArtifacts { get; set; } = new List<CollectedArtifact>();
 
-    public virtual ExperienceLevel ExperienceLevel { get; set; } = null!;
-
     public virtual ICollection<PlayerSession> PlayerSessions { get; set; } = new List<PlayerSession>();
+
+    public virtual XpLevel XpLevel { get; set; } = null!;
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Dreamcore_Horror_Game_API_Server.Models;
+namespace Dreamcore_Horror_Game_API_Server.Models.Database;
 
 public partial class PlayerSession
 {
@@ -24,6 +24,10 @@ public partial class PlayerSession
     public bool? PlayedAsCreature { get; set; }
 
     public Guid? UsedCreatureId { get; set; }
+
+    public short? SelfReviveCount { get; set; }
+
+    public short? AllyReviveCount { get; set; }
 
     public virtual GameSession GameSession { get; set; } = null!;
 
