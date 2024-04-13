@@ -40,7 +40,7 @@ public class TestOutputController : DatabaseController
             Id = Guid.NewGuid(),
             IpAddress = IPAddress.Parse("161.0.15.89"),
             Password = "password",
-            RefreshToken = TokenService.GetRefreshToken("161.0.15.89", AuthenticationRoles.Server),
+            RefreshToken = TokenService.CreateRefreshToken("161.0.15.89", AuthenticationRoles.Server),
             IsOnline = true,
             PlayerCapacity = 64
         };
@@ -64,7 +64,7 @@ public class TestOutputController : DatabaseController
             CollectOptionalData = true,
             IsOnline = true,
             RegistrationTimestamp = DateTime.UtcNow,
-            RefreshToken = TokenService.GetRefreshToken("test@gmail.com", AuthenticationRoles.Player)
+            RefreshToken = TokenService.CreateRefreshToken("test@gmail.com", AuthenticationRoles.Player)
         };
 
         Microsoft.AspNetCore.Identity.PasswordHasher<Player> passwordHasher = new();
