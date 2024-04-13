@@ -1,11 +1,12 @@
-﻿namespace Dreamcore_Horror_Game_API_Server
+﻿namespace DreamcoreHorrorGameApiServer;
+
+public static class HttpClientProvider
 {
-    public static class HttpClientProvider
+    public static HttpClient New => new();
+    public static HttpClient Shared => s_sharedClient;
+
+    private static readonly HttpClient s_sharedClient = new()
     {
-        public static HttpClient New => new();
-        public static HttpClient Shared { get; } = new()
-        {
-            Timeout = TimeSpan.FromSeconds(15)
-        };
-    }
+        Timeout = TimeSpan.FromSeconds(15)
+    };
 }

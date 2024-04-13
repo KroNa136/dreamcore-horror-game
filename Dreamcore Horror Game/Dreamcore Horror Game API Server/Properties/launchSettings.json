@@ -9,6 +9,7 @@
     }
   },
   "profiles": {
+    /*
     "Dreamcore_Horror_Game_API_Server": {
       "commandName": "Project",
       "dotnetRunMessages": true,
@@ -17,6 +18,17 @@
       "applicationUrl": "https://localhost:8016",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    */
+    "Dreamcore_Horror_Game_API_Server": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "launchUrl": "/",
+      "applicationUrl": "https://localhost:8016",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
       }
     },
     "IIS Express": {

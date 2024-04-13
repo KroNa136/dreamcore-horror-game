@@ -1,100 +1,114 @@
-﻿using Dreamcore_Horror_Game_API_Server.Models.Database;
+﻿using DreamcoreHorrorGameApiServer.ConstantValues;
+using DreamcoreHorrorGameApiServer.Models.Database;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dreamcore_Horror_Game_API_Server.Controllers.Database
+namespace DreamcoreHorrorGameApiServer.Controllers.Database;
+
+[ApiController]
+[Route(RouteNames.ApiControllerAction)]
+public class ArtifactsController : DatabaseController
 {
-    [ApiController]
-    [Route("api/[controller]/[action]")]
-    public class ArtifactsController : DatabaseController
+    public ArtifactsController(DreamcoreHorrorGameContext context) : base(context) { }
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public async Task<IActionResult> GetAll()
+        => NoHeader(CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : Ok(await _context.Artifacts.ToListAsync());
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
+    public async Task<IActionResult> Get(Guid? id)
+        => NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : id is not null
+                && await _context.Artifacts.FindAsync(id) is Artifact artifact
+            ? Ok(artifact)
+            : NotFound();
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind(
+        nameof(Artifact.Id),
+        nameof(Artifact.AssetName),
+        nameof(Artifact.RarityLevelId)
+    )] Artifact artifact)
     {
-        public ArtifactsController(DreamcoreHorrorGameContext context) : base(context) { }
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
 
-        [HttpGet]
-        public async Task<IActionResult> GetArtifacts()
+        if (ModelState.IsValid)
         {
-            return _context.Artifacts == null ?
-                Problem(ENTITY_SET_IS_NULL) :
-                Ok(await _context.Artifacts.ToListAsync());
-        }
+            artifact.Id = Guid.NewGuid();
 
-        [HttpGet]
-        public async Task<IActionResult> GetArtifact(Guid? id)
-        {
-            if (id == null || _context.Artifacts == null)
-                return NotFound();
-
-            var artifact = await _context.Artifacts.FindAsync(id);
-
-            if (artifact == null)
-                return NotFound();
-
+            _context.Add(artifact);
+            await _context.SaveChangesAsync();
             return Ok(artifact);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateArtifact([Bind("Id,AssetName,RarityLevelId")] Artifact artifact)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpPut]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(Guid? id, [Bind(
+        nameof(Artifact.Id),
+        nameof(Artifact.AssetName),
+        nameof(Artifact.RarityLevelId)
+    )] Artifact artifact)
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        if (id != artifact.Id)
+            return BadRequest(ErrorMessages.IdMismatch);
+
+        if (ModelState.IsValid)
         {
-            if (ModelState.IsValid)
+            try
             {
-                artifact.Id = Guid.NewGuid();
-                _context.Add(artifact);
+                _context.Update(artifact);
                 await _context.SaveChangesAsync();
-                return Ok(artifact);
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
-        }
-
-        [HttpPut]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditArtifact(Guid? id, [Bind("Id,AssetName,RarityLevelId")] Artifact artifact)
-        {
-            if (id == null || _context.Artifacts == null)
-                return NotFound();
-
-            if (id != artifact.Id)
-                return BadRequest(ID_DOES_NOT_MATCH);
-
-            if (ModelState.IsValid)
+            catch (DbUpdateConcurrencyException)
             {
-                try
-                {
-                    _context.Update(artifact);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ArtifactExists(artifact.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
-                return Ok(artifact);
+                if (!ArtifactExists(artifact.Id))
+                    return NotFound();
+                else
+                    throw;
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
+            return Ok(artifact);
         }
 
-        [HttpDelete]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteArtifact(Guid? id)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpDelete]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid? id)
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is not null && await _context.Artifacts.FindAsync(id) is Artifact artifact)
         {
-            if (id == null || _context.Artifacts == null)
-                return NotFound();
-
-            var artifact = await _context.Artifacts.FindAsync(id);
-
-            if (artifact == null)
-                return NotFound();
-
-            _context.Artifacts.Remove(artifact);
+            _context.Remove(artifact);
             await _context.SaveChangesAsync();
-
             return Ok();
         }
 
-        private bool ArtifactExists(Guid id) => (_context.Artifacts?.Any(x => x.Id == id)).GetValueOrDefault();
+        return NotFound();
     }
+
+    private bool ArtifactExists(Guid id)
+        => _context.Artifacts.Any(artifact => artifact.Id == id);
 }

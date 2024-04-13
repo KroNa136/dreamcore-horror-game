@@ -1,24 +1,32 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DreamcoreHorrorGameApiServer.ConstantValues;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 
-namespace Dreamcore_Horror_Game_API_Server.Controllers.Database
+namespace DreamcoreHorrorGameApiServer.Controllers.Database;
+
+[ApiController]
+[Route(RouteNames.ApiControllerAction)]
+public class DatabaseController : ControllerBase
 {
-    [ApiController]
-    [Route("[controller]/[action]")]
-    public class DatabaseController : ControllerBase
+    protected readonly DreamcoreHorrorGameContext _context;
+
+    public DatabaseController(DreamcoreHorrorGameContext context)
+        => _context = context;
+
+    // POST note:
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+
+    public string GetTokenFromHeaders()
+        => HttpContext.Request.Headers[HeaderNames.Authorization].ToString().Replace("Bearer ", string.Empty);
+
+    protected bool NoHeader(params string[] headers)
     {
-        protected readonly DreamcoreHorrorGameContext _context;
-
-        protected const string ENTITY_SET_IS_NULL = "Requested entity set is null.";
-        protected const string ID_DOES_NOT_MATCH = "Received parameter 'id' does not match the 'id' value of the object.";
-        protected const string INVALID_ENTITY_DATA = "Invalid entity data.";
-
-        public DatabaseController(DreamcoreHorrorGameContext context)
+        foreach (var header in headers)
         {
-            _context = context;
+            if (HttpContext.Request.Headers.ContainsKey(header))
+                return false;
         }
-
-        // POST note:
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        return true;
     }
 }

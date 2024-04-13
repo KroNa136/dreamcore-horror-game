@@ -2,13 +2,17 @@
 using System.Collections.Generic;
 using System.Net;
 
-namespace Dreamcore_Horror_Game_API_Server.Models.Database;
+namespace DreamcoreHorrorGameApiServer.Models.Database;
 
 public partial class Server
 {
     public Guid Id { get; set; }
 
     public IPAddress IpAddress { get; set; } = null!;
+
+    public string Password { get; set; } = null!;
+
+    public string? RefreshToken { get; set; }
 
     public short PlayerCapacity { get; set; }
 

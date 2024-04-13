@@ -1,100 +1,132 @@
-﻿using Dreamcore_Horror_Game_API_Server.Models.Database;
+﻿using DreamcoreHorrorGameApiServer.ConstantValues;
+using DreamcoreHorrorGameApiServer.Models.Database;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dreamcore_Horror_Game_API_Server.Controllers.Database
+namespace DreamcoreHorrorGameApiServer.Controllers.Database;
+
+[ApiController]
+[Route(RouteNames.ApiControllerAction)]
+public class PlayerSessionsController : DatabaseController
 {
-    [ApiController]
-    [Route("api/[controller]/[action]")]
-    public class PlayerSessionsController : DatabaseController
+    public PlayerSessionsController(DreamcoreHorrorGameContext context) : base(context) { }
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public async Task<IActionResult> GetAll()
+        => NoHeader(CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : Ok(await _context.PlayerSessions.ToListAsync());
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
+    public async Task<IActionResult> Get(Guid? id)
+        => NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : id is not null
+                && await _context.PlayerSessions.FindAsync(id) is PlayerSession playerSession
+            ? Ok(playerSession)
+            : NotFound();
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloperOrServer)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind(
+        nameof(PlayerSession.Id),
+        nameof(PlayerSession.GameSessionId),
+        nameof(PlayerSession.PlayerId),
+        nameof(PlayerSession.StartTimestamp),
+        nameof(PlayerSession.EndTimestamp),
+        nameof(PlayerSession.IsCompleted),
+        nameof(PlayerSession.IsWon),
+        nameof(PlayerSession.TimeAlive),
+        nameof(PlayerSession.PlayedAsCreature),
+        nameof(PlayerSession.UsedCreatureId),
+        nameof(PlayerSession.SelfReviveCount),
+        nameof(PlayerSession.AllyReviveCount)
+    )] PlayerSession playerSession)
     {
-        public PlayerSessionsController(DreamcoreHorrorGameContext context) : base(context) { }
+        if (NoHeader(CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
 
-        [HttpGet]
-        public async Task<IActionResult> GetPlayerSessions()
+        if (ModelState.IsValid)
         {
-            return _context.PlayerSessions == null ?
-                Problem(ENTITY_SET_IS_NULL) :
-                Ok(await _context.PlayerSessions.ToListAsync());
-        }
+            playerSession.Id = Guid.NewGuid();
 
-        [HttpGet]
-        public async Task<IActionResult> GetPlayerSession(Guid? id)
-        {
-            if (id == null || _context.PlayerSessions == null)
-                return NotFound();
-
-            var playerSession = await _context.PlayerSessions.FindAsync(id);
-
-            if (playerSession == null)
-                return NotFound();
-
+            _context.Add(playerSession);
+            await _context.SaveChangesAsync();
             return Ok(playerSession);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreatePlayerSession([Bind("Id,GameSessionId,PlayerId,StartTimestamp,EndTimestamp,IsCompleted,IsWon,TimeAlive,PlayedAsCreature,UsedCreatureId,SelfReviveCount,AllyReviveCount")] PlayerSession playerSession)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpPut]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloperOrServer)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(Guid? id, [Bind(
+        nameof(PlayerSession.Id),
+        nameof(PlayerSession.GameSessionId),
+        nameof(PlayerSession.PlayerId),
+        nameof(PlayerSession.StartTimestamp),
+        nameof(PlayerSession.EndTimestamp),
+        nameof(PlayerSession.IsCompleted),
+        nameof(PlayerSession.IsWon),
+        nameof(PlayerSession.TimeAlive),
+        nameof(PlayerSession.PlayedAsCreature),
+        nameof(PlayerSession.UsedCreatureId),
+        nameof(PlayerSession.SelfReviveCount),
+        nameof(PlayerSession.AllyReviveCount)
+    )] PlayerSession playerSession)
+    {
+        if (NoHeader(CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        if (id != playerSession.Id)
+            return BadRequest(ErrorMessages.IdMismatch);
+
+        if (ModelState.IsValid)
         {
-            if (ModelState.IsValid)
+            try
             {
-                playerSession.Id = Guid.NewGuid();
-                _context.Add(playerSession);
+                _context.Update(playerSession);
                 await _context.SaveChangesAsync();
-                return Ok(playerSession);
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
-        }
-
-        [HttpPut]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditPlayerSession(Guid? id, [Bind("Id,GameSessionId,PlayerId,StartTimestamp,EndTimestamp,IsCompleted,IsWon,TimeAlive,PlayedAsCreature,UsedCreatureId,SelfReviveCount,AllyReviveCount")] PlayerSession playerSession)
-        {
-            if (id == null || _context.PlayerSessions == null)
-                return NotFound();
-
-            if (id != playerSession.Id)
-                return BadRequest(ID_DOES_NOT_MATCH);
-
-            if (ModelState.IsValid)
+            catch (DbUpdateConcurrencyException)
             {
-                try
-                {
-                    _context.Update(playerSession);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!PlayerSessionExists(playerSession.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
-                return Ok(playerSession);
+                if (!PlayerSessionExists(playerSession.Id))
+                    return NotFound();
+                else
+                    throw;
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
+            return Ok(playerSession);
         }
 
-        [HttpDelete]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeletePlayerSession(Guid? id)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpDelete]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid? id)
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is not null && await _context.PlayerSessions.FindAsync(id) is PlayerSession playerSession)
         {
-            if (id == null || _context.PlayerSessions == null)
-                return NotFound();
-
-            var playerSession = await _context.PlayerSessions.FindAsync(id);
-
-            if (playerSession == null)
-                return NotFound();
-
-            _context.PlayerSessions.Remove(playerSession);
+            _context.Remove(playerSession);
             await _context.SaveChangesAsync();
-
             return Ok();
         }
 
-        private bool PlayerSessionExists(Guid id) => (_context.PlayerSessions?.Any(x => x.Id == id)).GetValueOrDefault();
+        return NotFound();
     }
+
+    private bool PlayerSessionExists(Guid id)
+        => _context.PlayerSessions.Any(playerSession => playerSession.Id == id);
 }

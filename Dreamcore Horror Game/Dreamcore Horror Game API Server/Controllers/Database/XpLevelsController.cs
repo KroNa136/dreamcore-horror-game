@@ -1,100 +1,114 @@
-﻿using Dreamcore_Horror_Game_API_Server.Models.Database;
+﻿using DreamcoreHorrorGameApiServer.ConstantValues;
+using DreamcoreHorrorGameApiServer.Models.Database;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dreamcore_Horror_Game_API_Server.Controllers.Database
+namespace DreamcoreHorrorGameApiServer.Controllers.Database;
+
+[ApiController]
+[Route(RouteNames.ApiControllerAction)]
+public class XpLevelsController : DatabaseController
 {
-    [ApiController]
-    [Route("api/[controller]/[action]")]
-    public class XpLevelsController : DatabaseController
+    public XpLevelsController(DreamcoreHorrorGameContext context) : base(context) { }
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public async Task<IActionResult> GetAll()
+        => NoHeader(CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : Ok(await _context.XpLevels.ToListAsync());
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
+    public async Task<IActionResult> Get(Guid? id)
+        => NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : id is not null
+                && await _context.XpLevels.FindAsync(id) is XpLevel xpLevel
+            ? Ok(xpLevel)
+            : NotFound();
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind(
+        nameof(XpLevel.Id),
+        nameof(XpLevel.Number),
+        nameof(XpLevel.RequiredXp)
+    )] XpLevel xpLevel)
     {
-        public XpLevelsController(DreamcoreHorrorGameContext context) : base(context) { }
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
 
-        [HttpGet]
-        public async Task<IActionResult> GetXpLevels()
+        if (ModelState.IsValid)
         {
-            return _context.XpLevels == null ?
-                Problem(ENTITY_SET_IS_NULL) :
-                Ok(await _context.XpLevels.ToListAsync());
-        }
+            xpLevel.Id = Guid.NewGuid();
 
-        [HttpGet]
-        public async Task<IActionResult> GetXpLevel(Guid? id)
-        {
-            if (id == null || _context.XpLevels == null)
-                return NotFound();
-
-            var xpLevel = await _context.XpLevels.FindAsync(id);
-
-            if (xpLevel == null)
-                return NotFound();
-
+            _context.Add(xpLevel);
+            await _context.SaveChangesAsync();
             return Ok(xpLevel);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateXpLevel([Bind("Id,Number,RequiredXp")] XpLevel xpLevel)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpPut]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(Guid? id, [Bind(
+        nameof(XpLevel.Id),
+        nameof(XpLevel.Number),
+        nameof(XpLevel.RequiredXp)
+    )] XpLevel xpLevel)
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        if (id != xpLevel.Id)
+            return BadRequest(ErrorMessages.IdMismatch);
+
+        if (ModelState.IsValid)
         {
-            if (ModelState.IsValid)
+            try
             {
-                xpLevel.Id = Guid.NewGuid();
-                _context.Add(xpLevel);
+                _context.Update(xpLevel);
                 await _context.SaveChangesAsync();
-                return Ok(xpLevel);
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
-        }
-
-        [HttpPut]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditXpLevel(Guid? id, [Bind("Id,Number,RequiredXp")] XpLevel xpLevel)
-        {
-            if (id == null || _context.XpLevels == null)
-                return NotFound();
-
-            if (id != xpLevel.Id)
-                return BadRequest(ID_DOES_NOT_MATCH);
-
-            if (ModelState.IsValid)
+            catch (DbUpdateConcurrencyException)
             {
-                try
-                {
-                    _context.Update(xpLevel);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!XpLevelExists(xpLevel.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
-                return Ok(xpLevel);
+                if (!XpLevelExists(xpLevel.Id))
+                    return NotFound();
+                else
+                    throw;
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
+            return Ok(xpLevel);
         }
 
-        [HttpDelete]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteXpLevel(Guid? id)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpDelete]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid? id)
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is not null && await _context.XpLevels.FindAsync(id) is XpLevel xpLevel)
         {
-            if (id == null || _context.XpLevels == null)
-                return NotFound();
-
-            var xpLevel = await _context.XpLevels.FindAsync(id);
-
-            if (xpLevel == null)
-                return NotFound();
-
-            _context.XpLevels.Remove(xpLevel);
+            _context.Remove(xpLevel);
             await _context.SaveChangesAsync();
-
             return Ok();
         }
 
-        private bool XpLevelExists(Guid id) => (_context.XpLevels?.Any(x => x.Id == id)).GetValueOrDefault();
+        return NotFound();
     }
+
+    private bool XpLevelExists(Guid id)
+        => _context.XpLevels.Any(xpLevel => xpLevel.Id == id);
 }
