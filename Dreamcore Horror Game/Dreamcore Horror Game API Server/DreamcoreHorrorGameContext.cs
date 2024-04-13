@@ -1,7 +1,9 @@
-﻿using Dreamcore_Horror_Game_API_Server.Models.Database;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using DreamcoreHorrorGameApiServer.Models.Database;
 
-namespace Dreamcore_Horror_Game_API_Server;
+namespace DreamcoreHorrorGameApiServer;
 
 public partial class DreamcoreHorrorGameContext : DbContext
 {
@@ -178,10 +180,13 @@ public partial class DreamcoreHorrorGameContext : DbContext
             entity.Property(e => e.Password)
                 .HasMaxLength(255)
                 .HasColumnName("password");
+            entity.Property(e => e.RefreshToken)
+                .HasColumnType("character varying")
+                .HasColumnName("refresh_token");
 
             entity.HasOne(d => d.DeveloperAccessLevel).WithMany(p => p.Developers)
                 .HasForeignKey(d => d.DeveloperAccessLevelId)
-                .OnDelete(DeleteBehavior.Restrict)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("developers_fkey_developer_access_level_id");
         });
 
@@ -254,8 +259,6 @@ public partial class DreamcoreHorrorGameContext : DbContext
 
             entity.ToTable("players");
 
-            entity.HasIndex(e => e.XpLevelId, "fki_players_fkey_experience_level_id");
-
             entity.HasIndex(e => e.XpLevelId, "fki_players_fkey_xp_level_id");
 
             entity.Property(e => e.Id)
@@ -270,6 +273,9 @@ public partial class DreamcoreHorrorGameContext : DbContext
             entity.Property(e => e.Password)
                 .HasMaxLength(255)
                 .HasColumnName("password");
+            entity.Property(e => e.RefreshToken)
+                .HasColumnType("character varying")
+                .HasColumnName("refresh_token");
             entity.Property(e => e.RegistrationTimestamp).HasColumnName("registration_timestamp");
             entity.Property(e => e.SpiritEnergyPoints).HasColumnName("spirit_energy_points");
             entity.Property(e => e.Username)
@@ -352,7 +358,13 @@ public partial class DreamcoreHorrorGameContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.IpAddress).HasColumnName("ip_address");
             entity.Property(e => e.IsOnline).HasColumnName("is_online");
+            entity.Property(e => e.Password)
+                .HasColumnType("character varying")
+                .HasColumnName("password");
             entity.Property(e => e.PlayerCapacity).HasColumnName("player_capacity");
+            entity.Property(e => e.RefreshToken)
+                .HasColumnType("character varying")
+                .HasColumnName("refresh_token");
         });
 
         modelBuilder.Entity<XpLevel>(entity =>

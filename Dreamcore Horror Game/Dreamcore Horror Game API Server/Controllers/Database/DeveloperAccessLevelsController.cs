@@ -1,99 +1,112 @@
-﻿using Dreamcore_Horror_Game_API_Server.Models.Database;
+﻿using DreamcoreHorrorGameApiServer.ConstantValues;
+using DreamcoreHorrorGameApiServer.Models.Database;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dreamcore_Horror_Game_API_Server.Controllers.Database
+namespace DreamcoreHorrorGameApiServer.Controllers.Database;
+
+[ApiController]
+[Route(RouteNames.ApiControllerAction)]
+public class DeveloperAccessLevelsController : DatabaseController
 {
-    [ApiController]
-    [Route("api/[controller]/[action]")]
-    public class DeveloperAccessLevelsController : DatabaseController
+    public DeveloperAccessLevelsController(DreamcoreHorrorGameContext context) : base(context) { }
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
+    public async Task<IActionResult> GetAll()
+        => NoHeader(CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : Ok(await _context.DeveloperAccessLevels.ToListAsync());
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
+    public async Task<IActionResult> Get(Guid? id)
+        => NoHeader(CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : id is not null
+                && await _context.DeveloperAccessLevels.FindAsync(id) is DeveloperAccessLevel developerAccessLevel
+            ? Ok(developerAccessLevel)
+            : NotFound();
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind(
+        nameof(DeveloperAccessLevel.Id),
+        nameof(DeveloperAccessLevel.Name)
+    )] DeveloperAccessLevel developerAccessLevel)
     {
-        public DeveloperAccessLevelsController(DreamcoreHorrorGameContext context) : base(context) { }
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
 
-        [HttpGet]
-        public async Task<IActionResult> GetDeveloperAccessLevels()
+        if (ModelState.IsValid)
         {
-            return _context.DeveloperAccessLevels == null ?
-                Problem(ENTITY_SET_IS_NULL) :
-                Ok(await _context.DeveloperAccessLevels.ToListAsync());
-        }
+            developerAccessLevel.Id = Guid.NewGuid();
 
-        [HttpGet]
-        public async Task<IActionResult> GetDeveloperAccessLevel(Guid? id)
-        {
-            if (id == null || _context.DeveloperAccessLevels == null)
-                return NotFound();
-
-            var developerAccessLevel = await _context.DeveloperAccessLevels.FindAsync(id);
-
-            if (developerAccessLevel == null)
-                return NotFound();
-
+            _context.Add(developerAccessLevel);
+            await _context.SaveChangesAsync();
             return Ok(developerAccessLevel);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateDeveloperAccessLevel([Bind("Id,Name")] DeveloperAccessLevel developerAccessLevel)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpPut]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(Guid? id, [Bind(
+        nameof(DeveloperAccessLevel.Id),
+        nameof(DeveloperAccessLevel.Name)
+    )] DeveloperAccessLevel developerAccessLevel)
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        if (id != developerAccessLevel.Id)
+            return BadRequest(ErrorMessages.IdMismatch);
+
+        if (ModelState.IsValid)
         {
-            if (ModelState.IsValid)
+            try
             {
-                developerAccessLevel.Id = Guid.NewGuid();
-                _context.Add(developerAccessLevel);
+                _context.Update(developerAccessLevel);
                 await _context.SaveChangesAsync();
-                return Ok(developerAccessLevel);
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
-        }
-
-        [HttpPut]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditDeveloperAccessLevel(Guid? id, [Bind("Id,Name")] DeveloperAccessLevel developerAccessLevel)
-        {
-            if (id == null || _context.DeveloperAccessLevels == null)
-                return NotFound();
-
-            if (id != developerAccessLevel.Id)
-                return BadRequest(ID_DOES_NOT_MATCH);
-
-            if (ModelState.IsValid)
+            catch (DbUpdateConcurrencyException)
             {
-                try
-                {
-                    _context.Update(developerAccessLevel);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!DeveloperAccessLevelExists(developerAccessLevel.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
-                return Ok(developerAccessLevel);
+                if (!DeveloperAccessLevelExists(developerAccessLevel.Id))
+                    return NotFound();
+                else
+                    throw;
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
+            return Ok(developerAccessLevel);
         }
 
-        [HttpDelete]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteDeveloperAccessLevel(Guid? id)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpDelete]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid? id)
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is not null && await _context.DeveloperAccessLevels.FindAsync(id) is DeveloperAccessLevel developerAccessLevel)
         {
-            if (id == null || _context.DeveloperAccessLevels == null)
-                return NotFound();
-
-            var developerAccessLevel = await _context.DeveloperAccessLevels.FindAsync(id);
-
-            if (developerAccessLevel == null)
-                return NotFound();
-
-            _context.DeveloperAccessLevels.Remove(developerAccessLevel);
+            _context.Remove(developerAccessLevel);
             await _context.SaveChangesAsync();
             return Ok();
         }
 
-        private bool DeveloperAccessLevelExists(Guid id) => (_context.DeveloperAccessLevels?.Any(x => x.Id == id)).GetValueOrDefault();
+        return NotFound();
     }
+
+    private bool DeveloperAccessLevelExists(Guid id)
+        => _context.DeveloperAccessLevels.Any(developerAccessLevel => developerAccessLevel.Id == id);
 }

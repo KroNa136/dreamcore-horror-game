@@ -1,100 +1,118 @@
-﻿using Dreamcore_Horror_Game_API_Server.Models.Database;
+﻿using DreamcoreHorrorGameApiServer.ConstantValues;
+using DreamcoreHorrorGameApiServer.Models.Database;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dreamcore_Horror_Game_API_Server.Controllers.Database
+namespace DreamcoreHorrorGameApiServer.Controllers.Database;
+
+[ApiController]
+[Route(RouteNames.ApiControllerAction)]
+public class GameModesController : DatabaseController
 {
-    [ApiController]
-    [Route("api/[controller]/[action]")]
-    public class GameModesController : DatabaseController
+    public GameModesController(DreamcoreHorrorGameContext context) : base(context) { }
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
+    public async Task<IActionResult> GetAll()
+        => NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : Ok(await _context.GameModes.ToListAsync());
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
+    public async Task<IActionResult> Get(Guid? id)
+        => NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : id is not null
+                && await _context.GameModes.FindAsync(id) is GameMode gameMode
+            ? Ok(gameMode)
+            : NotFound();
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind(
+        nameof(GameMode.Id),
+        nameof(GameMode.AssetName),
+        nameof(GameMode.MaxPlayers),
+        nameof(GameMode.TimeLimit),
+        nameof(GameMode.IsActive)
+    )] GameMode gameMode)
     {
-        public GameModesController(DreamcoreHorrorGameContext context) : base(context) { }
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
 
-        [HttpGet]
-        public async Task<IActionResult> GetGameModes()
+        if (ModelState.IsValid)
         {
-            return _context.GameModes == null ?
-                Problem(ENTITY_SET_IS_NULL) :
-                Ok(await _context.GameModes.ToListAsync());
-        }
+            gameMode.Id = Guid.NewGuid();
 
-        [HttpGet]
-        public async Task<IActionResult> GetGameMode(Guid? id)
-        {
-            if (id == null || _context.GameModes == null)
-                return NotFound();
-
-            var gameMode = await _context.GameModes.FindAsync(id);
-
-            if (gameMode == null)
-                return NotFound();
-
+            _context.Add(gameMode);
+            await _context.SaveChangesAsync();
             return Ok(gameMode);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateGameMode([Bind("Id,AssetName,MaxPlayers,TimeLimit,IsActive")] GameMode gameMode)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpPut]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(Guid? id, [Bind(
+        nameof(GameMode.Id),
+        nameof(GameMode.AssetName),
+        nameof(GameMode.MaxPlayers),
+        nameof(GameMode.TimeLimit),
+        nameof(GameMode.IsActive)
+    )] GameMode gameMode)
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        if (id != gameMode.Id)
+            return BadRequest(ErrorMessages.IdMismatch);
+
+        if (ModelState.IsValid)
         {
-            if (ModelState.IsValid)
+            try
             {
-                gameMode.Id = Guid.NewGuid();
-                _context.Add(gameMode);
+                _context.Update(gameMode);
                 await _context.SaveChangesAsync();
-                return Ok(gameMode);
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
-        }
-
-        [HttpPut]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditGameMode(Guid? id, [Bind("Id,AssetName,MaxPlayers,TimeLimit,IsActive")] GameMode gameMode)
-        {
-            if (id == null || _context.GameModes == null)
-                return NotFound();
-
-            if (id != gameMode.Id)
-                return BadRequest(ID_DOES_NOT_MATCH);
-
-            if (ModelState.IsValid)
+            catch (DbUpdateConcurrencyException)
             {
-                try
-                {
-                    _context.Update(gameMode);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!GameModeExists(gameMode.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
-                return Ok(gameMode);
+                if (!GameModeExists(gameMode.Id))
+                    return NotFound();
+                else
+                    throw;
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
+            return Ok(gameMode);
         }
 
-        [HttpDelete]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteGameMode(Guid? id)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpDelete]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid? id)
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is not null && await _context.GameModes.FindAsync(id) is GameMode gameMode)
         {
-            if (id == null || _context.GameModes == null)
-                return NotFound();
-
-            var gameMode = await _context.GameModes.FindAsync(id);
-
-            if (gameMode == null)
-                return NotFound();
-
-            _context.GameModes.Remove(gameMode);
+            _context.Remove(gameMode);
             await _context.SaveChangesAsync();
-
             return Ok();
         }
 
-        private bool GameModeExists(Guid id) => (_context.GameModes?.Any(x => x.Id == id)).GetValueOrDefault();
+        return NotFound();
     }
+
+    private bool GameModeExists(Guid id)
+        => _context.GameModes.Any(gameMode => gameMode.Id == id);
 }

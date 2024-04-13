@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Dreamcore_Horror_Game_API_Server.Models.Database;
+namespace DreamcoreHorrorGameApiServer.Models.Database;
 
 public partial class Player
 {
@@ -12,6 +12,8 @@ public partial class Player
     public string Email { get; set; } = null!;
 
     public string Password { get; set; } = null!;
+
+    public string? RefreshToken { get; set; }
 
     public DateTime RegistrationTimestamp { get; set; }
 

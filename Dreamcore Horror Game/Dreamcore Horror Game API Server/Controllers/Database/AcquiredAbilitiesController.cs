@@ -1,100 +1,116 @@
-﻿using Dreamcore_Horror_Game_API_Server.Models.Database;
+﻿using DreamcoreHorrorGameApiServer.ConstantValues;
+using DreamcoreHorrorGameApiServer.Models.Database;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dreamcore_Horror_Game_API_Server.Controllers.Database
+namespace DreamcoreHorrorGameApiServer.Controllers.Database;
+
+[ApiController]
+[Route(RouteNames.ApiControllerAction)]
+public class AcquiredAbilitiesController : DatabaseController
 {
-    [ApiController]
-    [Route("api/[controller]/[action]")]
-    public class AcquiredAbilitiesController : DatabaseController
+    public AcquiredAbilitiesController(DreamcoreHorrorGameContext context) : base(context) { }
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public async Task<IActionResult> GetAll()
+        => NoHeader(CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : Ok(await _context.AcquiredAbilities.ToListAsync());
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
+    public async Task<IActionResult> Get(Guid? id)
+        => NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : id is not null
+                && await _context.AcquiredAbilities.FindAsync(id) is AcquiredAbility acquiredAbility
+            ? Ok(acquiredAbility)
+            : NotFound();
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind(
+        nameof(AcquiredAbility.Id),
+        nameof(AcquiredAbility.PlayerId),
+        nameof(AcquiredAbility.AbilityId),
+        nameof(AcquiredAbility.AcquirementTimestamp)
+    )] AcquiredAbility acquiredAbility)
     {
-        public AcquiredAbilitiesController(DreamcoreHorrorGameContext context) : base(context) { }
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
 
-        [HttpGet]
-        public async Task<IActionResult> GetAcquiredAbilities()
+        if (ModelState.IsValid)
         {
-            return _context.AcquiredAbilities == null ?
-                Problem(ENTITY_SET_IS_NULL) :
-                Ok(await _context.AcquiredAbilities.ToListAsync());
-        }
+            acquiredAbility.Id = Guid.NewGuid();
 
-        [HttpGet]
-        public async Task<IActionResult> GetAcquiredAbility(Guid? id)
-        {
-            if (id == null || _context.AcquiredAbilities == null)
-                return NotFound();
-
-            var acquiredAbility = await _context.AcquiredAbilities.FindAsync(id);
-
-            if (acquiredAbility == null)
-                return NotFound();
-
+            _context.Add(acquiredAbility);
+            await _context.SaveChangesAsync();
             return Ok(acquiredAbility);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateAcquiredAbility([Bind("Id,PlayerId,AbilityId,AcquirementTimestamp")] AcquiredAbility acquiredAbility)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpPut]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(Guid? id, [Bind(
+        nameof(AcquiredAbility.Id),
+        nameof(AcquiredAbility.PlayerId),
+        nameof(AcquiredAbility.AbilityId),
+        nameof(AcquiredAbility.AcquirementTimestamp)
+    )] AcquiredAbility acquiredAbility)
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        if (id != acquiredAbility.Id)
+            return BadRequest(ErrorMessages.IdMismatch);
+
+        if (ModelState.IsValid)
         {
-            if (ModelState.IsValid)
+            try
             {
-                acquiredAbility.Id = Guid.NewGuid();
-                _context.Add(acquiredAbility);
+                _context.Update(acquiredAbility);
                 await _context.SaveChangesAsync();
-                return Ok(acquiredAbility);
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
-        }
-
-        [HttpPut]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditAcquiredAbility(Guid? id, [Bind("Id,PlayerId,AbilityId,AcquirementTimestamp")] AcquiredAbility acquiredAbility)
-        {
-            if (id == null || _context.AcquiredAbilities == null)
-                return NotFound();
-
-            if (id != acquiredAbility.Id)
-                return BadRequest(ID_DOES_NOT_MATCH);
-
-            if (ModelState.IsValid)
+            catch (DbUpdateConcurrencyException)
             {
-                try
-                {
-                    _context.Update(acquiredAbility);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!AcquiredAbilityExists(acquiredAbility.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
-                return Ok(acquiredAbility);
+                if (!AcquiredAbilityExists(acquiredAbility.Id))
+                    return NotFound();
+                else
+                    throw;
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
+            return Ok(acquiredAbility);
         }
 
-        [HttpDelete]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteAcquiredAbility(Guid? id)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpDelete]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid? id)
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is not null && await _context.AcquiredAbilities.FindAsync(id) is AcquiredAbility acquiredAbility)
         {
-            if (id == null || _context.AcquiredAbilities == null)
-                return NotFound();
-
-            var acquiredAbility = await _context.AcquiredAbilities.FindAsync(id);
-
-            if (acquiredAbility == null)
-                return NotFound();
-
-            _context.AcquiredAbilities.Remove(acquiredAbility);
+            _context.Remove(acquiredAbility);
             await _context.SaveChangesAsync();
-
             return Ok();
         }
 
-        private bool AcquiredAbilityExists(Guid id) => (_context.AcquiredAbilities?.Any(x => x.Id == id)).GetValueOrDefault();
+        return NotFound();
     }
+
+    private bool AcquiredAbilityExists(Guid id)
+        => _context.AcquiredAbilities.Any(acquiredAbility => acquiredAbility.Id == id);
 }

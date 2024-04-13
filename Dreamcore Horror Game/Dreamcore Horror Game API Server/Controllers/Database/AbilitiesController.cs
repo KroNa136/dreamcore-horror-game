@@ -1,99 +1,112 @@
-﻿using Dreamcore_Horror_Game_API_Server.Models.Database;
+﻿using DreamcoreHorrorGameApiServer.ConstantValues;
+using DreamcoreHorrorGameApiServer.Models.Database;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dreamcore_Horror_Game_API_Server.Controllers.Database
+namespace DreamcoreHorrorGameApiServer.Controllers.Database;
+
+[ApiController]
+[Route(RouteNames.ApiControllerAction)]
+public class AbilitiesController : DatabaseController
 {
-    [ApiController]
-    [Route("api/[controller]/[action]")]
-    public class AbilitiesController : DatabaseController
+    public AbilitiesController(DreamcoreHorrorGameContext context) : base(context) { }
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
+    public async Task<IActionResult> GetAll()
+        => NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : Ok(await _context.Abilities.ToListAsync());
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
+    public async Task<IActionResult> Get(Guid? id)
+        => NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : id is not null
+                && await _context.Abilities.FindAsync(id) is Ability ability
+            ? Ok(ability)
+            : NotFound();
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind(
+        nameof(Ability.Id),
+        nameof(Ability.AssetName)
+    )] Ability ability)
     {
-        public AbilitiesController(DreamcoreHorrorGameContext context) : base(context) { }
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
 
-        [HttpGet]
-        public async Task<IActionResult> GetAbilities()
+        if (ModelState.IsValid)
         {
-            return _context.Abilities == null ?
-                Problem(ENTITY_SET_IS_NULL) :
-                Ok(await _context.Abilities.ToListAsync());
-        }
+            ability.Id = Guid.NewGuid();
 
-        [HttpGet]
-        public async Task<IActionResult> GetAbility(Guid? id)
-        {
-            if (id == null || _context.Abilities == null)
-                return NotFound();
-
-            var ability = await _context.Abilities.FindAsync(id);
-
-            if (ability == null)
-                return NotFound();
-
+            _context.Add(ability);
+            await _context.SaveChangesAsync();
             return Ok(ability);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateAbility([Bind("Id,AssetName")] Ability ability)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpPut]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(Guid? id, [Bind(
+        nameof(Ability.Id),
+        nameof(Ability.AssetName)
+    )] Ability ability)
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        if (id != ability.Id)
+            return BadRequest(ErrorMessages.IdMismatch);
+
+        if (ModelState.IsValid)
         {
-            if (ModelState.IsValid)
+            try
             {
-                ability.Id = Guid.NewGuid();
-                _context.Add(ability);
+                _context.Update(ability);
                 await _context.SaveChangesAsync();
-                return Ok(ability);
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
-        }
-
-        [HttpPut]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditAbility(Guid? id, [Bind("Id,AssetName")] Ability ability)
-        {
-            if (id == null || _context.Abilities == null)
-                return NotFound();
-
-            if (id != ability.Id)
-                return BadRequest(ID_DOES_NOT_MATCH);
-
-            if (ModelState.IsValid)
+            catch (DbUpdateConcurrencyException)
             {
-                try
-                {
-                    _context.Update(ability);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!AbilityExists(ability.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
-                return Ok(ability);
+                if (!AbilityExists(ability.Id))
+                    return NotFound();
+                else
+                    throw;
             }
-
-            return BadRequest(INVALID_ENTITY_DATA);
+            return Ok(ability);
         }
 
-        [HttpDelete]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteAbility(Guid? id)
+        return BadRequest(ErrorMessages.InvalidModelData);
+    }
+
+    [HttpDelete]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid? id)
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is not null && await _context.Abilities.FindAsync(id) is Ability ability)
         {
-            if (id == null || _context.Abilities == null)
-                return NotFound();
-
-            var ability = await _context.Abilities.FindAsync(id);
-
-            if (ability == null)
-                return NotFound();
-
-            _context.Abilities.Remove(ability);
+            _context.Remove(ability);
             await _context.SaveChangesAsync();
             return Ok();
         }
 
-        private bool AbilityExists(Guid id) => (_context.Abilities?.Any(x => x.Id == id)).GetValueOrDefault();
+        return NotFound();
     }
+
+    private bool AbilityExists(Guid id)
+        => _context.Abilities.Any(ability => ability.Id == id);
 }
