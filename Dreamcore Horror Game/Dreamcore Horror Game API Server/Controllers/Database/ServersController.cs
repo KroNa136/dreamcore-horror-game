@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace DreamcoreHorrorGameApiServer.Controllers.Database;
 
@@ -52,8 +53,7 @@ public class ServersController : DatabaseController
             return Forbid(ErrorMessages.HeaderMissing);
 
         bool serverExists = await _context.Servers.AnyAsync(s =>
-            s.IpAddress.ToString().Equals(server.IpAddress.ToString())
-        );
+            s.IpAddress.ToString().Equals(server.IpAddress.ToString()));
 
         if (serverExists)
             return UnprocessableEntity(ErrorMessages.ServerAlreadyExists);
@@ -174,36 +174,15 @@ public class ServersController : DatabaseController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
     public async Task<IActionResult> GetServerWithFreeSlots(int slots)
-    {
-        if (NoHeader(CorsHeaders.GameClient))
-            return Forbid(ErrorMessages.HeaderMissing);
-
-        if (slots < 1)
-            return UnprocessableEntity(ErrorMessages.UnacceptableParameterValue);
-
-        var serversWithEnoughFreeSlots = GetServersWithEnoughFreeSlots(_context.Servers, slots);
-
-        if (serversWithEnoughFreeSlots.IsEmpty())
-            return Ok(null);
-
-        var serversWithWaitingSessions = GetServersWithWaitingSessions(serversWithEnoughFreeSlots, slots);
-
-        if (serversWithWaitingSessions.IsNotEmpty())
-        {
-            int randomIndex = Random.Shared.Next(0, serversWithWaitingSessions.Count());
-            var server = serversWithWaitingSessions.ElementAt(randomIndex);
-            return Ok(server.IpAddress);
-        }
-        else
-        {
-            var server = await CreateWaitingSessionOnAnyServer(serversWithEnoughFreeSlots, slots);
-
-            if (server is not null)
-                return Ok(server.IpAddress);
-        }
-
-        return Ok(null);
-    }
+        => NoHeader(CorsHeaders.GameClient)
+            ? Forbid(ErrorMessages.HeaderMissing)
+            : slots < 1
+            ? UnprocessableEntity(ErrorMessages.UnacceptableParameterValue)
+            : GetServersWithEnoughFreeSlots(slots) is IEnumerable<Server> suitableServers
+                && await suitableServers.FirstOrDefaultAsync(async server => await HasWaitingSession(server, slots))
+                    is Server server
+            ? Ok(server.IpAddress)
+            : Ok(null);
 
     private bool ServerExists(Guid id)
         => _context.Servers.Any(server => server.Id == id);
@@ -257,80 +236,63 @@ public class ServersController : DatabaseController
         return true;
     }
 
-    private IEnumerable<Server> GetServersWithEnoughFreeSlots(IEnumerable<Server> servers, int requestedSlots)
+    private IEnumerable<Server> GetServersWithEnoughFreeSlots(int requestedSlots)
+        => _context.Servers.Where(server => server.IsOnline).ToList()
+            .Where(server => GetCurrentPlayerCount(server) + requestedSlots <= server.PlayerCapacity);
+
+    private int GetCurrentPlayerCount(Server server)
+        => _context.PlayerSessions.Where(playerSession => playerSession.EndTimestamp == null
+            && playerSession.GameSession.ServerId == server.Id).Count();
+
+    private static async Task<bool> HasWaitingSession(Server server, int slots)
     {
-        List<Server> result = new();
-
-        if (servers is null)
-            return result;
-
-        var onlineServers = servers.Where(server => server.IsOnline).ToList();
-
-        onlineServers.ForEach(server =>
+        UriBuilder uriBuilder = new()
         {
-            var activePlayerSessions = _context.PlayerSessions.Where(playerSession =>
-                playerSession.EndTimestamp == null
-                && playerSession.GameSession.ServerId == server.Id
-            );
+            Host = server.IpAddress.ToString(),
+            Port = 80,
+            Path = $"/api/WaitingSessions/Any?playerCount={slots}"
+        };
 
-            bool canFitRequestedPlayerCount = activePlayerSessions.Count() + requestedSlots <= server.PlayerCapacity;
+        HttpResponseMessage anyWaitingSessionsResponse = await HttpClientProvider.Shared.GetAsync(uriBuilder.Uri);
 
-            if (canFitRequestedPlayerCount)
-                result.Add(server);
-        });
+        if (!anyWaitingSessionsResponse.IsSuccessStatusCode)
+            return false;
 
-        return result;
-    }
+        string responseText = await anyWaitingSessionsResponse.Content.ReadAsStringAsync();
 
-    private static IEnumerable<Server> GetServersWithWaitingSessions(IEnumerable<Server> servers, int requestedSlots)
-    {
-        List<Server> result = new();
-
-        if (servers is null)
-            return result;
-
-        servers.ToList().ForEach(async server =>
+        try
         {
-            UriBuilder uriBuilder = new()
-            {
-                Host = server.IpAddress.ToString(),
-                Port = 80,
-                Path = $"/api/WaitingSessions/Any?playerCount={requestedSlots}"
-            };
+            bool hasWaitingSessions = JsonSerializer.Deserialize<bool>(responseText, JsonSerializerOptionsProvider.Shared);
 
-            HttpResponseMessage response = await HttpClientProvider.Shared.GetAsync(uriBuilder.Uri);
-
-            if (!response.IsSuccessStatusCode)
-                return;
-
-            object? anyWaitingSessions = await response.Content.ReadFromJsonAsync(typeof(bool));
-
-            if (anyWaitingSessions is bool b && b == true)
-                result.Add(server);
-        });
-
-        return result;
-    }
-
-    private static async Task<Server?> CreateWaitingSessionOnAnyServer(IEnumerable<Server> servers, int requestedSlots)
-    {
-        foreach (var server in servers)
+            if (hasWaitingSessions)
+                return true;
+        }
+        catch (JsonException)
         {
-            UriBuilder uriBuilder = new()
-            {
-                Host = server.IpAddress.ToString(),
-                Port = 80,
-                Path = $"/api/WaitingSessions/Create?playerCount={requestedSlots}"
-            };
-
-            JsonContent jsonContent = JsonContent.Create(requestedSlots, typeof(int));
-
-            HttpResponseMessage response = await HttpClientProvider.Shared.PostAsync(uriBuilder.Uri, jsonContent);
-
-            if (response.IsSuccessStatusCode)
-                return server;
+            return false;
         }
 
-        return null;
+        return await CreateWaitingSession(server, slots);
+    }
+
+    private static async Task<bool> CreateWaitingSession(Server server, int slots)
+    {
+        UriBuilder uriBuilder = new()
+        {
+            Host = server.IpAddress.ToString(),
+            Port = 80,
+            Path = $"/api/WaitingSessions/Create?playerCount={slots}"
+        };
+
+        JsonContent jsonContent = JsonContent.Create(slots, typeof(int));
+
+        HttpResponseMessage createWaitingSessionResponse = await HttpClientProvider.Shared
+            .PostAsync(uriBuilder.Uri, jsonContent);
+
+        string responseText = await createWaitingSessionResponse.Content.ReadAsStringAsync();
+
+        bool success = createWaitingSessionResponse.IsSuccessStatusCode && responseText.IsEmpty();
+
+        return success;
     }
 }
