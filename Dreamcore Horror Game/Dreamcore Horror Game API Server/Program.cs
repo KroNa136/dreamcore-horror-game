@@ -14,7 +14,7 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        Console.WriteLine($"TOKEN:\n{TokenService.CreateAccessToken("test", AuthenticationRoles.FullAccessDeveloper)}\n");
+        Console.WriteLine($"TOKEN:\n{TokenService.CreateAccessToken("test", AuthenticationRoles.Player)}\n");
 
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
