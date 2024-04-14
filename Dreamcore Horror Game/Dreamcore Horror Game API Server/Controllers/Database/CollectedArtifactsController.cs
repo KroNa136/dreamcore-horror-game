@@ -15,19 +15,29 @@ public class CollectedArtifactsController : DatabaseController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public async Task<IActionResult> GetAll()
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : Ok(await _context.CollectedArtifacts.ToListAsync());
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        return Ok(await _context.CollectedArtifacts.ToListAsync());
+    }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public async Task<IActionResult> Get(Guid? id)
-        => NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : id is not null
-                && await _context.CollectedArtifacts.FindAsync(id) is CollectedArtifact collectedArtifact
+    {
+        if (NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        var collectedArtifact = await _context.CollectedArtifacts.FindAsync(id);
+
+        return collectedArtifact is not null
             ? Ok(collectedArtifact)
             : NotFound();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloperOrServer)]
@@ -42,16 +52,14 @@ public class CollectedArtifactsController : DatabaseController
         if (NoHeader(CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (ModelState.IsValid)
-        {
-            collectedArtifact.Id = Guid.NewGuid();
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
 
-            _context.Add(collectedArtifact);
-            await _context.SaveChangesAsync();
-            return Ok(collectedArtifact);
-        }
+        collectedArtifact.Id = Guid.NewGuid();
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        _context.Add(collectedArtifact);
+        await _context.SaveChangesAsync();
+        return Ok(collectedArtifact);
     }
 
     [HttpPut]
@@ -73,24 +81,23 @@ public class CollectedArtifactsController : DatabaseController
         if (id != collectedArtifact.Id)
             return BadRequest(ErrorMessages.IdMismatch);
 
-        if (ModelState.IsValid)
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
+
+        try
         {
-            try
-            {
-                _context.Update(collectedArtifact);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CollectedArtifactExists(collectedArtifact.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-            return Ok(collectedArtifact);
+            _context.Update(collectedArtifact);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!CollectedArtifactExists(collectedArtifact.Id))
+                return NotFound();
+            else
+                throw;
         }
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        return Ok(collectedArtifact);
     }
 
     [HttpDelete]
@@ -101,14 +108,17 @@ public class CollectedArtifactsController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (id is not null && await _context.CollectedArtifacts.FindAsync(id) is CollectedArtifact collectedArtifact)
-        {
-            _context.Remove(collectedArtifact);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        if (id is null)
+            return NotFound();
 
-        return NotFound();
+        var collectedArtifact = await _context.CollectedArtifacts.FindAsync(id);
+
+        if (collectedArtifact is null)
+            return NotFound();
+
+        _context.Remove(collectedArtifact);
+        await _context.SaveChangesAsync();
+        return Ok();
     }
 
     private bool CollectedArtifactExists(Guid id)

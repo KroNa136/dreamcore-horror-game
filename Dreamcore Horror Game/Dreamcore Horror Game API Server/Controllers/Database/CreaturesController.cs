@@ -15,19 +15,29 @@ public class CreaturesController : DatabaseController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public async Task<IActionResult> GetAll()
-        => NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : Ok(await _context.Creatures.ToListAsync());
+    {
+        if (NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        return Ok(await _context.Creatures.ToListAsync());
+    }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
     public async Task<IActionResult> Get(Guid? id)
-        => NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : id is not null
-                && await _context.Creatures.FindAsync(id) is Creature creature
+    {
+        if (NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        var creature = await _context.Creatures.FindAsync(id);
+
+        return creature is not null
             ? Ok(creature)
             : NotFound();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
@@ -43,16 +53,14 @@ public class CreaturesController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (ModelState.IsValid)
-        {
-            creature.Id = Guid.NewGuid();
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
 
-            _context.Add(creature);
-            await _context.SaveChangesAsync();
-            return Ok(creature);
-        }
+        creature.Id = Guid.NewGuid();
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        _context.Add(creature);
+        await _context.SaveChangesAsync();
+        return Ok(creature);
     }
 
     [HttpPut]
@@ -75,24 +83,23 @@ public class CreaturesController : DatabaseController
         if (id != creature.Id)
             return BadRequest(ErrorMessages.IdMismatch);
 
-        if (ModelState.IsValid)
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
+
+        try
         {
-            try
-            {
-                _context.Update(creature);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CreatureExists(creature.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-            return Ok(creature);
+            _context.Update(creature);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!CreatureExists(creature.Id))
+                return NotFound();
+            else
+                throw;
         }
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        return Ok(creature);
     }
 
     [HttpDelete]
@@ -103,14 +110,17 @@ public class CreaturesController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (id is not null && await _context.Creatures.FindAsync(id) is Creature creature)
-        {
-            _context.Remove(creature);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        if (id is null)
+            return NotFound();
 
-        return NotFound();
+        var creature = await _context.Creatures.FindAsync(id);
+
+        if (creature is null)
+            return NotFound();
+
+        _context.Remove(creature);
+        await _context.SaveChangesAsync();
+        return Ok();
     }
 
     private bool CreatureExists(Guid id)

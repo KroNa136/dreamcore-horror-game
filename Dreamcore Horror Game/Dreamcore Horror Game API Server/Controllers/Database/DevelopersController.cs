@@ -22,29 +22,46 @@ public class DevelopersController : DatabaseController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public async Task<IActionResult> GetAll()
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : Ok(await _context.Developers.ToListAsync());
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        return Ok(await _context.Developers.ToListAsync());
+    }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public async Task<IActionResult> Get(Guid? id)
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : id is not null
-                && await _context.Developers.FindAsync(id) is Developer developer
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        var developer = await _context.Developers.FindAsync(id);
+
+        return developer is not null
             ? Ok(developer)
             : NotFound();
+    }
 
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetByLogin(string login)
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : login.IsNotEmpty()
-                && await _context.Developers.FirstOrDefaultAsync(developer => developer.Login.Equals(login)) is Developer developer
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (login.IsEmpty())
+            return NotFound();
+
+        var developer = await _context.Developers.FirstOrDefaultAsync(developer => developer.Login.Equals(login));
+
+        return developer is not null
             ? Ok(developer)
             : NotFound();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
@@ -65,17 +82,15 @@ public class DevelopersController : DatabaseController
         if (developerExists)
             return UnprocessableEntity(ErrorMessages.DeveloperAlreadyExists);
 
-        if (ModelState.IsValid)
-        {
-            developer.Id = Guid.NewGuid();
-            developer.Password = _passwordHasher.HashPassword(developer, developer.Password);
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
 
-            _context.Add(developer);
-            await _context.SaveChangesAsync();
-            return Ok(developer);
-        }
+        developer.Id = Guid.NewGuid();
+        developer.Password = _passwordHasher.HashPassword(developer, developer.Password);
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        _context.Add(developer);
+        await _context.SaveChangesAsync();
+        return Ok(developer);
     }
 
     [HttpPut]
@@ -98,24 +113,23 @@ public class DevelopersController : DatabaseController
         if (id != developer.Id)
             return BadRequest(ErrorMessages.IdMismatch);
 
-        if (ModelState.IsValid)
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
+
+        try
         {
-            try
-            {
-                _context.Update(developer);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DeveloperExists(developer.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-            return Ok(developer);
+            _context.Update(developer);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!DeveloperExists(developer.Id))
+                return NotFound();
+            else
+                throw;
         }
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        return Ok(developer);
     }
 
     [HttpDelete]
@@ -126,56 +140,94 @@ public class DevelopersController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (id is not null && await _context.Developers.FindAsync(id) is Developer developer)
-        {
-            _context.Remove(developer);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        if (id is null)
+            return NotFound();
 
-        return NotFound();
+        var developer = await _context.Developers.FindAsync(id);
+
+        if (developer is null)
+            return NotFound();
+
+        _context.Remove(developer);
+        await _context.SaveChangesAsync();
+        return Ok();
     }
 
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
     public IActionResult Login(LoginData loginData)
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : loginData.IsNotEmptyLogin && loginData.IsNotEmptyPassword
-                && GetByLoginIncludeDeveloperAccessLevel(loginData.Login) is Developer developer
-                && VerifyPassword(developer, loginData.Password)
-                && TokenService.CreateRefreshToken(developer.Login, developer.DeveloperAccessLevel.Name) is string token
-                && SetRefreshToken(developer, token)
-            ? Ok(token)
-            : Unauthorized();
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (loginData.IsEmptyLogin || loginData.IsEmptyPassword)
+            return Unauthorized();
+
+        var developer = GetByLoginIncludeDeveloperAccessLevel(loginData.Login);
+
+        if (developer is null)
+            return Unauthorized();
+
+        if (VerifyPassword(developer, loginData.Password))
+        {
+            string token = TokenService.CreateRefreshToken(developer.Login, developer.DeveloperAccessLevel.Name);
+            SetRefreshToken(developer, token);
+            return Ok(token);
+        }
+
+        return Unauthorized();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     [ValidateAntiForgeryToken]
     public IActionResult ChangePassword(LoginData loginData, string newPassword)
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : loginData.IsNotEmptyLogin && loginData.IsNotEmptyPassword && newPassword.IsNotEmpty()
-                && GetByLoginIncludeDeveloperAccessLevel(loginData.Login) is Developer developer
-                && VerifyPassword(developer, loginData.Password)
-                && TokenService.CreateRefreshToken(developer.Login, developer.DeveloperAccessLevel.Name) is string token
-                && SetPasswordAndRefreshToken(developer, newPassword, token)
-            ? Ok(token)
-            : Unauthorized();
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (loginData.IsEmptyLogin || loginData.IsEmptyPassword || newPassword.IsEmpty())
+            return Unauthorized();
+
+        var developer = GetByLoginIncludeDeveloperAccessLevel(loginData.Login);
+
+        if (developer is null)
+            return Unauthorized();
+
+        if (VerifyPassword(developer, loginData.Password))
+        {
+            string token = TokenService.CreateRefreshToken(developer.Login, developer.DeveloperAccessLevel.Name);
+            SetPasswordAndRefreshToken(developer, newPassword, token);
+            return Ok(token);
+        }
+
+        return Unauthorized();
+    }
+
 
     // TODO: password restore
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Refresh, Roles = AuthenticationRoles.Developer)]
     public IActionResult GetAccessToken(string login)
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : login.IsNotEmpty()
-                && GetByLoginIncludeDeveloperAccessLevel(login) is Developer developer
-                && VerifyRefreshToken(developer, GetTokenFromHeaders())
-            ? Ok(TokenService.CreateAccessToken(login, developer.DeveloperAccessLevel.Name))
-            : Unauthorized();
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (login.IsEmpty())
+            return Unauthorized();
+
+        var developer = GetByLoginIncludeDeveloperAccessLevel(login);
+
+        if (developer is null)
+            return Unauthorized();
+
+        if (VerifyRefreshToken(developer, AuthorizationToken))
+            return Ok(TokenService.CreateAccessToken(login, developer.DeveloperAccessLevel.Name));
+
+        return Unauthorized();
+    }
 
     private bool DeveloperExists(Guid id)
         => _context.Developers.Any(developer => developer.Id == id);

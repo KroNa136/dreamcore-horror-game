@@ -15,19 +15,29 @@ public class XpLevelsController : DatabaseController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public async Task<IActionResult> GetAll()
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : Ok(await _context.XpLevels.ToListAsync());
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        return Ok(await _context.XpLevels.ToListAsync());
+    }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public async Task<IActionResult> Get(Guid? id)
-        => NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : id is not null
-                && await _context.XpLevels.FindAsync(id) is XpLevel xpLevel
+    {
+        if (NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        var xpLevel = await _context.XpLevels.FindAsync(id);
+
+        return xpLevel is not null
             ? Ok(xpLevel)
             : NotFound();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
@@ -41,16 +51,14 @@ public class XpLevelsController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (ModelState.IsValid)
-        {
-            xpLevel.Id = Guid.NewGuid();
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
 
-            _context.Add(xpLevel);
-            await _context.SaveChangesAsync();
-            return Ok(xpLevel);
-        }
+        xpLevel.Id = Guid.NewGuid();
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        _context.Add(xpLevel);
+        await _context.SaveChangesAsync();
+        return Ok(xpLevel);
     }
 
     [HttpPut]
@@ -71,24 +79,23 @@ public class XpLevelsController : DatabaseController
         if (id != xpLevel.Id)
             return BadRequest(ErrorMessages.IdMismatch);
 
-        if (ModelState.IsValid)
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
+
+        try
         {
-            try
-            {
-                _context.Update(xpLevel);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!XpLevelExists(xpLevel.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-            return Ok(xpLevel);
+            _context.Update(xpLevel);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!XpLevelExists(xpLevel.Id))
+                return NotFound();
+            else
+                throw;
         }
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        return Ok(xpLevel);
     }
 
     [HttpDelete]
@@ -99,14 +106,17 @@ public class XpLevelsController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (id is not null && await _context.XpLevels.FindAsync(id) is XpLevel xpLevel)
-        {
-            _context.Remove(xpLevel);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        if (id is null)
+            return NotFound();
 
-        return NotFound();
+        var xpLevel = await _context.XpLevels.FindAsync(id);
+
+        if (xpLevel is null)
+            return NotFound();
+
+        _context.Remove(xpLevel);
+        await _context.SaveChangesAsync();
+        return Ok();
     }
 
     private bool XpLevelExists(Guid id)

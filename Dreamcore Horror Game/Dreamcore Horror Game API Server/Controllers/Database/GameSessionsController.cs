@@ -15,19 +15,29 @@ public class GameSessionsController : DatabaseController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public async Task<IActionResult> GetAll()
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : Ok(await _context.GameSessions.ToListAsync());
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        return Ok(await _context.GameSessions.ToListAsync());
+    }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
     public async Task<IActionResult> Get(Guid? id)
-        => NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : id is not null
-                && await _context.GameSessions.FindAsync(id) is GameSession gameSession
+    {
+        if (NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        var gameSession = await _context.GameSessions.FindAsync(id);
+
+        return gameSession is not null
             ? Ok(gameSession)
             : NotFound();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloperOrServer)]
@@ -43,16 +53,14 @@ public class GameSessionsController : DatabaseController
         if (NoHeader(CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (ModelState.IsValid)
-        {
-            gameSession.Id = Guid.NewGuid();
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
 
-            _context.Add(gameSession);
-            await _context.SaveChangesAsync();
-            return Ok(gameSession);
-        }
+        gameSession.Id = Guid.NewGuid();
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        _context.Add(gameSession);
+        await _context.SaveChangesAsync();
+        return Ok(gameSession);
     }
 
     [HttpPut]
@@ -75,24 +83,23 @@ public class GameSessionsController : DatabaseController
         if (id != gameSession.Id)
             return BadRequest(ErrorMessages.IdMismatch);
 
-        if (ModelState.IsValid)
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
+
+        try
         {
-            try
-            {
-                _context.Update(gameSession);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!GameSessionExists(gameSession.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-            return Ok(gameSession);
+            _context.Update(gameSession);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!GameSessionExists(gameSession.Id))
+                return NotFound();
+            else
+                throw;
         }
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        return Ok(gameSession);
     }
 
     [HttpDelete]
@@ -103,14 +110,17 @@ public class GameSessionsController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (id is not null && await _context.GameSessions.FindAsync(id) is GameSession gameSession)
-        {
-            _context.Remove(gameSession);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        if (id is null)
+            return NotFound();
 
-        return NotFound();
+        var gameSession = await _context.GameSessions.FindAsync(id);
+
+        if (gameSession is null)
+            return NotFound();
+
+        _context.Remove(gameSession);
+        await _context.SaveChangesAsync();
+        return Ok();
     }
 
     private bool GameSessionExists(Guid id)

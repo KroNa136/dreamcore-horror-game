@@ -17,7 +17,7 @@ public class DatabaseController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to.
     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
 
-    public string GetTokenFromHeaders()
+    protected string AuthorizationToken
         => HttpContext.Request.Headers[HeaderNames.Authorization].ToString().Replace("Bearer ", string.Empty);
 
     protected bool NoHeader(params string[] headers)
@@ -29,4 +29,6 @@ public class DatabaseController : ControllerBase
         }
         return true;
     }
+
+    protected bool InvalidModelState => !ModelState.IsValid;
 }
