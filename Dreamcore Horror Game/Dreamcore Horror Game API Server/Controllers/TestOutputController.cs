@@ -1,5 +1,5 @@
 ﻿using DreamcoreHorrorGameApiServer.ConstantValues;
-using DreamcoreHorrorGameApiServer.Controllers.Database;
+using DreamcoreHorrorGameApiServer.Controllers;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
 using Microsoft.AspNetCore.Mvc;
@@ -11,9 +11,12 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class TestOutputController : DatabaseController
+public class TestOutputController : ControllerBase
 {
-    public TestOutputController(DreamcoreHorrorGameContext context) : base(context) { }
+    private DreamcoreHorrorGameContext _context;
+
+    public TestOutputController(DreamcoreHorrorGameContext context)
+        => _context = context;
 
     [HttpGet]
     public IResult Test()
