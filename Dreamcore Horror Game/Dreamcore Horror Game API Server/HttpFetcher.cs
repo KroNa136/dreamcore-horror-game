@@ -19,7 +19,6 @@ public static class HttpFetcher
         };
 
         s_httpClient.DefaultRequestHeaders.Add(HeaderNames.Accept, MediaTypeNames.Application.Json);
-        s_httpClient.DefaultRequestHeaders.Add(HeaderNames.ContentType, MediaTypeNames.Application.Json);
         s_httpClient.DefaultRequestHeaders.Add(CorsHeaders.ApiServer, string.Empty);
     }
 
