@@ -22,19 +22,29 @@ public class PlayersController : DatabaseController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public async Task<IActionResult> GetAll()
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : Ok(await _context.Players.ToListAsync());
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        return Ok(await _context.Players.ToListAsync());
+    }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
     public async Task<IActionResult> Get(Guid? id)
-        => NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : id is not null
-                && await _context.Players.FindAsync(id) is Player player
+    {
+        if (NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        var player = await _context.Players.FindAsync(id);
+
+        return player is not null
             ? Ok(player)
             : NotFound();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
@@ -62,17 +72,15 @@ public class PlayersController : DatabaseController
         if (playerExists)
             return UnprocessableEntity(ErrorMessages.PlayerAlreadyExists);
 
-        if (ModelState.IsValid)
-        {
-            player.Id = Guid.NewGuid();
-            player.Password = _passwordHasher.HashPassword(player, player.Password);
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
 
-            _context.Add(player);
-            await _context.SaveChangesAsync();
-            return Ok(player);
-        }
+        player.Id = Guid.NewGuid();
+        player.Password = _passwordHasher.HashPassword(player, player.Password);
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        _context.Add(player);
+        await _context.SaveChangesAsync();
+        return Ok(player);
     }
 
     [HttpPut]
@@ -102,24 +110,23 @@ public class PlayersController : DatabaseController
         if (id != player.Id)
             return BadRequest(ErrorMessages.IdMismatch);
 
-        if (ModelState.IsValid)
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
+
+        try
         {
-            try
-            {
-                _context.Update(player);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!PlayerExists(player.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-            return Ok(player);
+            _context.Update(player);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!PlayerExists(player.Id))
+                return NotFound();
+            else
+                throw;
         }
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        return Ok(player);
     }
 
     [HttpDelete]
@@ -130,14 +137,17 @@ public class PlayersController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (id is not null && await _context.Players.FindAsync(id) is Player player)
-        {
-            _context.Remove(player);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        if (id is null)
+            return NotFound();
 
-        return NotFound();
+        var player = await _context.Players.FindAsync(id);
+
+        if (player is null)
+            return NotFound();
+
+        _context.Remove(player);
+        await _context.SaveChangesAsync();
+        return Ok();
     }
 
     [HttpPost]
@@ -166,60 +176,92 @@ public class PlayersController : DatabaseController
         if (playerExists)
             return UnprocessableEntity(ErrorMessages.PlayerAlreadyExists);
 
-        if (ModelState.IsValid)
-        {
-            player.Id = Guid.NewGuid();
-            player.Password = _passwordHasher.HashPassword(player, player.Password);
-            player.RefreshToken = TokenService.CreateRefreshToken(player.Email, AuthenticationRoles.Player);
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
 
-            _context.Add(player);
-            await _context.SaveChangesAsync();
-            return Ok(player.RefreshToken);
-        }
+        player.Id = Guid.NewGuid();
+        player.Password = _passwordHasher.HashPassword(player, player.Password);
+        player.RefreshToken = TokenService.CreateRefreshToken(player.Email, AuthenticationRoles.Player);
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        _context.Add(player);
+        await _context.SaveChangesAsync();
+        return Ok(player.RefreshToken);
     }
 
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
     public IActionResult Login(LoginData loginData)
-        => NoHeader(CorsHeaders.GameClient)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : loginData.IsNotEmptyLogin && loginData.IsNotEmptyPassword
-                && GetByEmail(loginData.Login) is Player player
-                && VerifyPassword(player, loginData.Password)
-                && TokenService.CreateRefreshToken(player.Email, AuthenticationRoles.Player) is string token
-                && SetRefreshToken(player, token)
-            ? Ok(token)
-            : Unauthorized();
+    {
+        if (NoHeader(CorsHeaders.GameClient))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (loginData.IsEmptyLogin || loginData.IsEmptyPassword)
+            return Unauthorized();
+
+        var player = GetByEmail(loginData.Login);
+
+        if (player is null)
+            return Unauthorized();
+
+        if (VerifyPassword(player, loginData.Password))
+        {
+            string token = TokenService.CreateRefreshToken(player.Email, AuthenticationRoles.Player);
+            SetRefreshToken(player, token);
+            return Ok(token);
+        }
+
+        return Unauthorized();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
     [ValidateAntiForgeryToken]
     public IActionResult ChangePassword(LoginData loginData, string newPassword)
-        => NoHeader(CorsHeaders.GameClient)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : loginData.IsNotEmptyLogin && loginData.IsNotEmptyPassword && newPassword.IsNotEmpty()
-                && GetByEmail(loginData.Login) is Player player
-                && VerifyPassword(player, loginData.Password)
-                && TokenService.CreateRefreshToken(player.Email, AuthenticationRoles.Player) is string token
-                && SetPasswordAndRefreshToken(player, newPassword, token)
-            ? Ok(token)
-            : Unauthorized();
+    {
+        if (NoHeader(CorsHeaders.GameClient))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (loginData.IsEmptyLogin || loginData.IsEmptyPassword || newPassword.IsEmpty())
+            return Unauthorized();
+
+        var player = GetByEmail(loginData.Login);
+
+        if (player is null)
+            return Unauthorized();
+
+        if (VerifyPassword(player, loginData.Password))
+        {
+            string token = TokenService.CreateRefreshToken(player.Email, AuthenticationRoles.Player);
+            SetPasswordAndRefreshToken(player, newPassword, token);
+            return Ok(token);
+        }
+
+        return Unauthorized();
+    }
 
     // TODO: password restore
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Refresh, Roles = AuthenticationRoles.Player)]
     public IActionResult GetAccessToken(string email)
-        => NoHeader(CorsHeaders.GameClient)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : email.IsNotEmpty()
-                && GetByEmail(email) is Player player
-                && VerifyRefreshToken(player, GetTokenFromHeaders())
-            ? Ok(TokenService.CreateAccessToken(email, AuthenticationRoles.Player))
-            : Unauthorized();
+    {
+        if (NoHeader(CorsHeaders.GameClient))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (email.IsEmpty())
+            return Unauthorized();
+
+        var player = GetByEmail(email);
+
+        if (player is null)
+            return Unauthorized();
+
+        if (VerifyRefreshToken(player, AuthorizationToken))
+            return Ok(TokenService.CreateAccessToken(email, AuthenticationRoles.Player));
+
+        return Unauthorized();
+    }
 
     private bool PlayerExists(Guid id)
         => _context.Players.Any(player => player.Id == id);

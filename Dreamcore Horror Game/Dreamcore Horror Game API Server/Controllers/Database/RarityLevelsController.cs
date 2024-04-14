@@ -15,19 +15,29 @@ public class RarityLevelsController : DatabaseController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public async Task<IActionResult> GetAll()
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : Ok(await _context.RarityLevels.ToListAsync());
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        return Ok(await _context.RarityLevels.ToListAsync());
+    } 
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
     public async Task<IActionResult> Get(Guid? id)
-        => NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : id is not null
-                && await _context.RarityLevels.FindAsync(id) is RarityLevel rarityLevel
+    {
+        if (NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        var rarityLevel = await _context.RarityLevels.FindAsync(id);
+
+        return rarityLevel is not null
             ? Ok(rarityLevel)
             : NotFound();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
@@ -41,16 +51,14 @@ public class RarityLevelsController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (ModelState.IsValid)
-        {
-            rarityLevel.Id = Guid.NewGuid();
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
 
-            _context.Add(rarityLevel);
-            await _context.SaveChangesAsync();
-            return Ok(rarityLevel);
-        }
+        rarityLevel.Id = Guid.NewGuid();
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        _context.Add(rarityLevel);
+        await _context.SaveChangesAsync();
+        return Ok(rarityLevel);
     }
 
     [HttpPut]
@@ -71,24 +79,23 @@ public class RarityLevelsController : DatabaseController
         if (id != rarityLevel.Id)
             return BadRequest(ErrorMessages.IdMismatch);
 
-        if (ModelState.IsValid)
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
+
+        try
         {
-            try
-            {
-                _context.Update(rarityLevel);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!RarityLevelExists(rarityLevel.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-            return Ok(rarityLevel);
+            _context.Update(rarityLevel);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!RarityLevelExists(rarityLevel.Id))
+                return NotFound();
+            else
+                throw;
         }
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        return Ok(rarityLevel);
     }
 
     [HttpDelete]
@@ -99,14 +106,17 @@ public class RarityLevelsController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (id is not null && await _context.RarityLevels.FindAsync(id) is RarityLevel rarityLevel)
-        {
-            _context.Remove(rarityLevel);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        if (id is null)
+            return NotFound();
 
-        return NotFound();
+        var rarityLevel = await _context.RarityLevels.FindAsync(id);
+
+        if (rarityLevel is null)
+            return NotFound();
+
+        _context.Remove(rarityLevel);
+        await _context.SaveChangesAsync();
+        return Ok();
     }
 
     private bool RarityLevelExists(Guid id)

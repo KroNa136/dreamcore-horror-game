@@ -23,19 +23,29 @@ public class ServersController : DatabaseController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public async Task<IActionResult> GetAll()
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : Ok(await _context.Servers.ToListAsync());
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        return Ok(await _context.Servers.ToListAsync());
+    }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
     public async Task<IActionResult> Get(Guid? id)
-        => NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : id is not null
-                && await _context.Servers.FindAsync(id) is Server server
+    {
+        if (NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        var server = await _context.Servers.FindAsync(id);
+
+        return server is not null
             ? Ok(server)
             : NotFound();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
@@ -58,17 +68,15 @@ public class ServersController : DatabaseController
         if (serverExists)
             return UnprocessableEntity(ErrorMessages.ServerAlreadyExists);
 
-        if (ModelState.IsValid)
-        {
-            server.Id = Guid.NewGuid();
-            server.Password = _passwordHasher.HashPassword(server, server.Password);
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
 
-            _context.Add(server);
-            await _context.SaveChangesAsync();
-            return Ok(server);
-        }
+        server.Id = Guid.NewGuid();
+        server.Password = _passwordHasher.HashPassword(server, server.Password);
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        _context.Add(server);
+        await _context.SaveChangesAsync();
+        return Ok(server);
     }
 
     [HttpPut]
@@ -92,24 +100,23 @@ public class ServersController : DatabaseController
         if (id != server.Id)
             return BadRequest(ErrorMessages.IdMismatch);
 
-        if (ModelState.IsValid)
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
+
+        try
         {
-            try
-            {
-                _context.Update(server);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ServerExists(server.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-            return Ok(server);
+            _context.Update(server);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!ServerExists(server.Id))
+                return NotFound();
+            else
+                throw;
         }
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        return Ok(server);
     }
 
     [HttpDelete]
@@ -120,74 +127,115 @@ public class ServersController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (id is not null && await _context.Servers.FindAsync(id) is Server server)
-        {
-            _context.Remove(server);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        if (id is null)
+            return NotFound();
 
-        return NotFound();
+        var server = await _context.Servers.FindAsync(id);
+
+        if (server is null)
+            return NotFound();
+
+        _context.Remove(server);
+        await _context.SaveChangesAsync();
+        return Ok();
     }
 
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
     public IActionResult Login(LoginData loginData)
-        => NoHeader(CorsHeaders.GameServer)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : loginData.IsNotEmptyLogin && loginData.IsNotEmptyPassword
-                && GetByIpAddress(loginData.Login!) is Server server
-                && VerifyPassword(server, loginData.Password)
-                && TokenService.CreateRefreshToken(server.IpAddress.ToString(), AuthenticationRoles.Server) is string token
-                && SetRefreshToken(server, token)
-            ? Ok(token)
-            : Unauthorized();
+    {
+        if (NoHeader(CorsHeaders.GameServer))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (loginData.IsEmptyLogin || loginData.IsEmptyPassword)
+            return Unauthorized();
+
+        var server = GetByIpAddress(loginData.Login);
+
+        if (server is null)
+            return Unauthorized();
+
+        if (VerifyPassword(server, loginData.Password))
+        {
+            string token = TokenService.CreateRefreshToken(server.IpAddress.ToString(), AuthenticationRoles.Server);
+            SetRefreshToken(server, token);
+            return Ok(token);
+        }
+
+        return Unauthorized();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Server)]
     [ValidateAntiForgeryToken]
     public IActionResult ChangePassword(LoginData loginData, string newPassword)
-        => NoHeader(CorsHeaders.GameServer)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : loginData.IsNotEmptyLogin && loginData.IsNotEmptyPassword && newPassword.IsNotEmpty()
-                && GetByIpAddress(loginData.Login!) is Server server
-                && VerifyPassword(server, loginData.Password)
-                && TokenService.CreateRefreshToken(server.IpAddress.ToString(), AuthenticationRoles.Server) is string token
-                && SetPasswordAndRefreshToken(server, newPassword, token)
-            ? Ok(token)
-            : Unauthorized();
+    {
+        if (NoHeader(CorsHeaders.GameServer))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (loginData.IsEmptyLogin || loginData.IsEmptyPassword || newPassword.IsEmpty())
+            return Unauthorized();
+
+        var server = GetByIpAddress(loginData.Login);
+
+        if (server is null)
+            return Unauthorized();
+
+        if (VerifyPassword(server, loginData.Password))
+        {
+            string token = TokenService.CreateRefreshToken(server.IpAddress.ToString(), AuthenticationRoles.Server);
+            SetPasswordAndRefreshToken(server, newPassword, token);
+            return Ok(token);
+        }
+
+        return Unauthorized();
+    }
 
     // TODO: password restore
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Refresh, Roles = AuthenticationRoles.Server)]
     public IActionResult GetAccessToken(string ipAddress)
-        => NoHeader(CorsHeaders.GameServer)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : ipAddress.IsNotEmpty()
-                && GetByIpAddress(ipAddress) is Server server
-                && VerifyRefreshToken(server, GetTokenFromHeaders())
-            ? Ok(TokenService.CreateAccessToken(ipAddress, AuthenticationRoles.Server))
-            : Unauthorized();
+    {
+        if (NoHeader(CorsHeaders.GameServer))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (ipAddress.IsEmpty())
+            return Unauthorized();
+
+        var server = GetByIpAddress(ipAddress);
+
+        if (server is null)
+            return Unauthorized();
+
+        if (VerifyRefreshToken(server, AuthorizationToken))
+            return Ok(TokenService.CreateAccessToken(ipAddress, AuthenticationRoles.Server));
+
+        return Unauthorized();
+    }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
     public async Task<IActionResult> GetServerWithFreeSlots(int slots)
-        => NoHeader(CorsHeaders.GameClient)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : slots < 1
-            ? UnprocessableEntity(ErrorMessages.UnacceptableParameterValue)
-            : GetServersWithEnoughFreeSlots(slots) is IEnumerable<Server> suitableServers
-                && await suitableServers.FirstOrDefaultAsync(async server => await HasWaitingSession(server, slots))
-                    is Server server
-            ? Ok(server.IpAddress)
-            : Ok(null);
+    {
+        if (NoHeader(CorsHeaders.GameClient))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (slots < 1)
+            return UnprocessableEntity(ErrorMessages.UnacceptableParameterValue);
+
+        var suitableServers = GetServersWithEnoughFreeSlots(slots);
+
+        var server = await suitableServers.FirstOrDefaultAsync(async server => await HasWaitingSession(server, slots));
+
+        return Ok(server?.IpAddress);
+    }
 
     private bool ServerExists(Guid id)
         => _context.Servers.Any(server => server.Id == id);
 
-    private Server? GetByIpAddress(string ipAddress)
+    private Server? GetByIpAddress(string? ipAddress)
         => _context.Servers.FirstOrDefault(server => server.IpAddress.ToString().Equals(ipAddress));
 
     private bool VerifyPassword(Server server, string? password)
@@ -246,14 +294,11 @@ public class ServersController : DatabaseController
 
     private static async Task<bool> HasWaitingSession(Server server, int slots)
     {
-        UriBuilder uriBuilder = new()
-        {
-            Host = server.IpAddress.ToString(),
-            Port = 80,
-            Path = $"/api/WaitingSessions/Any?playerCount={slots}"
-        };
-
-        HttpResponseMessage anyWaitingSessionsResponse = await HttpClientProvider.Shared.GetAsync(uriBuilder.Uri);
+        HttpResponseMessage anyWaitingSessionsResponse = await HttpFetcher.GetAsync(
+            host: server.IpAddress.ToString(),
+            port: 80,
+            path: $"/api/WaitingSessions/Any?playerCount={slots}"
+        );
 
         if (!anyWaitingSessionsResponse.IsSuccessStatusCode)
             return false;
@@ -269,6 +314,7 @@ public class ServersController : DatabaseController
         }
         catch (JsonException)
         {
+            // TODO: log error
             return false;
         }
 
@@ -277,22 +323,17 @@ public class ServersController : DatabaseController
 
     private static async Task<bool> CreateWaitingSession(Server server, int slots)
     {
-        UriBuilder uriBuilder = new()
-        {
-            Host = server.IpAddress.ToString(),
-            Port = 80,
-            Path = $"/api/WaitingSessions/Create?playerCount={slots}"
-        };
-
         JsonContent jsonContent = JsonContent.Create(slots, typeof(int));
 
-        HttpResponseMessage createWaitingSessionResponse = await HttpClientProvider.Shared
-            .PostAsync(uriBuilder.Uri, jsonContent);
+        HttpResponseMessage createWaitingSessionResponse = await HttpFetcher.PostAsync(
+            host: server.IpAddress.ToString(),
+            port: 80,
+            path: $"/api/WaitingSessions/Create?playerCount={slots}",
+            content: jsonContent
+        );
 
         string responseText = await createWaitingSessionResponse.Content.ReadAsStringAsync();
 
-        bool success = createWaitingSessionResponse.IsSuccessStatusCode && responseText.IsEmpty();
-
-        return success;
+        return createWaitingSessionResponse.IsSuccessStatusCode && responseText.IsEmpty();
     }
 }

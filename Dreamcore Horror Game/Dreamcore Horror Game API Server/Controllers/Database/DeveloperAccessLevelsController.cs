@@ -15,19 +15,29 @@ public class DeveloperAccessLevelsController : DatabaseController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public async Task<IActionResult> GetAll()
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : Ok(await _context.DeveloperAccessLevels.ToListAsync());
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        return Ok(await _context.DeveloperAccessLevels.ToListAsync());
+    }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public async Task<IActionResult> Get(Guid? id)
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : id is not null
-                && await _context.DeveloperAccessLevels.FindAsync(id) is DeveloperAccessLevel developerAccessLevel
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        var developerAccessLevel = await _context.DeveloperAccessLevels.FindAsync(id);
+
+        return developerAccessLevel is not null
             ? Ok(developerAccessLevel)
             : NotFound();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
@@ -40,16 +50,14 @@ public class DeveloperAccessLevelsController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (ModelState.IsValid)
-        {
-            developerAccessLevel.Id = Guid.NewGuid();
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
 
-            _context.Add(developerAccessLevel);
-            await _context.SaveChangesAsync();
-            return Ok(developerAccessLevel);
-        }
+        developerAccessLevel.Id = Guid.NewGuid();
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        _context.Add(developerAccessLevel);
+        await _context.SaveChangesAsync();
+        return Ok(developerAccessLevel);
     }
 
     [HttpPut]
@@ -69,24 +77,23 @@ public class DeveloperAccessLevelsController : DatabaseController
         if (id != developerAccessLevel.Id)
             return BadRequest(ErrorMessages.IdMismatch);
 
-        if (ModelState.IsValid)
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
+
+        try
         {
-            try
-            {
-                _context.Update(developerAccessLevel);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DeveloperAccessLevelExists(developerAccessLevel.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-            return Ok(developerAccessLevel);
+            _context.Update(developerAccessLevel);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!DeveloperAccessLevelExists(developerAccessLevel.Id))
+                return NotFound();
+            else
+                throw;
         }
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        return Ok(developerAccessLevel);
     }
 
     [HttpDelete]
@@ -97,14 +104,17 @@ public class DeveloperAccessLevelsController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (id is not null && await _context.DeveloperAccessLevels.FindAsync(id) is DeveloperAccessLevel developerAccessLevel)
-        {
-            _context.Remove(developerAccessLevel);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        if (id is null)
+            return NotFound();
 
-        return NotFound();
+        var developerAccessLevel = await _context.DeveloperAccessLevels.FindAsync(id);
+
+        if (developerAccessLevel is null)
+            return NotFound();
+
+        _context.Remove(developerAccessLevel);
+        await _context.SaveChangesAsync();
+        return Ok();
     }
 
     private bool DeveloperAccessLevelExists(Guid id)

@@ -15,19 +15,29 @@ public class AbilitiesController : DatabaseController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public async Task<IActionResult> GetAll()
-        => NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : Ok(await _context.Abilities.ToListAsync());
+    {
+        if (NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        return Ok(await _context.Abilities.ToListAsync());
+    }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public async Task<IActionResult> Get(Guid? id)
-        => NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : id is not null
-                && await _context.Abilities.FindAsync(id) is Ability ability
+    {
+        if (NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        var ability = await _context.Abilities.FindAsync(id);
+
+        return ability is not null
             ? Ok(ability)
             : NotFound();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
@@ -40,16 +50,14 @@ public class AbilitiesController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (ModelState.IsValid)
-        {
-            ability.Id = Guid.NewGuid();
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
 
-            _context.Add(ability);
-            await _context.SaveChangesAsync();
-            return Ok(ability);
-        }
+        ability.Id = Guid.NewGuid();
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        _context.Add(ability);
+        await _context.SaveChangesAsync();
+        return Ok(ability);
     }
 
     [HttpPut]
@@ -69,24 +77,23 @@ public class AbilitiesController : DatabaseController
         if (id != ability.Id)
             return BadRequest(ErrorMessages.IdMismatch);
 
-        if (ModelState.IsValid)
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
+
+        try
         {
-            try
-            {
-                _context.Update(ability);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!AbilityExists(ability.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-            return Ok(ability);
+            _context.Update(ability);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!AbilityExists(ability.Id))
+                return NotFound();
+            else
+                throw;
         }
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        return Ok(ability);
     }
 
     [HttpDelete]
@@ -97,14 +104,17 @@ public class AbilitiesController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (id is not null && await _context.Abilities.FindAsync(id) is Ability ability)
-        {
-            _context.Remove(ability);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        if (id is null)
+            return NotFound();
 
-        return NotFound();
+        var ability = await _context.Abilities.FindAsync(id);
+
+        if (ability is null)
+            return NotFound();
+
+        _context.Remove(ability);
+        await _context.SaveChangesAsync();
+        return Ok();
     }
 
     private bool AbilityExists(Guid id)

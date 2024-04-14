@@ -15,19 +15,29 @@ public class GameModesController : DatabaseController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public async Task<IActionResult> GetAll()
-        => NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : Ok(await _context.GameModes.ToListAsync());
+    {
+        if (NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        return Ok(await _context.GameModes.ToListAsync());
+    }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
     public async Task<IActionResult> Get(Guid? id)
-        => NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : id is not null
-                && await _context.GameModes.FindAsync(id) is GameMode gameMode
+    {
+        if (NoHeader(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        var gameMode = await _context.GameModes.FindAsync(id);
+
+        return gameMode is not null
             ? Ok(gameMode)
             : NotFound();
+    }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
@@ -43,16 +53,14 @@ public class GameModesController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (ModelState.IsValid)
-        {
-            gameMode.Id = Guid.NewGuid();
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
 
-            _context.Add(gameMode);
-            await _context.SaveChangesAsync();
-            return Ok(gameMode);
-        }
+        gameMode.Id = Guid.NewGuid();
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        _context.Add(gameMode);
+        await _context.SaveChangesAsync();
+        return Ok(gameMode);
     }
 
     [HttpPut]
@@ -75,24 +83,23 @@ public class GameModesController : DatabaseController
         if (id != gameMode.Id)
             return BadRequest(ErrorMessages.IdMismatch);
 
-        if (ModelState.IsValid)
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
+
+        try
         {
-            try
-            {
-                _context.Update(gameMode);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!GameModeExists(gameMode.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-            return Ok(gameMode);
+            _context.Update(gameMode);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!GameModeExists(gameMode.Id))
+                return NotFound();
+            else
+                throw;
         }
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        return Ok(gameMode);
     }
 
     [HttpDelete]
@@ -103,14 +110,17 @@ public class GameModesController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (id is not null && await _context.GameModes.FindAsync(id) is GameMode gameMode)
-        {
-            _context.Remove(gameMode);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        if (id is null)
+            return NotFound();
 
-        return NotFound();
+        var gameMode = await _context.GameModes.FindAsync(id);
+
+        if (gameMode is null)
+            return NotFound();
+
+        _context.Remove(gameMode);
+        await _context.SaveChangesAsync();
+        return Ok();
     }
 
     private bool GameModeExists(Guid id)

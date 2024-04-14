@@ -15,20 +15,30 @@ public class AcquiredAbilitiesController : DatabaseController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public async Task<IActionResult> GetAll()
-        => NoHeader(CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : Ok(await _context.AcquiredAbilities.ToListAsync());
+    {
+        if (NoHeader(CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        return Ok(await _context.AcquiredAbilities.ToListAsync());
+    }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public async Task<IActionResult> Get(Guid? id)
-        => NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
-            ? Forbid(ErrorMessages.HeaderMissing)
-            : id is not null
-                && await _context.AcquiredAbilities.FindAsync(id) is AcquiredAbility acquiredAbility
+    {
+        if (NoHeader(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication))
+            return Forbid(ErrorMessages.HeaderMissing);
+
+        if (id is null)
+            return NotFound();
+
+        var acquiredAbility = await _context.AcquiredAbilities.FindAsync(id);
+
+        return acquiredAbility is not null
             ? Ok(acquiredAbility)
             : NotFound();
-
+    }
+    
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
     [ValidateAntiForgeryToken]
@@ -42,16 +52,14 @@ public class AcquiredAbilitiesController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (ModelState.IsValid)
-        {
-            acquiredAbility.Id = Guid.NewGuid();
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
 
-            _context.Add(acquiredAbility);
-            await _context.SaveChangesAsync();
-            return Ok(acquiredAbility);
-        }
+        acquiredAbility.Id = Guid.NewGuid();
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        _context.Add(acquiredAbility);
+        await _context.SaveChangesAsync();
+        return Ok(acquiredAbility);
     }
 
     [HttpPut]
@@ -73,24 +81,23 @@ public class AcquiredAbilitiesController : DatabaseController
         if (id != acquiredAbility.Id)
             return BadRequest(ErrorMessages.IdMismatch);
 
-        if (ModelState.IsValid)
+        if (InvalidModelState)
+            return BadRequest(ErrorMessages.InvalidModelData);
+
+        try
         {
-            try
-            {
-                _context.Update(acquiredAbility);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!AcquiredAbilityExists(acquiredAbility.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-            return Ok(acquiredAbility);
+            _context.Update(acquiredAbility);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!AcquiredAbilityExists(acquiredAbility.Id))
+                return NotFound();
+            else
+                throw;
         }
 
-        return BadRequest(ErrorMessages.InvalidModelData);
+        return Ok(acquiredAbility);
     }
 
     [HttpDelete]
@@ -101,14 +108,17 @@ public class AcquiredAbilitiesController : DatabaseController
         if (NoHeader(CorsHeaders.DeveloperWebApplication))
             return Forbid(ErrorMessages.HeaderMissing);
 
-        if (id is not null && await _context.AcquiredAbilities.FindAsync(id) is AcquiredAbility acquiredAbility)
-        {
-            _context.Remove(acquiredAbility);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        if (id is null)
+            return NotFound();
 
-        return NotFound();
+        var acquiredAbility = await _context.AcquiredAbilities.FindAsync(id);
+
+        if (acquiredAbility is null)
+            return NotFound();
+
+        _context.Remove(acquiredAbility);
+        await _context.SaveChangesAsync();
+        return Ok();
     }
 
     private bool AcquiredAbilityExists(Guid id)
