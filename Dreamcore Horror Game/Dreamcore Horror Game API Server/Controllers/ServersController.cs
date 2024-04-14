@@ -86,8 +86,6 @@ public class ServersController : UserController<Server>
         => await RequireHeaders(CorsHeaders.GameServer)
             .ChangePasswordAsync(loginData, newPassword);
 
-    // TODO: password restore
-
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Refresh, Roles = AuthenticationRoles.Server)]
     public override async Task<IActionResult> GetAccessToken(string ipAddress)
@@ -98,7 +96,7 @@ public class ServersController : UserController<Server>
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
     public async Task<IActionResult> GetServerWithFreeSlots(int slots)
         => await RequireHeaders(CorsHeaders.GameClient)
-            .Do(slots, async slots =>
+            .DoAsync(slots, async slots =>
             {
                 if (slots < 1)
                     return UnprocessableEntity(ErrorMessages.UnacceptableParameterValue);
