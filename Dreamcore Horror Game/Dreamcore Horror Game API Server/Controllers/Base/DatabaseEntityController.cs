@@ -3,7 +3,6 @@ using DreamcoreHorrorGameApiServer.Extensions;
 using DreamcoreHorrorGameApiServer.Models.Database.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 
 namespace DreamcoreHorrorGameApiServer.Controllers.Base;
@@ -12,8 +11,8 @@ namespace DreamcoreHorrorGameApiServer.Controllers.Base;
 public abstract class DatabaseEntityController<TEntity> : ControllerBase
     where TEntity : class, IDatabaseEntity
 {
-    protected string AuthorizationToken
-        => HttpContext.Request.Headers[HeaderNames.Authorization].ToString().Replace("Bearer ", string.Empty);
+    protected string AuthorizationToken => HttpContext.Request.Headers[HeaderNames.Authorization]
+        .ToString().Replace("Bearer ", string.Empty);
 
     protected bool InvalidModelState => !ModelState.IsValid;
 
@@ -33,33 +32,17 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to.
     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
 
-    public virtual DatabaseEntityController<TEntity> WithHttpContext(HttpContext context)
-    {
-        SetHttpContextRequestHeaders(context.Request.Headers);
-        return this;
-    }
-
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
     public virtual DatabaseEntityController<TEntity> RequireHeaders(params string[] headers)
     {
         SetRequiredHeaders(headers);
         return this;
     }
 
-    protected void SetHttpContextRequestHeaders(IEnumerable<KeyValuePair<string, StringValues>> fromCollection)
-    {
-        HttpContext.Request.Headers.Clear();
-
-        foreach (var header in fromCollection)
-            HttpContext.Request.Headers.Add(header);
-    }
-
-    protected void SetRequiredHeaders(IEnumerable<string> fromCollection)
-    {
-        _requiredHeaders.Clear();
-        _requiredHeaders.AddRange(fromCollection);
-    }
-
-    public async Task<IActionResult> Do<T>(T arg, Func<T, Task<IActionResult>> action)
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> DoAsync<T>(T arg, Func<T, Task<IActionResult>> action)
     {
         if (NoHeader(_requiredHeaders))
             return this.Forbidden(ErrorMessages.HeaderMissing);
@@ -67,7 +50,9 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
         return await action(arg);
     }
 
-    public async Task<IActionResult> Do<T1, T2>(T1 arg1, T2 arg2, Func<T1, T2, Task<IActionResult>> action)
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> DoAsync<T1, T2>(T1 arg1, T2 arg2, Func<T1, T2, Task<IActionResult>> action)
     {
         if (NoHeader(_requiredHeaders))
             return this.Forbidden(ErrorMessages.HeaderMissing);
@@ -176,6 +161,12 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
 
     protected async Task<bool> EntityExistsAsync(Guid id)
         => await _context.Set<TEntity>().AnyAsync(entity => entity.Id == id);
+
+    protected void SetRequiredHeaders(IEnumerable<string> fromCollection)
+    {
+        _requiredHeaders.Clear();
+        _requiredHeaders.AddRange(fromCollection);
+    }
 
     protected bool NoHeader(IEnumerable<string> headers)
     {

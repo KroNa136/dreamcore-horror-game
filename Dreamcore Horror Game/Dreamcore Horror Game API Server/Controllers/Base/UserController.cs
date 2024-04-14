@@ -17,22 +17,20 @@ namespace DreamcoreHorrorGameApiServer.Controllers.Base
 
         private readonly string _alreadyExistsErrorMessage;
 
-        // private readonly Func<DreamcoreHorrorGameContext, IPasswordHasher<TUser>, UserController<TUser>> _derivedClassConstructor;
-
-        public UserController(DreamcoreHorrorGameContext context, IPasswordHasher<TUser> passwordHasher, Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> getByLoginFunction, string alreadyExistsErrorMessage)
-            : base(context)
+        public UserController(
+            DreamcoreHorrorGameContext context,
+            IPasswordHasher<TUser> passwordHasher,
+            Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> getByLoginFunction,
+            string alreadyExistsErrorMessage
+        ) : base(context)
         {
             _passwordHasher = passwordHasher;
             _getByLogin = getByLoginFunction;
             _alreadyExistsErrorMessage = alreadyExistsErrorMessage;
         }
 
-        public override UserController<TUser> WithHttpContext(HttpContext context)
-        {
-            SetHttpContextRequestHeaders(context.Request.Headers);
-            return this;
-        }
-
+        [ApiExplorerSettings(IgnoreApi = true)]
+        [NonAction]
         public override UserController<TUser> RequireHeaders(params string[] headers)
         {
             SetRequiredHeaders(headers);
