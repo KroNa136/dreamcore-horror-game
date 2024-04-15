@@ -3,11 +3,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-namespace DreamcoreHorrorGameApiServer;
+namespace DreamcoreHorrorGameApiServer.Services;
 
-public static class TokenService
+public class TokenService : ITokenService
 {
-    public static string CreateAccessToken(string login, string role)
+    public string CreateAccessToken(string login, string role)
         => CreateToken(
             login: login,
             role: role,
@@ -17,7 +17,7 @@ public static class TokenService
             securityKey: AccessTokenOptions.SecurityKey
         );
 
-    public static string CreateRefreshToken(string login, string role)
+    public string CreateRefreshToken(string login, string role)
         => CreateToken(
             login: login,
             role: role,

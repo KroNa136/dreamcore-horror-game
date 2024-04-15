@@ -1,6 +1,7 @@
 ﻿using DreamcoreHorrorGameApiServer.ConstantValues;
 using DreamcoreHorrorGameApiServer.Extensions;
-using DreamcoreHorrorGameApiServer.Models.Database.Interfaces;
+using DreamcoreHorrorGameApiServer.Models;
+using DreamcoreHorrorGameApiServer.Models.Database;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Net.Http.Headers;

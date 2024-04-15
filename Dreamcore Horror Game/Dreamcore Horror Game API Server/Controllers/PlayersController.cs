@@ -3,6 +3,7 @@ using DreamcoreHorrorGameApiServer.Controllers.Base;
 using DreamcoreHorrorGameApiServer.Extensions;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
+using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,9 +15,10 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 [Route(RouteNames.ApiControllerAction)]
 public class PlayersController : UserController<Player>
 {
-    public PlayersController(DreamcoreHorrorGameContext context, IPasswordHasher<Player> passwordHasher)
+    public PlayersController(DreamcoreHorrorGameContext context, ITokenService tokenService, IPasswordHasher<Player> passwordHasher)
         : base(
             context: context,
+            tokenService: tokenService,
             passwordHasher: passwordHasher,
             getByLoginFunction: async (context, login) => await context.Players
                 .FirstOrDefaultAsync(player => player.Email.Equals(login)),

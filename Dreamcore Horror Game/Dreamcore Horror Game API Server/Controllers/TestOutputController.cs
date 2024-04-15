@@ -1,7 +1,7 @@
 ﻿using DreamcoreHorrorGameApiServer.ConstantValues;
-using DreamcoreHorrorGameApiServer.Controllers;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
+using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
@@ -14,9 +14,13 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 public class TestOutputController : ControllerBase
 {
     private DreamcoreHorrorGameContext _context;
+    private ITokenService _tokenService;
 
-    public TestOutputController(DreamcoreHorrorGameContext context)
-        => _context = context;
+    public TestOutputController(DreamcoreHorrorGameContext context, ITokenService tokenService)
+    {
+        _context = context;
+        _tokenService = tokenService;
+    }
 
     [HttpGet]
     public IResult Test()
@@ -43,7 +47,7 @@ public class TestOutputController : ControllerBase
             Id = Guid.NewGuid(),
             IpAddress = IPAddress.Parse("161.0.15.89"),
             Password = "password",
-            RefreshToken = TokenService.CreateRefreshToken("161.0.15.89", AuthenticationRoles.Server),
+            RefreshToken = _tokenService.CreateRefreshToken("161.0.15.89", AuthenticationRoles.Server),
             IsOnline = true,
             PlayerCapacity = 64
         };
@@ -67,7 +71,7 @@ public class TestOutputController : ControllerBase
             CollectOptionalData = true,
             IsOnline = true,
             RegistrationTimestamp = DateTime.UtcNow,
-            RefreshToken = TokenService.CreateRefreshToken("test@gmail.com", AuthenticationRoles.Player)
+            RefreshToken = _tokenService.CreateRefreshToken("test@gmail.com", AuthenticationRoles.Player)
         };
 
         Microsoft.AspNetCore.Identity.PasswordHasher<Player> passwordHasher = new();
