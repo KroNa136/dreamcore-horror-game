@@ -22,43 +22,8 @@ public class Program
 
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
-            var defaultOptions = new JsonSerializerOptionsProvider().Default;
-
-            options.JsonSerializerOptions.AllowTrailingCommas = defaultOptions.AllowTrailingCommas;
-
-            if (defaultOptions.Converters is not null && defaultOptions.Converters.IsNotEmpty())
-                foreach (var converter in defaultOptions.Converters)
-                    options.JsonSerializerOptions.Converters.Add(converter);
-
-            options.JsonSerializerOptions.DefaultBufferSize = defaultOptions.DefaultBufferSize;
-            options.JsonSerializerOptions.DefaultIgnoreCondition = defaultOptions.DefaultIgnoreCondition;
-
-            if (defaultOptions.DictionaryKeyPolicy is not null)
-                options.JsonSerializerOptions.DictionaryKeyPolicy = defaultOptions.DictionaryKeyPolicy;
-
-            if (defaultOptions.Encoder is not null)
-                options.JsonSerializerOptions.Encoder = defaultOptions.Encoder;
-
-            options.JsonSerializerOptions.IgnoreReadOnlyFields = defaultOptions.IgnoreReadOnlyFields;
-            options.JsonSerializerOptions.IgnoreReadOnlyProperties = defaultOptions.IgnoreReadOnlyProperties;
-            options.JsonSerializerOptions.IncludeFields = defaultOptions.IncludeFields;
-            options.JsonSerializerOptions.MaxDepth = defaultOptions.MaxDepth;
-            options.JsonSerializerOptions.NumberHandling = defaultOptions.NumberHandling;
-            options.JsonSerializerOptions.PropertyNameCaseInsensitive = defaultOptions.PropertyNameCaseInsensitive;
-
-            if (defaultOptions.PropertyNamingPolicy is not null)
-                options.JsonSerializerOptions.PropertyNamingPolicy = defaultOptions.PropertyNamingPolicy;
-
-            options.JsonSerializerOptions.ReadCommentHandling = defaultOptions.ReadCommentHandling;
-
-            if (defaultOptions.ReferenceHandler is not null)
-                options.JsonSerializerOptions.ReferenceHandler = defaultOptions.ReferenceHandler;
-
-            if (defaultOptions.TypeInfoResolver is not null)
-                options.JsonSerializerOptions.TypeInfoResolver = defaultOptions.TypeInfoResolver;
-
-            options.JsonSerializerOptions.UnknownTypeHandling = defaultOptions.UnknownTypeHandling;
-            options.JsonSerializerOptions.WriteIndented = defaultOptions.WriteIndented;
+            var defaultJsonSerializerOptions = new JsonSerializerOptionsProvider().Default;
+            options.ConfigureFrom(defaultJsonSerializerOptions);
         });
 
         builder.Services.AddEndpointsApiExplorer();
@@ -67,20 +32,20 @@ public class Program
         {
             options.AddPolicy(CorsPolicyNames.Default, policy =>
             {
-                policy.AllowAnyOrigin()
-                    .AllowAnyMethod()
-                    .WithHeaders(
-                        HeaderNames.Accept,
-                        HeaderNames.Authorization,
-                        HeaderNames.ContentLength,
-                        HeaderNames.ContentType,
-                        HeaderNames.Host,
-                        HeaderNames.Origin,
-                        HeaderNames.XXSSProtection,
-                        CorsHeaders.GameClient,
-                        CorsHeaders.GameServer,
-                        CorsHeaders.DeveloperWebApplication
-                    );
+                policy.AllowAnyOrigin();
+                policy.AllowAnyMethod();
+                policy.WithHeaders(
+                    HeaderNames.Accept,
+                    HeaderNames.Authorization,
+                    HeaderNames.ContentLength,
+                    HeaderNames.ContentType,
+                    HeaderNames.Host,
+                    HeaderNames.Origin,
+                    HeaderNames.XXSSProtection,
+                    CorsHeaders.GameClient,
+                    CorsHeaders.GameServer,
+                    CorsHeaders.DeveloperWebApplication
+                );
             });
         });
 
