@@ -127,13 +127,13 @@ public class ServersController : UserController<Server>
 
     private async Task<bool> HasWaitingSession(Server server, int slots)
     {
-        HttpResponseMessage anyWaitingSessionsResponse = await _httpFetcher.GetAsync(
+        HttpResponseMessage? anyWaitingSessionsResponse = await _httpFetcher.GetAsync(
             host: server.IpAddress.ToString(),
             port: 8024,
             path: $"/api/WaitingSessions/Any?playerCount={slots}"
         );
 
-        if (!anyWaitingSessionsResponse.IsSuccessStatusCode)
+        if (anyWaitingSessionsResponse is null || !anyWaitingSessionsResponse.IsSuccessStatusCode)
             return false;
 
         string responseText = await anyWaitingSessionsResponse.Content.ReadAsStringAsync();
@@ -156,19 +156,24 @@ public class ServersController : UserController<Server>
 
     private async Task<bool> CreateWaitingSession(Server server, int slots)
     {
+        MediaTypeHeaderValue requestContentType = new(MediaTypeNames.Application.Json);
+
         JsonContent jsonContent = JsonContent.Create(
             inputValue: slots,
             inputType: typeof(int),
-            mediaType: new MediaTypeHeaderValue(MediaTypeNames.Application.Json),
+            mediaType: requestContentType,
             options: _jsonSerializerOptionsProvider.Default
         );
 
-        HttpResponseMessage createWaitingSessionResponse = await _httpFetcher.PostAsync(
+        HttpResponseMessage? createWaitingSessionResponse = await _httpFetcher.PostAsync(
             host: server.IpAddress.ToString(),
             port: 8024,
             path: $"/api/WaitingSessions/Create",
             content: jsonContent
         );
+
+        if (createWaitingSessionResponse is null)
+            return false;
 
         string responseText = await createWaitingSessionResponse.Content.ReadAsStringAsync();
 
