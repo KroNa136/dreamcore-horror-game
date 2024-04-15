@@ -1,7 +1,9 @@
 using DreamcoreHorrorGameApiServer.ConstantValues;
 using DreamcoreHorrorGameApiServer.ConstantValues.TokenOptions;
 using DreamcoreHorrorGameApiServer.Extensions;
+using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
+using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -14,49 +16,49 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        Console.WriteLine($"TOKEN:\n{TokenService.CreateAccessToken("test", AuthenticationRoles.Player)}\n");
+        Console.WriteLine($"TOKEN:\n{new TokenService().CreateAccessToken("test", AuthenticationRoles.Player)}\n");
 
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
-            var sharedOptions = JsonSerializerOptionsProvider.Shared;
+            var defaultOptions = new JsonSerializerOptionsProvider().Default;
 
-            options.JsonSerializerOptions.AllowTrailingCommas = sharedOptions.AllowTrailingCommas;
+            options.JsonSerializerOptions.AllowTrailingCommas = defaultOptions.AllowTrailingCommas;
 
-            if (sharedOptions.Converters is not null && sharedOptions.Converters.IsNotEmpty())
-                foreach (var converter in sharedOptions.Converters)
+            if (defaultOptions.Converters is not null && defaultOptions.Converters.IsNotEmpty())
+                foreach (var converter in defaultOptions.Converters)
                     options.JsonSerializerOptions.Converters.Add(converter);
 
-            options.JsonSerializerOptions.DefaultBufferSize = sharedOptions.DefaultBufferSize;
-            options.JsonSerializerOptions.DefaultIgnoreCondition = sharedOptions.DefaultIgnoreCondition;
+            options.JsonSerializerOptions.DefaultBufferSize = defaultOptions.DefaultBufferSize;
+            options.JsonSerializerOptions.DefaultIgnoreCondition = defaultOptions.DefaultIgnoreCondition;
 
-            if (sharedOptions.DictionaryKeyPolicy is not null)
-                options.JsonSerializerOptions.DictionaryKeyPolicy = sharedOptions.DictionaryKeyPolicy;
+            if (defaultOptions.DictionaryKeyPolicy is not null)
+                options.JsonSerializerOptions.DictionaryKeyPolicy = defaultOptions.DictionaryKeyPolicy;
 
-            if (sharedOptions.Encoder is not null)
-                options.JsonSerializerOptions.Encoder = sharedOptions.Encoder;
+            if (defaultOptions.Encoder is not null)
+                options.JsonSerializerOptions.Encoder = defaultOptions.Encoder;
 
-            options.JsonSerializerOptions.IgnoreReadOnlyFields = sharedOptions.IgnoreReadOnlyFields;
-            options.JsonSerializerOptions.IgnoreReadOnlyProperties = sharedOptions.IgnoreReadOnlyProperties;
-            options.JsonSerializerOptions.IncludeFields = sharedOptions.IncludeFields;
-            options.JsonSerializerOptions.MaxDepth = sharedOptions.MaxDepth;
-            options.JsonSerializerOptions.NumberHandling = sharedOptions.NumberHandling;
-            options.JsonSerializerOptions.PropertyNameCaseInsensitive = sharedOptions.PropertyNameCaseInsensitive;
+            options.JsonSerializerOptions.IgnoreReadOnlyFields = defaultOptions.IgnoreReadOnlyFields;
+            options.JsonSerializerOptions.IgnoreReadOnlyProperties = defaultOptions.IgnoreReadOnlyProperties;
+            options.JsonSerializerOptions.IncludeFields = defaultOptions.IncludeFields;
+            options.JsonSerializerOptions.MaxDepth = defaultOptions.MaxDepth;
+            options.JsonSerializerOptions.NumberHandling = defaultOptions.NumberHandling;
+            options.JsonSerializerOptions.PropertyNameCaseInsensitive = defaultOptions.PropertyNameCaseInsensitive;
 
-            if (sharedOptions.PropertyNamingPolicy is not null)
-                options.JsonSerializerOptions.PropertyNamingPolicy = sharedOptions.PropertyNamingPolicy;
+            if (defaultOptions.PropertyNamingPolicy is not null)
+                options.JsonSerializerOptions.PropertyNamingPolicy = defaultOptions.PropertyNamingPolicy;
 
-            options.JsonSerializerOptions.ReadCommentHandling = sharedOptions.ReadCommentHandling;
+            options.JsonSerializerOptions.ReadCommentHandling = defaultOptions.ReadCommentHandling;
 
-            if (sharedOptions.ReferenceHandler is not null)
-                options.JsonSerializerOptions.ReferenceHandler = sharedOptions.ReferenceHandler;
+            if (defaultOptions.ReferenceHandler is not null)
+                options.JsonSerializerOptions.ReferenceHandler = defaultOptions.ReferenceHandler;
 
-            if (sharedOptions.TypeInfoResolver is not null)
-                options.JsonSerializerOptions.TypeInfoResolver = sharedOptions.TypeInfoResolver;
+            if (defaultOptions.TypeInfoResolver is not null)
+                options.JsonSerializerOptions.TypeInfoResolver = defaultOptions.TypeInfoResolver;
 
-            options.JsonSerializerOptions.UnknownTypeHandling = sharedOptions.UnknownTypeHandling;
-            options.JsonSerializerOptions.WriteIndented = sharedOptions.WriteIndented;
+            options.JsonSerializerOptions.UnknownTypeHandling = defaultOptions.UnknownTypeHandling;
+            options.JsonSerializerOptions.WriteIndented = defaultOptions.WriteIndented;
         });
 
         builder.Services.AddEndpointsApiExplorer();
@@ -119,9 +121,14 @@ public class Program
         if (dbConnectionString is not null)
             builder.Services.AddDbContext<DreamcoreHorrorGameContext>(options => options.UseNpgsql(dbConnectionString));
 
-        builder.Services.AddTransient<IPasswordHasher<Developer>, PasswordHasher<Developer>>();
-        builder.Services.AddTransient<IPasswordHasher<Player>, PasswordHasher<Player>>();
-        builder.Services.AddTransient<IPasswordHasher<Server>, PasswordHasher<Server>>();
+        builder.Services.AddSingleton<IJsonSerializerOptionsProvider, JsonSerializerOptionsProvider>();
+        builder.Services.AddSingleton<ITokenService, TokenService>();
+
+        builder.Services.AddScoped<IHttpFetcher, HttpFetcher>();
+
+        builder.Services.AddScoped<IPasswordHasher<Developer>, PasswordHasher<Developer>>();
+        builder.Services.AddScoped<IPasswordHasher<Player>, PasswordHasher<Player>>();
+        builder.Services.AddScoped<IPasswordHasher<Server>, PasswordHasher<Server>>();
 
         WebApplication app = builder.Build();
 

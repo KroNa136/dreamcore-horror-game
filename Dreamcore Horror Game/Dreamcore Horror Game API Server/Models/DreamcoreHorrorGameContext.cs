@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using DreamcoreHorrorGameApiServer.Models.Database;
 
-namespace DreamcoreHorrorGameApiServer;
+namespace DreamcoreHorrorGameApiServer.Models;
 
 public partial class DreamcoreHorrorGameContext : DbContext
 {

@@ -3,10 +3,13 @@ using DreamcoreHorrorGameApiServer.Controllers.Base;
 using DreamcoreHorrorGameApiServer.Extensions;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
+using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Http.Headers;
+using System.Net.Mime;
 using System.Text.Json;
 
 namespace DreamcoreHorrorGameApiServer.Controllers;
@@ -15,15 +18,22 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 [Route(RouteNames.ApiControllerAction)]
 public class ServersController : UserController<Server>
 {
-    public ServersController(DreamcoreHorrorGameContext context, IPasswordHasher<Server> passwordHasher)
+    private readonly IHttpFetcher _httpFetcher;
+    private readonly IJsonSerializerOptionsProvider _jsonSerializerOptionsProvider;
+
+    public ServersController(DreamcoreHorrorGameContext context, ITokenService tokenService, IPasswordHasher<Server> passwordHasher, IHttpFetcher httpFetcher, IJsonSerializerOptionsProvider jsonSerializerOptionsProvider)
         : base(
             context: context,
+            tokenService: tokenService,
             passwordHasher: passwordHasher,
             getByLoginFunction: (context, login) => context.Servers
                 .FirstOrDefaultAsync(server => server.IpAddress.ToString().Equals(login)),
             alreadyExistsErrorMessage: ErrorMessages.ServerAlreadyExists
         )
-    { }
+    {
+        _httpFetcher = httpFetcher;
+        _jsonSerializerOptionsProvider = jsonSerializerOptionsProvider;
+    }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
@@ -101,9 +111,8 @@ public class ServersController : UserController<Server>
                 if (slots < 1)
                     return UnprocessableEntity(ErrorMessages.UnacceptableParameterValue);
 
-                var suitableServers = GetServersWithEnoughFreeSlots(slots);
-
-                var server = await suitableServers.FirstOrDefaultAsync(async server => await HasWaitingSession(server, slots));
+                var server = await GetServersWithEnoughFreeSlots(slots)
+                    .FirstOrDefaultAsync(async server => await HasWaitingSession(server, slots));
 
                 return Ok(server?.IpAddress);
             });
@@ -116,11 +125,11 @@ public class ServersController : UserController<Server>
         => _context.PlayerSessions.Where(playerSession => playerSession.EndTimestamp == null
             && playerSession.GameSession.ServerId == server.Id).Count();
 
-    private static async Task<bool> HasWaitingSession(Server server, int slots)
+    private async Task<bool> HasWaitingSession(Server server, int slots)
     {
-        HttpResponseMessage anyWaitingSessionsResponse = await HttpFetcher.GetAsync(
+        HttpResponseMessage anyWaitingSessionsResponse = await _httpFetcher.GetAsync(
             host: server.IpAddress.ToString(),
-            port: 80,
+            port: 8024,
             path: $"/api/WaitingSessions/Any?playerCount={slots}"
         );
 
@@ -131,7 +140,7 @@ public class ServersController : UserController<Server>
 
         try
         {
-            bool hasWaitingSessions = JsonSerializer.Deserialize<bool>(responseText, JsonSerializerOptionsProvider.Shared);
+            bool hasWaitingSessions = JsonSerializer.Deserialize<bool>(responseText, _jsonSerializerOptionsProvider.Default);
 
             if (hasWaitingSessions)
                 return true;
@@ -145,14 +154,19 @@ public class ServersController : UserController<Server>
         return await CreateWaitingSession(server, slots);
     }
 
-    private static async Task<bool> CreateWaitingSession(Server server, int slots)
+    private async Task<bool> CreateWaitingSession(Server server, int slots)
     {
-        JsonContent jsonContent = JsonContent.Create(slots, typeof(int));
+        JsonContent jsonContent = JsonContent.Create(
+            inputValue: slots,
+            inputType: typeof(int),
+            mediaType: new MediaTypeHeaderValue(MediaTypeNames.Application.Json),
+            options: _jsonSerializerOptionsProvider.Default
+        );
 
-        HttpResponseMessage createWaitingSessionResponse = await HttpFetcher.PostAsync(
+        HttpResponseMessage createWaitingSessionResponse = await _httpFetcher.PostAsync(
             host: server.IpAddress.ToString(),
-            port: 80,
-            path: $"/api/WaitingSessions/Create?playerCount={slots}",
+            port: 8024,
+            path: $"/api/WaitingSessions/Create",
             content: jsonContent
         );
 

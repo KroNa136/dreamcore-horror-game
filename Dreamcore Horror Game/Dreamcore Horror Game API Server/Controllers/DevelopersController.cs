@@ -3,6 +3,7 @@ using DreamcoreHorrorGameApiServer.Controllers.Base;
 using DreamcoreHorrorGameApiServer.Extensions;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
+using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,9 +15,10 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 [Route(RouteNames.ApiControllerAction)]
 public class DevelopersController : UserController<Developer>
 {
-    public DevelopersController(DreamcoreHorrorGameContext context, IPasswordHasher<Developer> passwordHasher)
+    public DevelopersController(DreamcoreHorrorGameContext context, ITokenService tokenService, IPasswordHasher<Developer> passwordHasher)
         : base(
             context: context,
+            tokenService: tokenService,
             passwordHasher: passwordHasher,
             getByLoginFunction: async (context, login) => await context.Developers
                 .Include(developer => developer.DeveloperAccessLevel)
@@ -92,7 +94,7 @@ public class DevelopersController : UserController<Developer>
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Refresh, Roles = AuthenticationRoles.Developer)]
-    public override Task<IActionResult> GetAccessToken(string login)
-        => RequireHeaders(CorsHeaders.DeveloperWebApplication)
+    public override async Task<IActionResult> GetAccessToken(string login)
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
             .GetAccessTokenAsync(login);
 }

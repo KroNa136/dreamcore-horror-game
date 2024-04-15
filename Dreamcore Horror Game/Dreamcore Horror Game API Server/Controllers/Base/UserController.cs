@@ -1,7 +1,8 @@
 ﻿using DreamcoreHorrorGameApiServer.ConstantValues;
 using DreamcoreHorrorGameApiServer.Extensions;
 using DreamcoreHorrorGameApiServer.Models;
-using DreamcoreHorrorGameApiServer.Models.Database.Interfaces;
+using DreamcoreHorrorGameApiServer.Models.Database;
+using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,19 +12,22 @@ namespace DreamcoreHorrorGameApiServer.Controllers.Base
     public abstract class UserController<TUser> : DatabaseEntityController<TUser>
         where TUser : class, IDatabaseEntity, IUser
     {
-        private readonly IPasswordHasher<TUser> _passwordHasher;
+        protected readonly ITokenService _tokenService;
+        protected readonly IPasswordHasher<TUser> _passwordHasher;
 
-        private readonly Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> _getByLogin;
+        protected readonly Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> _getByLogin;
 
-        private readonly string _alreadyExistsErrorMessage;
+        protected readonly string _alreadyExistsErrorMessage;
 
         public UserController(
             DreamcoreHorrorGameContext context,
+            ITokenService tokenService,
             IPasswordHasher<TUser> passwordHasher,
             Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> getByLoginFunction,
             string alreadyExistsErrorMessage
         ) : base(context)
         {
+            _tokenService = tokenService;
             _passwordHasher = passwordHasher;
             _getByLogin = getByLoginFunction;
             _alreadyExistsErrorMessage = alreadyExistsErrorMessage;
@@ -82,7 +86,7 @@ namespace DreamcoreHorrorGameApiServer.Controllers.Base
 
             user.Id = Guid.NewGuid();
             user.Password = _passwordHasher.HashPassword(user, user.Password);
-            user.RefreshToken = TokenService.CreateRefreshToken(user.Login, user.Role);
+            user.RefreshToken = _tokenService.CreateRefreshToken(user.Login, user.Role);
 
             _context.Add(user);
             await _context.SaveChangesAsync();
@@ -106,7 +110,7 @@ namespace DreamcoreHorrorGameApiServer.Controllers.Base
 
             if (VerifyPassword(user, loginData.Password))
             {
-                string token = TokenService.CreateRefreshToken(user.Login, user.Role);
+                string token = _tokenService.CreateRefreshToken(user.Login, user.Role);
                 await SetRefreshTokenAsync(user, token);
                 return Ok(token);
             }
@@ -131,7 +135,7 @@ namespace DreamcoreHorrorGameApiServer.Controllers.Base
 
             if (VerifyPassword(user, loginData.Password))
             {
-                string token = TokenService.CreateRefreshToken(user.Login, user.Role);
+                string token = _tokenService.CreateRefreshToken(user.Login, user.Role);
                 await SetPasswordAndRefreshTokenAsync(user, newPassword, token);
                 return Ok(token);
             }
@@ -157,7 +161,7 @@ namespace DreamcoreHorrorGameApiServer.Controllers.Base
                 return Unauthorized();
 
             if (VerifyRefreshToken(user, AuthorizationToken))
-                return Ok(TokenService.CreateAccessToken(user.Login, user.Role));
+                return Ok(_tokenService.CreateAccessToken(user.Login, user.Role));
 
             return Unauthorized();
         }

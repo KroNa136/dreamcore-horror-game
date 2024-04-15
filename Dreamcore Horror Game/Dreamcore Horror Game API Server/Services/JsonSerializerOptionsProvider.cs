@@ -1,18 +1,19 @@
-﻿using System.Text.Json;
+﻿using DreamcoreHorrorGameApiServer.JsonConverters;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace DreamcoreHorrorGameApiServer;
+namespace DreamcoreHorrorGameApiServer.Services;
 
-public static class JsonSerializerOptionsProvider
+public class JsonSerializerOptionsProvider : IJsonSerializerOptionsProvider
 {
-    public static JsonSerializerOptions New => new();
-    public static JsonSerializerOptions Shared => s_sharedOptions;
+    public JsonSerializerOptions New => new();
+    public JsonSerializerOptions Default => _defaultOptions;
 
-    private static readonly JsonSerializerOptions s_sharedOptions;
+    private readonly JsonSerializerOptions _defaultOptions;
 
-    static JsonSerializerOptionsProvider()
+    public JsonSerializerOptionsProvider()
     {
-        s_sharedOptions = new()
+        _defaultOptions = new()
         {
             AllowTrailingCommas = true,
             DefaultBufferSize = 2048,
@@ -31,6 +32,6 @@ public static class JsonSerializerOptionsProvider
             WriteIndented = true
         };
 
-        s_sharedOptions.Converters.Add(new IpAddressConverter());
+        _defaultOptions.Converters.Add(new IpAddressConverter());
     }
 }
