@@ -15,11 +15,13 @@ public class TestOutputController : ControllerBase
 {
     private DreamcoreHorrorGameContext _context;
     private ITokenService _tokenService;
+    private IJsonSerializerOptionsProvider _jsonSerializerOptionsProvider;
 
-    public TestOutputController(DreamcoreHorrorGameContext context, ITokenService tokenService)
+    public TestOutputController(DreamcoreHorrorGameContext context, ITokenService tokenService, IJsonSerializerOptionsProvider jsonSerializerOptionsProvider)
     {
         _context = context;
         _tokenService = tokenService;
+        _jsonSerializerOptionsProvider = jsonSerializerOptionsProvider;
     }
 
     [HttpGet]
@@ -31,7 +33,7 @@ public class TestOutputController : ControllerBase
         return Results.Json
         (
             data: devs,
-            options: JsonSerializerOptionsProvider.Shared,
+            options: _jsonSerializerOptionsProvider.Default,
             contentType: MediaTypeNames.Application.Json,
             statusCode: 200
         );
