@@ -2,22 +2,22 @@
 
 public static class IEnumerableExtensions
 {
-    public static bool IsEmpty<T>(this IEnumerable<T> collection)
-        => !collection.Any();
+    public static bool IsEmpty<TSource>(this IEnumerable<TSource> source)
+        => !source.Any();
 
-    public static bool IsNotEmpty<T>(this IEnumerable<T> collection)
-        => collection.Any();
+    public static bool IsNotEmpty<TSource>(this IEnumerable<TSource> source)
+        => source.Any();
 
-    public static async Task<T?> FirstOrDefaultAsync<T>(this IEnumerable<T> collection, Func<T, Task<bool>> predicate)
+    public static async Task<TSource?> FirstOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, Task<bool>> predicateTask)
     {
-        if (collection == null)
-            throw new ArgumentNullException(nameof(collection));
+        if (source is null)
+            throw new ArgumentNullException(nameof(source));
 
-        if (predicate == null)
-            throw new ArgumentNullException(nameof(predicate));
+        if (predicateTask is null)
+            throw new ArgumentNullException(nameof(predicateTask));
 
-        foreach (T element in collection)
-            if (await predicate(element))
+        foreach (var element in source)
+            if (await predicateTask(element))
                 return element;
 
         return default;
