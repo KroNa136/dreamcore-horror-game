@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
+using System.Configuration;
 
 namespace DreamcoreHorrorGameApiServer;
 
@@ -16,25 +17,92 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        Console.WriteLine($"TOKEN:\n{new TokenService().CreateAccessToken("test", AuthenticationRoles.Player)}\n");
+        string testToken = new TokenService()
+            .CreateAccessToken("test_login", AuthenticationRoles.FullAccessDeveloper);
 
+        Console.WriteLine($"TOKEN:\n{testToken}\n");
+
+        WebApplicationBuilder builder = CreateWebApplicationBuilder(args);
+        WebApplication app = builder.CreateWebApplication();
+
+        app.Run();
+    }
+
+    private static WebApplicationBuilder CreateWebApplicationBuilder(string[] args)
+    {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+        builder.AddControllersWithJsonOptions()
+            .AddSwaggerGenerator()
+            .AddEndpointsApiExplorer()
+            .AddProjectDependencies()
+            .AddCorsPolicies()
+            .AddAuthentication();
+
+        try
+        {
+            builder.AddDatabaseContext();
+        }
+        catch (SettingsPropertyNotFoundException)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Database connection string not found in the configuration.");
+            Environment.Exit(-1);
+        }
+
+        return builder;
+    }
+}
+
+file static class WebApplicationBuilderExtensions
+{
+    internal static WebApplicationBuilder AddControllersWithJsonOptions(this WebApplicationBuilder builder)
+    {
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
             var defaultJsonSerializerOptions = new JsonSerializerOptionsProvider().Default;
             options.ConfigureFrom(defaultJsonSerializerOptions);
         });
 
-        builder.Services.AddEndpointsApiExplorer();
+        return builder;
+    }
 
+    internal static WebApplicationBuilder AddSwaggerGenerator(this WebApplicationBuilder builder)
+    {
+        builder.Services.AddSwaggerGen();
+        return builder;
+    }
+
+    internal static WebApplicationBuilder AddEndpointsApiExplorer(this WebApplicationBuilder builder)
+    {
+        builder.Services.AddEndpointsApiExplorer();
+        return builder;
+    }
+
+    internal static WebApplicationBuilder AddProjectDependencies(this WebApplicationBuilder builder)
+    {
+        builder.Services
+            .AddSingleton<IJsonSerializerOptionsProvider, JsonSerializerOptionsProvider>()
+            .AddSingleton<ITokenService, TokenService>()
+            .AddSingleton<IPropertyPredicateValidator, PropertyPredicateValidator>()
+            .AddScoped<IHttpFetcher, HttpFetcher>()
+            .AddScoped<IPasswordHasher<Developer>, PasswordHasher<Developer>>()
+            .AddScoped<IPasswordHasher<Player>, PasswordHasher<Player>>()
+            .AddScoped<IPasswordHasher<Server>, PasswordHasher<Server>>();
+
+        return builder;
+    }
+
+    internal static WebApplicationBuilder AddCorsPolicies(this WebApplicationBuilder builder)
+    {
         builder.Services.AddCors(options =>
         {
             options.AddPolicy(CorsPolicyNames.Default, policy =>
             {
                 policy.AllowAnyOrigin();
                 policy.AllowAnyMethod();
-                policy.WithHeaders(
+                policy.WithHeaders
+                (
                     HeaderNames.Accept,
                     HeaderNames.Authorization,
                     HeaderNames.ContentLength,
@@ -49,9 +117,15 @@ public class Program
             });
         });
 
+        return builder;
+    }
+
+    internal static WebApplicationBuilder AddAuthentication(this WebApplicationBuilder builder)
+    {
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(AuthenticationSchemes.Access, options =>
             {
+                options.RequireHttpsMetadata = true;
                 options.SaveToken = true;
                 options.TokenValidationParameters = new TokenValidationParameters()
                 {
@@ -67,6 +141,7 @@ public class Program
             })
             .AddJwtBearer(AuthenticationSchemes.Refresh, options =>
             {
+                options.RequireHttpsMetadata = true;
                 options.SaveToken = true;
                 options.TokenValidationParameters = new TokenValidationParameters()
                 {
@@ -81,31 +156,43 @@ public class Program
                 };
             });
 
-        string? dbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        return builder;
+    }
 
-        if (dbConnectionString is not null)
-            builder.Services.AddDbContext<DreamcoreHorrorGameContext>(options => options.UseNpgsql(dbConnectionString));
+    internal static WebApplicationBuilder AddDatabaseContext(this WebApplicationBuilder builder)
+    {
+        string? defaultConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-        builder.Services.AddSingleton<IJsonSerializerOptionsProvider, JsonSerializerOptionsProvider>();
-        builder.Services.AddSingleton<ITokenService, TokenService>();
+        if (string.IsNullOrEmpty(defaultConnectionString))
+            throw new SettingsPropertyNotFoundException();
 
-        builder.Services.AddScoped<IHttpFetcher, HttpFetcher>();
+        builder.Services.AddDbContext<DreamcoreHorrorGameContext>
+        (
+            optionsAction: options => options.UseNpgsql(defaultConnectionString),
+            contextLifetime: ServiceLifetime.Transient,
+            optionsLifetime: ServiceLifetime.Transient
+        );
 
-        builder.Services.AddScoped<IPasswordHasher<Developer>, PasswordHasher<Developer>>();
-        builder.Services.AddScoped<IPasswordHasher<Player>, PasswordHasher<Player>>();
-        builder.Services.AddScoped<IPasswordHasher<Server>, PasswordHasher<Server>>();
+        return builder;
+    }
 
+    internal static WebApplication CreateWebApplication(this WebApplicationBuilder builder)
+    {
         WebApplication app = builder.Build();
 
-        app.UseHttpsRedirection();
+        app.UseHttpsRedirection()
+            .UseCors(CorsPolicyNames.Default)
+            .UseAuthentication()
+            .UseAuthorization();
 
-        app.UseCors(CorsPolicyNames.Default);
-
-        app.UseAuthentication();
-        app.UseAuthorization();
+        if (app.Environment.IsEnvironment(Environments.Development))
+        {
+            app.UseSwagger()
+                .UseSwaggerUI();
+        }
 
         app.MapControllers();
 
-        app.Run();
+        return app;
     }
 }
