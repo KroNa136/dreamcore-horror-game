@@ -3,18 +3,24 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33403.182
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dreamcore Horror Game API Server", "Dreamcore Horror Game API Server\Dreamcore Horror Game API Server.csproj", "{C02AA169-D038-41CF-A46B-7103AF9B14AB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dreamcore Horror Game API Server", "Dreamcore Horror Game API Server\Dreamcore Horror Game API Server.csproj", "{C02AA169-D038-41CF-A46B-7103AF9B14AB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{C02AA169-D038-41CF-A46B-7103AF9B14AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C02AA169-D038-41CF-A46B-7103AF9B14AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C02AA169-D038-41CF-A46B-7103AF9B14AB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C02AA169-D038-41CF-A46B-7103AF9B14AB}.Debug|x64.Build.0 = Debug|Any CPU
 		{C02AA169-D038-41CF-A46B-7103AF9B14AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C02AA169-D038-41CF-A46B-7103AF9B14AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C02AA169-D038-41CF-A46B-7103AF9B14AB}.Release|x64.ActiveCfg = Release|Any CPU
+		{C02AA169-D038-41CF-A46B-7103AF9B14AB}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
