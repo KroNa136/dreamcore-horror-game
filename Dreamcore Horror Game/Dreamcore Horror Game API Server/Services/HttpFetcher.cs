@@ -19,7 +19,7 @@ public class HttpFetcher : IHttpFetcher
         };
 
         _httpClient.DefaultRequestHeaders.Add(HeaderNames.Accept, MediaTypeNames.Application.Json);
-        _httpClient.DefaultRequestHeaders.Add(CorsHeaders.ApiServer, string.Empty);
+        _httpClient.DefaultRequestHeaders.Add(CorsHeaders.ApiServer, CorsHeaders.RequiredHeaderValue);
     }
 
     public async Task<HttpResponseMessage?> GetAsync(string host, int port, string path)

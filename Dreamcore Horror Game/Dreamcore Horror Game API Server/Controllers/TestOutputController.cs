@@ -2,6 +2,7 @@
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
 using DreamcoreHorrorGameApiServer.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
@@ -22,6 +23,22 @@ public class TestOutputController : ControllerBase
         _context = context;
         _tokenService = tokenService;
         _jsonSerializerOptionsProvider = jsonSerializerOptionsProvider;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> RandomizePlayerLevels()
+    {
+        var players = _context.Players.ToList();
+
+        foreach (var player in players)
+        {
+            var count = _context.XpLevels.Count();
+            player.XpLevel = _context.XpLevels.AsEnumerable().ElementAt(new Random().Next(0, count));
+
+            _context.Update(player);
+            await _context.SaveChangesAsync();
+        }
+        return Ok();
     }
 
     [HttpGet]

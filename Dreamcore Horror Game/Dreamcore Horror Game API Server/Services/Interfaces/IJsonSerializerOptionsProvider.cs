@@ -4,6 +4,6 @@ namespace DreamcoreHorrorGameApiServer.Services;
 
 public interface IJsonSerializerOptionsProvider
 {
-    public JsonSerializerOptions New => new();
+    public JsonSerializerOptions New { get; }
     public JsonSerializerOptions Default { get; }
 }

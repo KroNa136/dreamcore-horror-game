@@ -8,7 +8,8 @@ namespace DreamcoreHorrorGameApiServer.Services;
 public class TokenService : ITokenService
 {
     public string CreateAccessToken(string login, string role)
-        => CreateToken(
+        => CreateToken
+        (
             login: login,
             role: role,
             issuer: AccessTokenOptions.Issuer,
@@ -18,7 +19,8 @@ public class TokenService : ITokenService
         );
 
     public string CreateRefreshToken(string login, string role)
-        => CreateToken(
+        => CreateToken
+        (
             login: login,
             role: role,
             issuer: RefreshTokenOptions.Issuer,
@@ -35,7 +37,8 @@ public class TokenService : ITokenService
             new Claim(ClaimTypes.Role, role),
         };
 
-        JwtSecurityToken jwt = new(
+        JwtSecurityToken jwt = new
+        (
             issuer: issuer,
             audience: audience,
             claims: claims,

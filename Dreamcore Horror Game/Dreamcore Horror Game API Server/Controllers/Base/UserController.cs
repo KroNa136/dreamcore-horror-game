@@ -6,210 +6,313 @@ using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
-namespace DreamcoreHorrorGameApiServer.Controllers.Base
+namespace DreamcoreHorrorGameApiServer.Controllers.Base;
+
+public abstract class UserController<TUser> : DatabaseEntityController<TUser>
+    where TUser : class, IDatabaseEntity, IUser
 {
-    public abstract class UserController<TUser> : DatabaseEntityController<TUser>
-        where TUser : class, IDatabaseEntity, IUser
+    protected readonly ITokenService _tokenService;
+    protected readonly IPasswordHasher<TUser> _passwordHasher;
+
+    protected readonly string _alreadyExistsErrorMessage;
+
+    protected readonly Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> _getByLogin;
+
+    public UserController
+    (
+        DreamcoreHorrorGameContext context,
+        IPropertyPredicateValidator propertyPredicateValidator,
+        ITokenService tokenService,
+        IPasswordHasher<TUser> passwordHasher,
+        string alreadyExistsErrorMessage,
+        System.Linq.Expressions.Expression<Func<TUser, object?>> orderBySelector,
+        Func<DreamcoreHorrorGameContext, Task<IQueryable<TUser>>> getAllWithFirstLevelRelationsFunction,
+        Func<DreamcoreHorrorGameContext, TUser, Task>? setRelationsFromForeignKeysFunction,
+        Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> getByLoginFunction
+    )
+    : base
+    (
+        context,
+        propertyPredicateValidator,
+        orderBySelector,
+        getAllWithFirstLevelRelationsFunction,
+        setRelationsFromForeignKeysFunction
+    )
     {
-        protected readonly ITokenService _tokenService;
-        protected readonly IPasswordHasher<TUser> _passwordHasher;
+        _tokenService = tokenService;
+        _passwordHasher = passwordHasher;
 
-        protected readonly Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> _getByLogin;
+        _alreadyExistsErrorMessage = alreadyExistsErrorMessage;
 
-        protected readonly string _alreadyExistsErrorMessage;
+        _getByLogin = getByLoginFunction;
+    }
 
-        public UserController(
-            DreamcoreHorrorGameContext context,
-            ITokenService tokenService,
-            IPasswordHasher<TUser> passwordHasher,
-            Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> getByLoginFunction,
-            string alreadyExistsErrorMessage
-        ) : base(context)
+    public override abstract Task<IActionResult> Create(TUser entity);
+    public abstract Task<IActionResult> Login(LoginData loginData);
+    public abstract Task<IActionResult> Logout(Guid? id);
+    public abstract Task<IActionResult> ChangePassword(LoginData loginData, string newPassword);
+    public abstract Task<IActionResult> GetAccessToken(string login);
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public override UserController<TUser> RequireHeaders(params string[] headers)
+    {
+        SetRequiredHeaders(headers);
+        return this;
+    }
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public override async Task<IActionResult> CreateEntityAsync(TUser user)
+    {
+        if (NoValidHeader(_requiredHeaders))
+            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
+
+        bool userExists = await _getByLogin(_context, user.Login) is not null;
+
+        if (userExists)
+            return UnprocessableEntity(_alreadyExistsErrorMessage);
+
+        if (InvalidModelState)
+            return ValidationProblem();
+
+        user.Id = Guid.NewGuid();
+        user.Password = _passwordHasher.HashPassword(user, user.Password);
+
+        try
         {
-            _tokenService = tokenService;
-            _passwordHasher = passwordHasher;
-            _getByLogin = getByLoginFunction;
-            _alreadyExistsErrorMessage = alreadyExistsErrorMessage;
+            if (_setRelationsFromForeignKeys is not null)
+                await _setRelationsFromForeignKeys(_context, user);
+        }
+        catch (InvalidConstraintException)
+        {
+            return UnprocessableEntity(ErrorMessages.RelatedEntityDoesNotExist);
         }
 
-        [ApiExplorerSettings(IgnoreApi = true)]
-        [NonAction]
-        public override UserController<TUser> RequireHeaders(params string[] headers)
+        _context.Add(user);
+
+        try
         {
-            SetRequiredHeaders(headers);
-            return this;
-        }
-
-        public override abstract Task<IActionResult> Create(TUser entity);
-        public abstract Task<IActionResult> Login(LoginData loginData);
-        public abstract Task<IActionResult> ChangePassword(LoginData loginData, string newPassword);
-        public abstract Task<IActionResult> GetAccessToken(string login);
-
-        [ApiExplorerSettings(IgnoreApi = true)]
-        [NonAction]
-        public override async Task<IActionResult> CreateAsync(TUser user)
-        {
-            if (NoHeader(_requiredHeaders))
-                return this.Forbidden(ErrorMessages.HeaderMissing);
-
-            bool userExists = await _context.Set<TUser>().AnyAsync(u => u.Login.Equals(user.Login));
-
-            if (userExists)
-                return UnprocessableEntity(_alreadyExistsErrorMessage);
-
-            if (InvalidModelState)
-                return ValidationProblem();
-
-            user.Id = Guid.NewGuid();
-            user.Password = _passwordHasher.HashPassword(user, user.Password);
-
-            _context.Add(user);
             await _context.SaveChangesAsync();
-            return Ok(user);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(ErrorMessages.CreateConflict);
+        }
+        catch (DbUpdateException)
+        {
+            // TODO: log error
+            return this.InternalServerError();
         }
 
-        [ApiExplorerSettings(IgnoreApi = true)]
-        [NonAction]
-        public async Task<IActionResult> RegisterAsync(TUser user)
+        return Ok(user);
+    }
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> LoginAsUserAsync(LoginData loginData)
+    {
+        if (NoValidHeader(_requiredHeaders))
+            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
+
+        if (loginData.IsEmptyLogin || loginData.IsEmptyPassword)
+            return Unauthorized();
+
+        var user = await _getByLogin(_context, loginData.Login);
+
+        if (user is null)
+            return Unauthorized();
+
+        if (user.IsOnline)
+            return UnprocessableEntity(ErrorMessages.UserIsAlreadyLoggedIn);
+
+        if (VerifyPassword(user, loginData.Password) is false)
+            return Unauthorized();
+
+        string token = _tokenService.CreateRefreshToken(user.Login, user.Role);
+
+        try
         {
-            if (NoHeader(_requiredHeaders))
-                return Forbid(ErrorMessages.HeaderMissing);
+            if (await SetRefreshTokenAsync(user, token) is false)
+                return Unauthorized();
 
-            bool userExists = await _context.Set<TUser>().AnyAsync(u => u.Login.Equals(user.Login));
+            if (await SetIsOnlineAsync(user, true) is false)
+                return Unauthorized();
+        }
+        catch (DbUpdateException)
+        {
+            // TODO: log error
+            return this.InternalServerError();
+        }
 
-            if (userExists)
-                return UnprocessableEntity(_alreadyExistsErrorMessage);
+        return Ok(token);
+    }
 
-            if (InvalidModelState)
-                return ValidationProblem();
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> LogoutAsUserAsync(Guid? id)
+    {
+        if (NoValidHeader(_requiredHeaders))
+            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
 
-            user.Id = Guid.NewGuid();
-            user.Password = _passwordHasher.HashPassword(user, user.Password);
-            user.RefreshToken = _tokenService.CreateRefreshToken(user.Login, user.Role);
+        if (id is null)
+            return NotFound();
 
-            _context.Add(user);
+        var user = await _context.Set<TUser>().FindAsync(id);
+
+        if (user is null)
+            return NotFound();
+
+        if (VerifyRefreshToken(user, AuthorizationToken) is false)
+            return Unauthorized();
+
+        if (!user.IsOnline)
+            return UnprocessableEntity(ErrorMessages.UserIsAlreadyLoggedOut);
+
+        try
+        {
+            if (await SetIsOnlineAsync(user, false) is false)
+                return NotFound();
+
+            if (await SetRefreshTokenAsync(user, null) is false)
+                return NotFound();
+        }
+        catch (DbUpdateException)
+        {
+            // TODO: log error
+            return this.InternalServerError();
+        }
+
+        return Ok();
+    }
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> ChangeUserPasswordAsync(LoginData loginData, string newPassword)
+    {
+        if (NoValidHeader(_requiredHeaders))
+            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
+
+        if (loginData.IsEmptyLogin || loginData.IsEmptyPassword || newPassword.IsEmpty())
+            return Unauthorized();
+
+        var user = await _getByLogin(_context, loginData.Login);
+
+        if (user is null)
+            return Unauthorized();
+
+        if (VerifyPassword(user, loginData.Password) is false)
+            return Unauthorized();
+
+        string token = _tokenService.CreateRefreshToken(user.Login, user.Role);
+
+        try
+        {
+            if (await SetPasswordAndRefreshTokenAsync(user, newPassword, token) is false)
+                return Unauthorized();
+        }
+        catch (DbUpdateException)
+        {
+            // TODO: log error
+            return this.InternalServerError();
+        }
+
+        return Ok(token);
+    }
+
+    // TODO: password restore
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> GetAccessTokenForUserAsync(string login)
+    {
+        if (NoValidHeader(_requiredHeaders))
+            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
+
+        if (login.IsEmpty())
+            return Unauthorized();
+
+        var user = await _getByLogin(_context, login);
+
+        if (user is null)
+            return Unauthorized();
+
+        if (VerifyRefreshToken(user, AuthorizationToken))
+            return Ok(_tokenService.CreateAccessToken(user.Login, user.Role));
+
+        return Unauthorized();
+    }
+
+    protected bool VerifyPassword(TUser user, string? password)
+        => _passwordHasher.VerifyHashedPassword(user, user.Password, password ?? string.Empty)
+            is not PasswordVerificationResult.Failed;
+
+    protected async Task<bool> SetPasswordAndRefreshTokenAsync(TUser user, string password, string? token)
+    {
+        user.Password = _passwordHasher.HashPassword(user, password);
+        user.RefreshToken = token;
+
+        _context.Update(user);
+
+        try
+        {
             await _context.SaveChangesAsync();
-            return Ok(user.RefreshToken);
         }
-
-        [ApiExplorerSettings(IgnoreApi = true)]
-        [NonAction]
-        public async Task<IActionResult> LoginAsync(LoginData loginData)
+        catch (DbUpdateException)
         {
-            if (NoHeader(_requiredHeaders))
-                return this.Forbidden(ErrorMessages.HeaderMissing);
-
-            if (loginData.IsEmptyLogin || loginData.IsEmptyPassword)
-                return Unauthorized();
-
-            var user = await _getByLogin(_context, loginData.Login);
-
-            if (user is null)
-                return Unauthorized();
-
-            if (VerifyPassword(user, loginData.Password))
-            {
-                string token = _tokenService.CreateRefreshToken(user.Login, user.Role);
-                await SetRefreshTokenAsync(user, token);
-                return Ok(token);
-            }
-
-            return Unauthorized();
+            if (await EntityExistsAsync(user.Id) is false)
+                return false;
+            else
+                throw;
         }
 
-        [ApiExplorerSettings(IgnoreApi = true)]
-        [NonAction]
-        public async Task<IActionResult> ChangePasswordAsync(LoginData loginData, string newPassword)
+        return true;
+    }
+
+    protected bool VerifyRefreshToken(TUser user, string? refreshToken)
+        => user.RefreshToken is not null && user.RefreshToken.Equals(refreshToken);
+
+    protected async Task<bool> SetRefreshTokenAsync(TUser user, string? token)
+    {
+        user.RefreshToken = token;
+
+        _context.Update(user);
+
+        try
         {
-            if (NoHeader(_requiredHeaders))
-                return this.Forbidden(ErrorMessages.HeaderMissing);
-
-            if (loginData.IsEmptyLogin || loginData.IsEmptyPassword || newPassword.IsEmpty())
-                return Unauthorized();
-
-            var user = await _getByLogin(_context, loginData.Login);
-
-            if (user is null)
-                return Unauthorized();
-
-            if (VerifyPassword(user, loginData.Password))
-            {
-                string token = _tokenService.CreateRefreshToken(user.Login, user.Role);
-                await SetPasswordAndRefreshTokenAsync(user, newPassword, token);
-                return Ok(token);
-            }
-
-            return Unauthorized();
+            await _context.SaveChangesAsync();
         }
-
-        // TODO: password restore
-
-        [ApiExplorerSettings(IgnoreApi = true)]
-        [NonAction]
-        public async Task<IActionResult> GetAccessTokenAsync(string login)
+        catch (DbUpdateException)
         {
-            if (NoHeader(_requiredHeaders))
-                return this.Forbidden(ErrorMessages.HeaderMissing);
-
-            if (login.IsEmpty())
-                return Unauthorized();
-
-            var user = await _getByLogin(_context, login);
-
-            if (user is null)
-                return Unauthorized();
-
-            if (VerifyRefreshToken(user, AuthorizationToken))
-                return Ok(_tokenService.CreateAccessToken(user.Login, user.Role));
-
-            return Unauthorized();
+            if (await EntityExistsAsync(user.Id) is false)
+                return false;
+            else
+                throw;
         }
 
-        private bool VerifyPassword(TUser user, string? password)
-            => _passwordHasher.VerifyHashedPassword(user, user.Password, password ?? string.Empty)
-                is not PasswordVerificationResult.Failed;
+        return true;
+    }
 
-        private async Task<bool> SetPasswordAndRefreshTokenAsync(TUser user, string password, string? token)
+    protected async Task<bool> SetIsOnlineAsync(TUser user, bool isOnline)
+    {
+        user.IsOnline = isOnline;
+
+        _context.Update(user);
+
+        try
         {
-            user.Password = _passwordHasher.HashPassword(user, password);
-            user.RefreshToken = token;
-
-            try
-            {
-                _context.Update(user);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (await EntityExistsAsync(user.Id) == false)
-                    return false;
-                else
-                    throw;
-            }
-            return true;
+            await _context.SaveChangesAsync();
         }
-
-        private bool VerifyRefreshToken(TUser user, string? refreshToken)
-            => user.RefreshToken is not null && user.RefreshToken.Equals(refreshToken);
-
-        private async Task<bool> SetRefreshTokenAsync(TUser user, string? token)
+        catch (DbUpdateException)
         {
-            user.RefreshToken = token;
-
-            try
-            {
-                _context.Update(user);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (await EntityExistsAsync(user.Id) == false)
-                    return false;
-                else
-                    throw;
-            }
-            return true;
+            if (await EntityExistsAsync(user.Id) is false)
+                return false;
+            else
+                throw;
         }
+
+        return true;
     }
 }
