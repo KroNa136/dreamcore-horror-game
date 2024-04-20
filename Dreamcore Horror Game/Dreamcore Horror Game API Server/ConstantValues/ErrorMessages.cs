@@ -22,6 +22,12 @@ public static class ErrorMessages
 
     public const string DeleteConflict = "Couldn't delete the requested entity due to some conflict in the database. Please try again later.";
 
+    public const string UserLoginConflict = "Couldn't log in due to some conflict in the database. Please try again later.";
+
+    public const string UserLogoutConflict = "Couldn't log out due to some conflict in the database. Please try again later.";
+    
+    public const string ChangeUserPasswordConflict = "Couldn't change the password due to some conflict in the database. Please try again later.";
+
     public const string DeleteConstraintViolation = "Couldn't delete the requested entity due to the database constraints.";
 
     public const string PlayerAlreadyExists = "A player with the same email address already exists.";
@@ -29,6 +35,8 @@ public static class ErrorMessages
     public const string DeveloperAlreadyExists = "A developer with the same login already exists.";
 
     public const string ServerAlreadyExists = "A server with the same IP address already exists.";
+
+    public const string EmptyLoginOrPassword = "Received authentication data contained an empty login and/or an empty password.";
 
     public const string UserIsAlreadyLoggedIn = "Requested user is already logged in.";
 

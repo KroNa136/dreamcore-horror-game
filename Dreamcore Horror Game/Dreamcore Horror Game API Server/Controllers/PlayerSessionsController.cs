@@ -53,7 +53,7 @@ public class PlayerSessionsController : DatabaseEntityController<PlayerSession>
             var usedCreature = await context.Creatures
                 .FindAsync(playerSession.UsedCreatureId);
 
-            if (gameSession is null || player is null)
+            if (gameSession is null || player is null || (usedCreature is null && playerSession.UsedCreatureId is not null))
                 throw new InvalidConstraintException();
 
             playerSession.GameSession = gameSession;
@@ -66,10 +66,6 @@ public class PlayerSessionsController : DatabaseEntityController<PlayerSession>
             {
                 playerSession.UsedCreature = usedCreature;
                 playerSession.UsedCreatureId = Guid.Empty;
-            }
-            else if (playerSession.UsedCreatureId is not null)
-            {
-                throw new InvalidConstraintException();
             }
         }
     )

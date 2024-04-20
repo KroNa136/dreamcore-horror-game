@@ -6,7 +6,6 @@ using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Data;
 
 namespace DreamcoreHorrorGameApiServer.Controllers.Base;
 
@@ -66,184 +65,159 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public override async Task<IActionResult> CreateEntityAsync(TUser user)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        bool userExists = await _getByLogin(_context, user.Login) is not null;
-
-        if (userExists)
-            return UnprocessableEntity(_alreadyExistsErrorMessage);
-
-        if (InvalidModelState)
-            return ValidationProblem();
-
-        user.Id = Guid.NewGuid();
-        user.Password = _passwordHasher.HashPassword(user, user.Password);
-
-        try
+        => await ValidateHeadersAndHandleErrorsAsync(user, async user =>
         {
+            bool userExists = await _getByLogin(_context, user.Login) is not null;
+
+            if (userExists)
+                return UnprocessableEntity(_alreadyExistsErrorMessage);
+
+            if (InvalidModelState)
+                return ValidationProblem();
+
+            user.Id = Guid.NewGuid();
+            user.Password = _passwordHasher.HashPassword(user, user.Password);
+
             if (_setRelationsFromForeignKeys is not null)
                 await _setRelationsFromForeignKeys(_context, user);
-        }
-        catch (InvalidConstraintException)
-        {
-            return UnprocessableEntity(ErrorMessages.RelatedEntityDoesNotExist);
-        }
 
-        _context.Add(user);
+            _context.Add(user);
 
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return Conflict(ErrorMessages.CreateConflict);
-        }
-        catch (DbUpdateException)
-        {
-            // TODO: log error
-            return this.InternalServerError();
-        }
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // TODO: log error
+                return Conflict(ErrorMessages.CreateConflict);
+            }
 
-        return Ok(user);
-    }
+            return Ok(user);
+        });
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> LoginAsUserAsync(LoginData loginData)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        if (loginData.IsEmptyLogin || loginData.IsEmptyPassword)
-            return Unauthorized();
-
-        var user = await _getByLogin(_context, loginData.Login);
-
-        if (user is null)
-            return Unauthorized();
-
-        if (user.IsOnline)
-            return UnprocessableEntity(ErrorMessages.UserIsAlreadyLoggedIn);
-
-        if (VerifyPassword(user, loginData.Password) is false)
-            return Unauthorized();
-
-        string token = _tokenService.CreateRefreshToken(user.Login, user.Role);
-
-        try
+        => await ValidateHeadersAndHandleErrorsAsync(loginData, async loginData =>
         {
-            if (await SetRefreshTokenAsync(user, token) is false)
+            if (loginData.IsEmptyLogin || loginData.IsEmptyPassword)
+                return BadRequest(ErrorMessages.EmptyLoginOrPassword);
+
+            var user = await _getByLogin(_context, loginData.Login);
+
+            if (user is null)
+                return NotFound();
+
+            if (user.IsOnline)
+                return UnprocessableEntity(ErrorMessages.UserIsAlreadyLoggedIn);
+
+            if (VerifyPassword(user, loginData.Password) is false)
                 return Unauthorized();
 
-            if (await SetIsOnlineAsync(user, true) is false)
-                return Unauthorized();
-        }
-        catch (DbUpdateException)
-        {
-            // TODO: log error
-            return this.InternalServerError();
-        }
+            string token = _tokenService.CreateRefreshToken(user.Login, user.Role);
 
-        return Ok(token);
-    }
+            try
+            {
+                if (await SetRefreshTokenAsync(user, token) is false
+                    || await SetIsOnlineAsync(user, true) is false)
+                    return NotFound();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // TODO: log error
+                return Conflict(ErrorMessages.UserLoginConflict);
+            }
+
+            return Ok(token);
+        });
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> LogoutAsUserAsync(Guid? id)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        if (id is null)
-            return NotFound();
-
-        var user = await _context.Set<TUser>().FindAsync(id);
-
-        if (user is null)
-            return NotFound();
-
-        if (VerifyRefreshToken(user, AuthorizationToken) is false)
-            return Unauthorized();
-
-        if (!user.IsOnline)
-            return UnprocessableEntity(ErrorMessages.UserIsAlreadyLoggedOut);
-
-        try
+        => await ValidateHeadersAndHandleErrorsAsync(id, async id =>
         {
-            if (await SetIsOnlineAsync(user, false) is false)
+            if (id is null)
                 return NotFound();
 
-            if (await SetRefreshTokenAsync(user, null) is false)
-                return NotFound();
-        }
-        catch (DbUpdateException)
-        {
-            // TODO: log error
-            return this.InternalServerError();
-        }
+            var user = await _context.Set<TUser>().FindAsync(id);
 
-        return Ok();
-    }
+            if (user is null)
+                return NotFound();
+
+            if (VerifyRefreshToken(user, AuthorizationToken) is false)
+                return Unauthorized();
+
+            if (user.IsOnline is false)
+                return UnprocessableEntity(ErrorMessages.UserIsAlreadyLoggedOut);
+
+            try
+            {
+                if (await SetIsOnlineAsync(user, false) is false
+                    || await SetRefreshTokenAsync(user, null) is false)
+                    return NotFound();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // TODO: log error
+                return Conflict(ErrorMessages.UserLogoutConflict);
+            }
+
+            return Ok();
+        });
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> ChangeUserPasswordAsync(LoginData loginData, string newPassword)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        if (loginData.IsEmptyLogin || loginData.IsEmptyPassword || newPassword.IsEmpty())
-            return Unauthorized();
-
-        var user = await _getByLogin(_context, loginData.Login);
-
-        if (user is null)
-            return Unauthorized();
-
-        if (VerifyPassword(user, loginData.Password) is false)
-            return Unauthorized();
-
-        string token = _tokenService.CreateRefreshToken(user.Login, user.Role);
-
-        try
+        => await ValidateHeadersAndHandleErrorsAsync(loginData, newPassword, async (loginData, newPassword) =>
         {
-            if (await SetPasswordAndRefreshTokenAsync(user, newPassword, token) is false)
+            if (loginData.IsEmptyLogin || loginData.IsEmptyPassword || newPassword.IsEmpty())
+                return BadRequest(ErrorMessages.EmptyLoginOrPassword);
+
+            var user = await _getByLogin(_context, loginData.Login);
+
+            if (user is null)
+                return NotFound();
+
+            if (VerifyPassword(user, loginData.Password) is false)
                 return Unauthorized();
-        }
-        catch (DbUpdateException)
-        {
-            // TODO: log error
-            return this.InternalServerError();
-        }
 
-        return Ok(token);
-    }
+            string token = _tokenService.CreateRefreshToken(user.Login, user.Role);
+
+            try
+            {
+                if (await SetPasswordAndRefreshTokenAsync(user, newPassword, token) is false)
+                    return NotFound();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // TODO: log error
+                return Conflict(ErrorMessages.ChangeUserPasswordConflict);
+            }
+
+            return Ok(token);
+        });
 
     // TODO: password restore
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> GetAccessTokenForUserAsync(string login)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
+        => await ValidateHeadersAndHandleErrorsAsync(login, async login =>
+        {
+            if (login.IsEmpty())
+                return NotFound();
 
-        if (login.IsEmpty())
-            return Unauthorized();
+            var user = await _getByLogin(_context, login);
 
-        var user = await _getByLogin(_context, login);
+            if (user is null)
+                return NotFound();
 
-        if (user is null)
-            return Unauthorized();
+            if (VerifyRefreshToken(user, AuthorizationToken) is false)
+                return Unauthorized();
 
-        if (VerifyRefreshToken(user, AuthorizationToken))
             return Ok(_tokenService.CreateAccessToken(user.Login, user.Role));
-
-        return Unauthorized();
-    }
+        });
 
     protected bool VerifyPassword(TUser user, string? password)
         => _passwordHasher.VerifyHashedPassword(user, user.Password, password ?? string.Empty)
@@ -260,7 +234,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
         {
             await _context.SaveChangesAsync();
         }
-        catch (DbUpdateException)
+        catch (DbUpdateConcurrencyException)
         {
             if (await EntityExistsAsync(user.Id) is false)
                 return false;
@@ -284,7 +258,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
         {
             await _context.SaveChangesAsync();
         }
-        catch (DbUpdateException)
+        catch (DbUpdateConcurrencyException)
         {
             if (await EntityExistsAsync(user.Id) is false)
                 return false;
@@ -305,7 +279,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
         {
             await _context.SaveChangesAsync();
         }
-        catch (DbUpdateException)
+        catch (DbUpdateConcurrencyException)
         {
             if (await EntityExistsAsync(user.Id) is false)
                 return false;

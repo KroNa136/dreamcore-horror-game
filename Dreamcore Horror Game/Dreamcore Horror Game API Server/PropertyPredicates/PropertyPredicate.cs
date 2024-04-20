@@ -20,12 +20,12 @@ public class PropertyPredicate
     }
 
     [JsonIgnore]
-    public bool IsNotEmptyProperty => !string.IsNullOrEmpty(Property);
-    [JsonIgnore]
-    public bool IsNotEmptyOperator => !string.IsNullOrEmpty(Operator);
-
-    [JsonIgnore]
     public bool IsEmptyProperty => string.IsNullOrEmpty(Property);
     [JsonIgnore]
+    public bool IsNotEmptyProperty => string.IsNullOrEmpty(Property) is false;
+
+    [JsonIgnore]
     public bool IsEmptyOperator => string.IsNullOrEmpty(Operator);
+    [JsonIgnore]
+    public bool IsNotEmptyOperator => string.IsNullOrEmpty(Operator) is false;
 }

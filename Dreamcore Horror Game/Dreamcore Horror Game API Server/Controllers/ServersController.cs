@@ -151,7 +151,7 @@ public class ServersController : UserController<Server>
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
     public async Task<IActionResult> GetServerWithFreeSlots(int slots)
         => await RequireHeaders(CorsHeaders.GameClient)
-            .DoAsync(slots, async slots =>
+            .ExecuteAsync(slots, async slots =>
             {
                 if (slots is < 1)
                     return UnprocessableEntity(ErrorMessages.UnacceptableParameterValue);
@@ -182,7 +182,7 @@ public class ServersController : UserController<Server>
             path: $"/api/WaitingSessions/Any?playerCount={slots}"
         );
 
-        if (anyWaitingSessionsResponse is null || !anyWaitingSessionsResponse.IsSuccessStatusCode)
+        if (anyWaitingSessionsResponse is null || anyWaitingSessionsResponse.IsNotSuccessStatusCode())
             return false;
 
         string responseText = await anyWaitingSessionsResponse.Content.ReadAsStringAsync();
