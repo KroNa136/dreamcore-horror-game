@@ -3,7 +3,7 @@
 public static class IEnumerableExtensions
 {
     public static bool IsEmpty<TSource>(this IEnumerable<TSource> source)
-        => !source.Any();
+        => source.Any() is false;
 
     public static bool IsNotEmpty<TSource>(this IEnumerable<TSource> source)
         => source.Any();

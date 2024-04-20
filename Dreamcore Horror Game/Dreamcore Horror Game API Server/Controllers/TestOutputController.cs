@@ -2,7 +2,6 @@
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
 using DreamcoreHorrorGameApiServer.Services;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
@@ -14,9 +13,9 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 [Route(RouteNames.ApiControllerAction)]
 public class TestOutputController : ControllerBase
 {
-    private DreamcoreHorrorGameContext _context;
-    private ITokenService _tokenService;
-    private IJsonSerializerOptionsProvider _jsonSerializerOptionsProvider;
+    private readonly DreamcoreHorrorGameContext _context;
+    private readonly ITokenService _tokenService;
+    private readonly IJsonSerializerOptionsProvider _jsonSerializerOptionsProvider;
 
     public TestOutputController(DreamcoreHorrorGameContext context, ITokenService tokenService, IJsonSerializerOptionsProvider jsonSerializerOptionsProvider)
     {

@@ -158,7 +158,7 @@ public class PlayersController : UserController<Player>
         nameof(Player.SpiritEnergyPoints)
     )] Player player)
         => await RequireHeaders(CorsHeaders.GameClient)
-            .DoAsync(player, async player =>
+            .ExecuteAsync(player, async player =>
             {
                 bool playerExists = await _getByLogin(_context, player.Login) is not null;
 
@@ -182,15 +182,8 @@ public class PlayersController : UserController<Player>
                 player.IsOnline = true;
                 player.XpLevelId = _context.XpLevels.First(xpLevel => xpLevel.Number == 1).Id;
 
-                try
-                {
-                    if (_setRelationsFromForeignKeys is not null)
-                        await _setRelationsFromForeignKeys(_context, player);
-                }
-                catch (InvalidConstraintException)
-                {
-                    return UnprocessableEntity(ErrorMessages.RelatedEntityDoesNotExist);
-                }
+                if (_setRelationsFromForeignKeys is not null)
+                    await _setRelationsFromForeignKeys(_context, player);
 
                 _context.Add(player);
 
@@ -200,12 +193,8 @@ public class PlayersController : UserController<Player>
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    return Conflict(ErrorMessages.PlayerRegisterConflict);
-                }
-                catch (DbUpdateException)
-                {
                     // TODO: log error
-                    return this.InternalServerError();
+                    return Conflict(ErrorMessages.PlayerRegisterConflict);
                 }
 
                 return Ok(player.RefreshToken);

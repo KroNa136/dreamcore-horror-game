@@ -19,7 +19,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     protected string AuthorizationToken => HttpContext.Request.Headers[HeaderNames.Authorization]
         .ToString().Replace("Bearer ", string.Empty);
 
-    protected bool InvalidModelState => !ModelState.IsValid;
+    protected bool InvalidModelState => ModelState.IsValid is false;
 
     protected readonly DreamcoreHorrorGameContext _context;
     protected readonly IPropertyPredicateValidator _propertyPredicateValidator;
@@ -75,40 +75,278 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> GetAllEntitiesAsync()
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
+        => await ValidateHeadersAndHandleErrorsAsync(async () =>
+        {
+            var entities = await _context.Set<TEntity>()
+                .OrderBy(_orderBySelector)
+                .ToListAsync();
 
-        var entities = await _context.Set<TEntity>()
-            .OrderBy(_orderBySelector)
-            .ToListAsync();
-
-        return Ok(entities);
-    }
+            return Ok(entities);
+        });
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> GetAllEntitiesWithRelationsAsync()
+        => await ValidateHeadersAndHandleErrorsAsync(async () =>
+        {
+            var entities = await (await _getAllWithFirstLevelRelations(_context))
+                .OrderBy(_orderBySelector)
+                .ToListAsync();
+
+            return Ok(entities);
+        });
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> GetEntityAsync(Guid? id)
+        => await ValidateHeadersAndHandleErrorsAsync(id, async id =>
+        {
+            if (id is null)
+                return NotFound();
+
+            var entities = _context.Set<TEntity>();
+            var entity = await entities.FirstOrDefaultAsync(entity => entity.Id == id);
+
+            if (entity is null)
+                return NotFound();
+
+            return Ok(entity);
+        });
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public IActionResult GetEntity(Func<TEntity, bool> predicate)
+        => ValidateHeadersAndHandleErrors(predicate, predicate =>
+        {
+            var entities = _context.Set<TEntity>().AsQueryable().AsForceParallel();
+            var entity = entities.FirstOrDefault(entity => predicate(entity));
+
+            if (entity is null)
+                return NotFound();
+
+            return Ok(entity);
+        });
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> GetEntityWithRelationsAsync(Guid? id)
+        => await ValidateHeadersAndHandleErrorsAsync(id, async id =>
+        {
+            if (id is null)
+                return NotFound();
+
+            var entities = await _getAllWithFirstLevelRelations(_context);
+            var entity = await entities.FirstOrDefaultAsync(entity => entity.Id == id);
+
+            if (entity is null)
+                return NotFound();
+
+            return Ok(entity);
+        });
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> GetEntityWithRelationsAsync(Func<TEntity, bool> predicate)
+        => await ValidateHeadersAndHandleErrorsAsync(predicate, async predicate =>
+        {
+            var entities = (await _getAllWithFirstLevelRelations(_context)).AsForceParallel();
+            var entity = entities.FirstOrDefault(entity => predicate(entity));
+
+            if (entity is null)
+                return NotFound();
+
+            return Ok(entity);
+        });
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> GetEntitiesWhereAsync(IEnumerable<PropertyPredicate> propertyPredicateCollection)
+        => await ValidateHeadersAndHandleErrorsAsync(propertyPredicateCollection, async propertyPredicateCollection =>
+        {
+            var entities = (await _getAllWithFirstLevelRelations(_context))
+                .OrderBy(_orderBySelector)
+                .AsForceParallel();
+
+            bool validationResult = _propertyPredicateValidator.ValidatePropertyPredicateCollection
+            (
+                propertyPredicateCollection: propertyPredicateCollection,
+                predicateTargetType: typeof(TEntity),
+                errorMessage: out string errorMessage
+            );
+
+            if (validationResult is false)
+                return BadRequest(errorMessage);
+
+            foreach (PropertyPredicate predicate in propertyPredicateCollection)
+            {
+                var property = GetProperty(typeof(TEntity), predicate.Property)!;
+                var _operator = _propertyPredicateValidator.GetOperator(predicate.Operator);
+
+                entities = _operator switch
+                {
+                    UnaryOperator unaryOperator => FilterEntities(entities, property, unaryOperator),
+                    BinaryOperator binaryOperator => FilterEntities(entities, property, binaryOperator, predicate),
+                    TernaryOperator ternaryOperator => FilterEntities(entities, property, ternaryOperator, predicate),
+                    _ => throw new InvalidOperationException()
+                };
+            }
+
+            return Ok(entities);
+        });
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public virtual async Task<IActionResult> CreateEntityAsync(TEntity entity)
+        => await ValidateHeadersAndHandleErrorsAsync(entity, async entity =>
+        {
+            if (InvalidModelState)
+                return ValidationProblem();
+
+            entity.Id = Guid.NewGuid();
+
+            if (_setRelationsFromForeignKeys is not null)
+                await _setRelationsFromForeignKeys(_context, entity);
+
+            _context.Add(entity);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // TODO: log error
+                return Conflict(ErrorMessages.CreateConflict);
+            }
+
+            return Ok(entity);
+        });
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> EditEntityAsync(Guid? id, TEntity entity)
+        => await ValidateHeadersAndHandleErrorsAsync(id, entity, async (id, entity) =>
+        {
+            if (id is null)
+                return NotFound();
+
+            if (id != entity.Id)
+                return BadRequest(ErrorMessages.IdMismatch);
+
+            if (InvalidModelState)
+                return ValidationProblem();
+
+            if (_setRelationsFromForeignKeys is not null)
+                await _setRelationsFromForeignKeys(_context, entity);
+
+            _context.Update(entity);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (await EntityExistsAsync(entity.Id) is false)
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    // TODO: log error
+                    return Conflict(ErrorMessages.EditConflict);
+                }
+            }
+
+            return Ok(entity);
+        });
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> DeleteEntityAsync(Guid? id)
+        => await ValidateHeadersAndHandleErrorsAsync(id, async id =>
+        {
+            if (id is null)
+                return NotFound();
+
+            var entity = await _context.Set<TEntity>().FindAsync(id);
+
+            if (entity is null)
+                return NotFound();
+
+            _context.Remove(entity);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                if (ex is DbUpdateConcurrencyException && await EntityExistsAsync(entity.Id) is false)
+                {
+                    // The most possible scenario for this case is when two users try to delete
+                    // the same entity one right after the other, so it makes sense to return Ok here
+                    // because the user's goal is accomplished - the entity doesn't exist anymore.
+                    return Ok();
+                }
+                else
+                {
+                    return UnprocessableEntity(ErrorMessages.DeleteConstraintViolation);
+                }
+            }
+
+            return Ok();
+        });
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> ExecuteAsync(Func<Task<IActionResult>> function)
+        => await ValidateHeadersAndHandleErrorsAsync(function());
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> ExecuteAsync<T>(T arg, Func<T, Task<IActionResult>> function)
+        => await ValidateHeadersAndHandleErrorsAsync(arg, async arg => await function(arg));
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> ExecuteAsync<T1, T2>(T1 arg1, T2 arg2, Func<T1, T2, Task<IActionResult>> function)
+        => await ValidateHeadersAndHandleErrorsAsync(arg1, arg2, async (arg1, arg2) => await function(arg1, arg2));
+
+    protected void SetRequiredHeaders(IEnumerable<string> fromCollection)
     {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        var entities = await (await _getAllWithFirstLevelRelations(_context))
-            .OrderBy(_orderBySelector)
-            .ToListAsync();
-
-        return Ok(entities);
+        _requiredHeaders.Clear();
+        _requiredHeaders.AddRange(fromCollection);
     }
 
-    /*
-    protected async Task<IActionResult> DoWithErrorHandlingAsync<T>(T arg, Func<T, Task<IActionResult>> action)
+    protected IActionResult ValidateHeadersAndHandleErrors<T>(T arg, Func<T, IActionResult> function)
+        => ValidateHeadersAndHandleErrors(() => function(arg));
+
+    protected IActionResult ValidateHeadersAndHandleErrors<T1, T2>(T1 arg1, T2 arg2, Func<T1, T2, IActionResult> function)
+        => ValidateHeadersAndHandleErrors(() => function(arg1, arg2));
+
+    protected IActionResult ValidateHeadersAndHandleErrors(Func<IActionResult> function)
     {
         if (NoValidHeader(_requiredHeaders))
             return this.Forbidden(ErrorMessages.CorsHeaderMissing);
 
         try
         {
-            return await action(arg);
+            return function();
+        }
+        catch (InvalidConstraintException)
+        {
+            return UnprocessableEntity(ErrorMessages.RelatedEntityDoesNotExist);
+        }
+        catch (DbUpdateException)
+        {
+            // TODO: log error
+            return this.InternalServerError();
+        }
+        catch (InvalidOperationException)
+        {
+            // TODO: log error
+            return this.InternalServerError();
         }
         catch (Exception)
         {
@@ -117,292 +355,43 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
         }
     }
 
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [NonAction]
-    public async Task<IActionResult> GetEntityAsync(Func<TEntity, bool> predicate)
-        => await DoWithErrorHandlingAsync(predicate, async predicate =>
-        {
-            var entity = await _context.Set<TEntity>().FirstOrDefaultAsync(entity => predicate(entity));
+    protected async Task<IActionResult> ValidateHeadersAndHandleErrorsAsync(Func<Task<IActionResult>> function)
+        => await ValidateHeadersAndHandleErrorsAsync(function());
 
-            if (entity is null)
-                return NotFound();
+    protected async Task<IActionResult> ValidateHeadersAndHandleErrorsAsync<T>(T arg, Func<T, Task<IActionResult>> function)
+        => await ValidateHeadersAndHandleErrorsAsync(function(arg));
 
-            return Ok(entity);
-        });
-    */
+    protected async Task<IActionResult> ValidateHeadersAndHandleErrorsAsync<T1, T2>(T1 arg1, T2 arg2, Func<T1, T2, Task<IActionResult>> function)
+        => await ValidateHeadersAndHandleErrorsAsync(function(arg1, arg2));
 
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [NonAction]
-    public async Task<IActionResult> GetEntityAsync(Guid? id)
+    protected async Task<IActionResult> ValidateHeadersAndHandleErrorsAsync(Task<IActionResult> task)
     {
         if (NoValidHeader(_requiredHeaders))
             return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        if (id is null)
-            return NotFound();
-
-        var entities = _context.Set<TEntity>();
-        var entity = await entities.FirstOrDefaultAsync(entity => entity.Id == id);
-
-        if (entity is null)
-            return NotFound();
-
-        return Ok(entity);
-    }
-
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [NonAction]
-    public IActionResult GetEntity(Func<TEntity, bool> predicate)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        var entities = _context.Set<TEntity>().AsQueryable().AsForceParallel();
-        var entity = entities.FirstOrDefault(entity => predicate(entity));
-
-        if (entity is null)
-            return NotFound();
-
-        return Ok(entity);
-    }
-
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [NonAction]
-    public async Task<IActionResult> GetEntityWithRelationsAsync(Guid? id)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        if (id is null)
-            return NotFound();
-
-        var entities = await _getAllWithFirstLevelRelations(_context);
-        var entity = await entities.FirstOrDefaultAsync(entity => entity.Id == id);
-
-        if (entity is null)
-            return NotFound();
-
-        return Ok(entity);
-    }
-
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [NonAction]
-    public async Task<IActionResult> GetEntityWithRelationsAsync(Func<TEntity, bool> predicate)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        var entities = (await _getAllWithFirstLevelRelations(_context)).AsForceParallel();
-        var entity = entities.FirstOrDefault(entity => predicate(entity));
-
-        if (entity is null)
-            return NotFound();
-
-        return Ok(entity);
-    }
-
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [NonAction]
-    public async Task<IActionResult> GetEntitiesWhereAsync(IEnumerable<PropertyPredicate> propertyPredicateCollection)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        var entities = (await _getAllWithFirstLevelRelations(_context))
-            .OrderBy(_orderBySelector)
-            .AsForceParallel();
-
-        bool validationResult = _propertyPredicateValidator.ValidatePropertyPredicateCollection
-        (
-            propertyPredicateCollection: propertyPredicateCollection,
-            predicateTargetType: typeof(TEntity),
-            errorMessage: out string errorMessage
-        );
-
-        if (validationResult is false)
-            return BadRequest(errorMessage);
-
-        foreach (PropertyPredicate predicate in propertyPredicateCollection)
-        {
-            var property = GetProperty(typeof(TEntity), predicate.Property)!;
-            var _operator = _propertyPredicateValidator.GetOperator(predicate.Operator);
-
-            switch (_operator)
-            {
-                case UnaryOperator unaryOperator:
-                    entities = FilterEntities(entities, property, unaryOperator);
-                    break;
-                case BinaryOperator binaryOperator:
-                    entities = FilterEntities(entities, property, binaryOperator, predicate);
-                    break;
-                case TernaryOperator ternaryOperator:
-                    entities = FilterEntities(entities, property, ternaryOperator, predicate);
-                    break;
-                default:
-                    // TODO: log error
-                    return this.InternalServerError();
-            };
-        }
-
-        return Ok(entities);
-    }
-
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [NonAction]
-    public virtual async Task<IActionResult> CreateEntityAsync(TEntity entity)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        if (InvalidModelState)
-            return ValidationProblem();
-
-        entity.Id = Guid.NewGuid();
 
         try
         {
-            if (_setRelationsFromForeignKeys is not null)
-                await _setRelationsFromForeignKeys(_context, entity);
+            return await task;
         }
         catch (InvalidConstraintException)
         {
             return UnprocessableEntity(ErrorMessages.RelatedEntityDoesNotExist);
-        }
-
-        _context.Add(entity);
-
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return Conflict(ErrorMessages.CreateConflict);
         }
         catch (DbUpdateException)
         {
             // TODO: log error
             return this.InternalServerError();
         }
-
-        return Ok(entity);
-    }
-
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [NonAction]
-    public async Task<IActionResult> EditEntityAsync(Guid? id, TEntity entity)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        if (id is null)
-            return NotFound();
-
-        if (id != entity.Id)
-            return BadRequest(ErrorMessages.IdMismatch);
-
-        if (InvalidModelState)
-            return ValidationProblem();
-
-        try
-        {
-            if (_setRelationsFromForeignKeys is not null)
-                await _setRelationsFromForeignKeys(_context, entity);
-        }
-        catch (InvalidConstraintException)
-        {
-            return UnprocessableEntity(ErrorMessages.RelatedEntityDoesNotExist);
-        }
-
-        _context.Update(entity);
-
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (await EntityExistsAsync(entity.Id) is false)
-            {
-                return NotFound();
-            }
-            else
-            {
-                return Conflict(ErrorMessages.EditConflict);
-            }
-        }
-        catch (DbUpdateException)
+        catch (InvalidOperationException)
         {
             // TODO: log error
             return this.InternalServerError();
         }
-
-        return Ok(entity);
-    }
-
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [NonAction]
-    public async Task<IActionResult> DeleteEntityAsync(Guid? id)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        if (id is null)
-            return NotFound();
-
-        var entity = await _context.Set<TEntity>().FindAsync(id);
-
-        if (entity is null)
-            return NotFound();
-
-        _context.Remove(entity);
-
-        try
+        catch (Exception)
         {
-            await _context.SaveChangesAsync();
+            // TODO: log error
+            return this.InternalServerError();
         }
-        catch (DbUpdateException ex)
-        {
-            if (ex is DbUpdateConcurrencyException && await EntityExistsAsync(entity.Id) is false)
-            {
-                // the most possible scenario for this case is when two users try to delete
-                // the same entity one right after the other, so it makes sense to return Ok here
-                // because the user's goal is accomplished - the entity doesn't exist anymore 
-                return Ok();
-            }
-            else
-            {
-                return UnprocessableEntity(ErrorMessages.DeleteConstraintViolation);
-            }
-        }
-
-        return Ok();
-    }
-
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [NonAction]
-    public async Task<IActionResult> DoAsync<T>(T arg, Func<T, Task<IActionResult>> action)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        return await action(arg);
-    }
-
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [NonAction]
-    public async Task<IActionResult> DoAsync<T1, T2>(T1 arg1, T2 arg2, Func<T1, T2, Task<IActionResult>> action)
-    {
-        if (NoValidHeader(_requiredHeaders))
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
-
-        return await action(arg1, arg2);
-    }
-
-    protected void SetRequiredHeaders(IEnumerable<string> fromCollection)
-    {
-        _requiredHeaders.Clear();
-        _requiredHeaders.AddRange(fromCollection);
     }
 
     protected bool NoValidHeader(IEnumerable<string> headers)

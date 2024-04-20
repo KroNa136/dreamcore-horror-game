@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace DreamcoreHorrorGameApiServer.PropertyPredicates;
+﻿namespace DreamcoreHorrorGameApiServer.PropertyPredicates;
 
 public class UnaryPropertyPredicate : PropertyPredicate
 {

@@ -12,8 +12,8 @@ public class LoginData
     }
 
     public bool IsEmptyLogin => string.IsNullOrEmpty(Login);
-    public bool IsNotEmptyLogin => !string.IsNullOrEmpty(Login);
+    public bool IsNotEmptyLogin => string.IsNullOrEmpty(Login) is false;
 
     public bool IsEmptyPassword => string.IsNullOrEmpty(Password);
-    public bool IsNotEmptyPassword => !string.IsNullOrEmpty(Password);
+    public bool IsNotEmptyPassword => string.IsNullOrEmpty(Password) is false;
 }
