@@ -9,8 +9,8 @@
     }
   },
   "profiles": {
-
-    "Dreamcore_Horror_Game_API_Server": {
+    /*
+    "DreamcoreHorrorGameAPIServer": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
@@ -20,19 +20,16 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    /*
-    
-    "Dreamcore_Horror_Game_API_Server": {
+    */
+    "DreamcoreHorrorGameAPIServer": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
-      "launchUrl": "/",
       "applicationUrl": "https://localhost:8008",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Production"
       }
     },
-  */
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,
