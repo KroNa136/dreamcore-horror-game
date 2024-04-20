@@ -2,8 +2,12 @@
 using DreamcoreHorrorGameApiServer.Controllers.Base;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
+using DreamcoreHorrorGameApiServer.Models.PropertyPredicates;
+using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace DreamcoreHorrorGameApiServer.Controllers;
 
@@ -11,23 +15,83 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 [Route(RouteNames.ApiControllerAction)]
 public class AcquiredAbilitiesController : DatabaseEntityController<AcquiredAbility>
 {
-    public AcquiredAbilitiesController(DreamcoreHorrorGameContext context) : base(context) { }
+    public AcquiredAbilitiesController
+    (
+        DreamcoreHorrorGameContext context,
+        IPropertyPredicateValidator propertyPredicateValidator
+    )
+    : base
+    (
+        context: context,
+        propertyPredicateValidator: propertyPredicateValidator,
+        orderBySelector: acquiredAbility => acquiredAbility.AcquirementTimestamp,
+        getAllWithFirstLevelRelationsFunction: async (context) =>
+        {
+            var players = await context.Players.ToListAsync();
+            var abilities = await context.Abilities.ToListAsync();
+
+            var acquiredAbilities = context.AcquiredAbilities.AsQueryable();
+
+            await acquiredAbilities.ForEachAsync(acquiredAbility =>
+            {
+                acquiredAbility.Player.AcquiredAbilities.Clear();
+                acquiredAbility.Ability.AcquiredAbilities.Clear();
+            });
+
+            return acquiredAbilities;
+        },
+        setRelationsFromForeignKeysFunction: async (context, acquiredAbility) =>
+        {
+            var player = await context.Players
+                .FindAsync(acquiredAbility.PlayerId);
+
+            var ability = await context.Abilities
+                .FindAsync(acquiredAbility.AbilityId);
+
+            if (player is null || ability is null)
+                throw new InvalidConstraintException();
+
+            acquiredAbility.Player = player;
+            acquiredAbility.PlayerId = Guid.Empty;
+
+            acquiredAbility.Ability = ability;
+            acquiredAbility.AbilityId = Guid.Empty;
+        }
+    )
+    { }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAll()
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .GetAllAsync();
+            .GetAllEntitiesAsync();
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public override async Task<IActionResult> GetAllWithRelations()
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+            .GetAllEntitiesWithRelationsAsync();
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public override async Task<IActionResult> Get(Guid? id)
         => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
-            .GetAsync(acquiredAbility => acquiredAbility.Id == id);
+            .GetEntityAsync(id);
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
+    public override async Task<IActionResult> GetWithRelations(Guid? id)
+        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
+            .GetEntityWithRelationsAsync(id);
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public override async Task<IActionResult> GetWhere(PropertyPredicate[] predicateCollection)
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+            .GetEntitiesWhereAsync(predicateCollection);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
-    [ValidateAntiForgeryToken]
     public override async Task<IActionResult> Create([Bind(
         nameof(AcquiredAbility.Id),
         nameof(AcquiredAbility.PlayerId),
@@ -35,11 +99,10 @@ public class AcquiredAbilitiesController : DatabaseEntityController<AcquiredAbil
         nameof(AcquiredAbility.AcquirementTimestamp)
     )] AcquiredAbility acquiredAbility)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .CreateAsync(acquiredAbility);
+            .CreateEntityAsync(acquiredAbility);
 
     [HttpPut]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
-    [ValidateAntiForgeryToken]
     public override async Task<IActionResult> Edit(Guid? id, [Bind(
         nameof(AcquiredAbility.Id),
         nameof(AcquiredAbility.PlayerId),
@@ -47,12 +110,11 @@ public class AcquiredAbilitiesController : DatabaseEntityController<AcquiredAbil
         nameof(AcquiredAbility.AcquirementTimestamp)
     )] AcquiredAbility acquiredAbility)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .EditAsync(id, acquiredAbility);
+            .EditEntityAsync(id, acquiredAbility);
 
     [HttpDelete]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
-    [ValidateAntiForgeryToken]
     public override async Task<IActionResult> Delete(Guid? id)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .DeleteAsync(id);
+            .DeleteEntityAsync(id);
 }

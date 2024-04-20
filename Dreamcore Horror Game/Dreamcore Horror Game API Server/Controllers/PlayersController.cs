@@ -3,11 +3,13 @@ using DreamcoreHorrorGameApiServer.Controllers.Base;
 using DreamcoreHorrorGameApiServer.Extensions;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
+using DreamcoreHorrorGameApiServer.Models.PropertyPredicates;
 using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace DreamcoreHorrorGameApiServer.Controllers;
 
@@ -15,32 +17,88 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 [Route(RouteNames.ApiControllerAction)]
 public class PlayersController : UserController<Player>
 {
-    public PlayersController(DreamcoreHorrorGameContext context, ITokenService tokenService, IPasswordHasher<Player> passwordHasher)
-        : base(
-            context: context,
-            tokenService: tokenService,
-            passwordHasher: passwordHasher,
-            getByLoginFunction: async (context, login) => await context.Players
-                .FirstOrDefaultAsync(player => player.Email.Equals(login)),
-            alreadyExistsErrorMessage: ErrorMessages.PlayerAlreadyExists
-        )
+    public PlayersController
+    (
+        DreamcoreHorrorGameContext context,
+        IPropertyPredicateValidator propertyPredicateValidator,
+        ITokenService tokenService,
+        IPasswordHasher<Player> passwordHasher
+    )
+    : base
+    (
+        context: context,
+        propertyPredicateValidator: propertyPredicateValidator,
+        tokenService: tokenService,
+        passwordHasher: passwordHasher,
+        alreadyExistsErrorMessage: ErrorMessages.PlayerAlreadyExists,
+        orderBySelector: player => player.Username,
+        getAllWithFirstLevelRelationsFunction: async (context) =>
+        {
+            var xpLevels = await context.XpLevels.ToListAsync();
+            var acquiredAbilities = await context.AcquiredAbilities.ToListAsync();
+            var collectedArtifacts = await context.CollectedArtifacts.ToListAsync();
+            var playerSessions = await context.PlayerSessions.ToListAsync();
+
+            var players = context.Players.AsQueryable();
+
+            await players.ForEachAsync(player =>
+            {
+                player.XpLevel.Players.Clear();
+            });
+
+            return players;
+        },
+        setRelationsFromForeignKeysFunction: async (context, player) =>
+        {
+            var xpLevel = await context.XpLevels
+                .FindAsync(player.XpLevelId);
+
+            if (xpLevel is null)
+                throw new InvalidConstraintException();
+
+            player.XpLevel = xpLevel;
+            player.XpLevelId = Guid.Empty;
+        },
+        getByLoginFunction: async (context, login) =>
+        {
+            return await context.Players
+                .FirstOrDefaultAsync(player => player.Email.Equals(login));
+        }
+    )
     { }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAll()
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .GetAllAsync();
+            .GetAllEntitiesAsync();
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public override async Task<IActionResult> GetAllWithRelations()
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+            .GetAllEntitiesWithRelationsAsync();
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
     public override async Task<IActionResult> Get(Guid? id)
         => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
-            .GetAsync(player => player.Id == id);
+            .GetEntityAsync(id);
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
+    public override async Task<IActionResult> GetWithRelations(Guid? id)
+        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
+            .GetEntityWithRelationsAsync(id);
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public override async Task<IActionResult> GetWhere(PropertyPredicate[] predicateCollection)
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+            .GetEntitiesWhereAsync(predicateCollection);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
-    [ValidateAntiForgeryToken]
     public override async Task<IActionResult> Create([Bind(
         nameof(Player.Id),
         nameof(Player.Username),
@@ -56,11 +114,10 @@ public class PlayersController : UserController<Player>
         nameof(Player.SpiritEnergyPoints)
     )] Player player)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .CreateAsync(player);
+            .CreateEntityAsync(player);
 
     [HttpPut]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
-    [ValidateAntiForgeryToken]
     public override async Task<IActionResult> Edit(Guid? id, [Bind(
         nameof(Player.Id),
         nameof(Player.Username),
@@ -76,18 +133,16 @@ public class PlayersController : UserController<Player>
         nameof(Player.SpiritEnergyPoints)
     )] Player player)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .EditAsync(id, player);
+            .EditEntityAsync(id, player);
 
     [HttpDelete]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
-    [ValidateAntiForgeryToken]
     public override async Task<IActionResult> Delete(Guid? id)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .DeleteAsync(id);
+            .DeleteEntityAsync(id);
 
     [HttpPost]
     [AllowAnonymous]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Register([Bind(
         nameof(Player.Id),
         nameof(Player.Username),
@@ -103,25 +158,80 @@ public class PlayersController : UserController<Player>
         nameof(Player.SpiritEnergyPoints)
     )] Player player)
         => await RequireHeaders(CorsHeaders.GameClient)
-            .RegisterAsync(player);
+            .DoAsync(player, async player =>
+            {
+                bool playerExists = await _getByLogin(_context, player.Login) is not null;
+
+                if (playerExists)
+                    return UnprocessableEntity(_alreadyExistsErrorMessage);
+
+                if (InvalidModelState)
+                    return ValidationProblem();
+
+                bool noFirstXpLevel = await _context.XpLevels.AnyAsync(xpLevel => xpLevel.Number == 1) is false;
+
+                if (noFirstXpLevel)
+                {
+                    // TODO: log error
+                    return this.InternalServerError();
+                }
+
+                player.Id = Guid.NewGuid();
+                player.Password = _passwordHasher.HashPassword(player, player.Password);
+                player.RefreshToken = _tokenService.CreateRefreshToken(player.Login, player.Role);
+                player.IsOnline = true;
+                player.XpLevelId = _context.XpLevels.First(xpLevel => xpLevel.Number == 1).Id;
+
+                try
+                {
+                    if (_setRelationsFromForeignKeys is not null)
+                        await _setRelationsFromForeignKeys(_context, player);
+                }
+                catch (InvalidConstraintException)
+                {
+                    return UnprocessableEntity(ErrorMessages.RelatedEntityDoesNotExist);
+                }
+
+                _context.Add(player);
+
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    return Conflict(ErrorMessages.PlayerRegisterConflict);
+                }
+                catch (DbUpdateException)
+                {
+                    // TODO: log error
+                    return this.InternalServerError();
+                }
+
+                return Ok(player.RefreshToken);
+            });
 
     [HttpPost]
     [AllowAnonymous]
-    [ValidateAntiForgeryToken]
     public override async Task<IActionResult> Login(LoginData loginData)
         => await RequireHeaders(CorsHeaders.GameClient)
-            .LoginAsync(loginData);
+            .LoginAsUserAsync(loginData);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
-    [ValidateAntiForgeryToken]
+    public override async Task<IActionResult> Logout(Guid? id)
+        => await RequireHeaders(CorsHeaders.GameClient)
+            .LogoutAsUserAsync(id);
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
     public override async Task<IActionResult> ChangePassword(LoginData loginData, string newPassword)
         => await RequireHeaders(CorsHeaders.GameClient)
-            .ChangePasswordAsync(loginData, newPassword);
+            .ChangeUserPasswordAsync(loginData, newPassword);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Refresh, Roles = AuthenticationRoles.Player)]
     public override async Task<IActionResult> GetAccessToken(string email)
         => await RequireHeaders(CorsHeaders.GameClient)
-            .GetAccessTokenAsync(email);
+            .GetAccessTokenForUserAsync(email);
 }

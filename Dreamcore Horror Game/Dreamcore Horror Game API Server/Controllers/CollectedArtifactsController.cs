@@ -2,8 +2,12 @@
 using DreamcoreHorrorGameApiServer.Controllers.Base;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
+using DreamcoreHorrorGameApiServer.Models.PropertyPredicates;
+using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace DreamcoreHorrorGameApiServer.Controllers;
 
@@ -11,23 +15,83 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 [Route(RouteNames.ApiControllerAction)]
 public class CollectedArtifactsController : DatabaseEntityController<CollectedArtifact>
 {
-    public CollectedArtifactsController(DreamcoreHorrorGameContext context) : base(context) { }
+    public CollectedArtifactsController
+    (
+        DreamcoreHorrorGameContext context,
+        IPropertyPredicateValidator propertyPredicateValidator
+    )
+    : base
+    (
+        context: context,
+        propertyPredicateValidator: propertyPredicateValidator,
+        orderBySelector: collectedArtifact => collectedArtifact.CollectionTimestamp,
+        getAllWithFirstLevelRelationsFunction: async (context) =>
+        {
+            var players = await context.Players.ToListAsync();
+            var artifacts = await context.Artifacts.ToListAsync();
+
+            var collectedArtifacts = context.CollectedArtifacts.AsQueryable();
+
+            await collectedArtifacts.ForEachAsync(collectedArtifact =>
+            {
+                collectedArtifact.Player.CollectedArtifacts.Clear();
+                collectedArtifact.Artifact.CollectedArtifacts.Clear();
+            });
+
+            return collectedArtifacts;
+        },
+        setRelationsFromForeignKeysFunction: async (context, collectedArtifact) =>
+        {
+            var player = await context.Players
+                .FindAsync(collectedArtifact.PlayerId);
+
+            var artifact = await context.Artifacts
+                .FindAsync(collectedArtifact.ArtifactId);
+
+            if (player is null || artifact is null)
+                throw new InvalidConstraintException();
+
+            collectedArtifact.Player = player;
+            collectedArtifact.PlayerId = Guid.Empty;
+
+            collectedArtifact.Artifact = artifact;
+            collectedArtifact.ArtifactId = Guid.Empty;
+        }
+    )
+    { }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAll()
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .GetAllAsync();
+            .GetAllEntitiesAsync();
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public override async Task<IActionResult> GetAllWithRelations()
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+            .GetAllEntitiesWithRelationsAsync();
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public override async Task<IActionResult> Get(Guid? id)
         => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
-            .GetAsync(collectedArtifact => collectedArtifact.Id == id);
+            .GetEntityAsync(id);
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
+    public override async Task<IActionResult> GetWithRelations(Guid? id)
+        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
+            .GetEntityWithRelationsAsync(id);
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public override async Task<IActionResult> GetWhere(PropertyPredicate[] predicateCollection)
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+            .GetEntitiesWhereAsync(predicateCollection);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloperOrServer)]
-    [ValidateAntiForgeryToken]
     public override async Task<IActionResult> Create([Bind(
         nameof(CollectedArtifact.Id),
         nameof(CollectedArtifact.PlayerId),
@@ -35,11 +99,10 @@ public class CollectedArtifactsController : DatabaseEntityController<CollectedAr
         nameof(CollectedArtifact.CollectionTimestamp)
     )] CollectedArtifact collectedArtifact)
         => await RequireHeaders(CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
-            .CreateAsync(collectedArtifact);
+            .CreateEntityAsync(collectedArtifact);
 
     [HttpPut]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
-    [ValidateAntiForgeryToken]
     public override async Task<IActionResult> Edit(Guid? id, [Bind(
         nameof(CollectedArtifact.Id),
         nameof(CollectedArtifact.PlayerId),
@@ -47,12 +110,11 @@ public class CollectedArtifactsController : DatabaseEntityController<CollectedAr
         nameof(CollectedArtifact.CollectionTimestamp)
     )] CollectedArtifact collectedArtifact)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .EditAsync(id, collectedArtifact);
+            .EditEntityAsync(id, collectedArtifact);
 
     [HttpDelete]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
-    [ValidateAntiForgeryToken]
     public override async Task<IActionResult> Delete(Guid? id)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .DeleteAsync(id);
+            .DeleteEntityAsync(id);
 }

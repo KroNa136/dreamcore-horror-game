@@ -1,6 +1,9 @@
-﻿namespace DreamcoreHorrorGameApiServer.Models.Database;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace DreamcoreHorrorGameApiServer.Models.Database;
 
 public interface IDatabaseEntity
 {
     public Guid Id { get; set; }
+    public string DisplayName { get; }
 }

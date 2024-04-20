@@ -9,7 +9,7 @@ public static class AccessTokenOptions
 
     public const string Audience = "AccessDreamcoreHorrorGameUser";
 
-    private const string Key = "project_eaglex_9bk24v6qx9rv9tr8N4qSU";
+    private const string Key = "exj7v0YETeNGkep43NaaYRI00Hrqx4yVTFDwoMLBLqtHQpZbvgu60GtZzCEHf18Y";
 
     public const int LifetimeMinutes = 5;
 

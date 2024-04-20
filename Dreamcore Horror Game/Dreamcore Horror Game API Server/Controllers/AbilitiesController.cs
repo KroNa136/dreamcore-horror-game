@@ -2,8 +2,11 @@
 using DreamcoreHorrorGameApiServer.Controllers.Base;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
+using DreamcoreHorrorGameApiServer.Models.PropertyPredicates;
+using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DreamcoreHorrorGameApiServer.Controllers;
 
@@ -11,44 +14,77 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 [Route(RouteNames.ApiControllerAction)]
 public class AbilitiesController : DatabaseEntityController<Ability>
 {
-    public AbilitiesController(DreamcoreHorrorGameContext context) : base(context) { }
+    public AbilitiesController
+    (
+        DreamcoreHorrorGameContext context,
+        IPropertyPredicateValidator propertyPredicateValidator
+    )
+    : base
+    (
+        context: context,
+        propertyPredicateValidator: propertyPredicateValidator,
+        orderBySelector: ability => ability.AssetName,
+        getAllWithFirstLevelRelationsFunction: async (context) =>
+        {
+            var acquiredAbilities = await context.AcquiredAbilities.ToListAsync();
+
+            return context.Abilities.AsQueryable();
+        },
+        setRelationsFromForeignKeysFunction: null
+    )
+    { }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public override async Task<IActionResult> GetAll()
         => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
-            .GetAllAsync();
+            .GetAllEntitiesAsync();
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
+    public override async Task<IActionResult> GetAllWithRelations()
+        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
+            .GetAllEntitiesWithRelationsAsync();
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public override async Task<IActionResult> Get(Guid? id)
         => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
-            .GetAsync(ability => ability.Id == id);
+            .GetEntityAsync(id);
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
+    public override async Task<IActionResult> GetWithRelations(Guid? id)
+        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
+            .GetEntityWithRelationsAsync(id);
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public override async Task<IActionResult> GetWhere(PropertyPredicate[] predicateCollection)
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+            .GetEntitiesWhereAsync(predicateCollection);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
-    [ValidateAntiForgeryToken]
     public override async Task<IActionResult> Create([Bind(
         nameof(Ability.Id),
         nameof(Ability.AssetName)
     )] Ability ability)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .CreateAsync(ability);
+            .CreateEntityAsync(ability);
 
     [HttpPut]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
-    [ValidateAntiForgeryToken]
     public override async Task<IActionResult> Edit(Guid? id, [Bind(
         nameof(Ability.Id),
         nameof(Ability.AssetName)
     )] Ability ability)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .EditAsync(id, ability);
+            .EditEntityAsync(id, ability);
 
     [HttpDelete]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
-    [ValidateAntiForgeryToken]
     public override async Task<IActionResult> Delete(Guid? id)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .DeleteAsync(id);
+            .DeleteEntityAsync(id);
 }

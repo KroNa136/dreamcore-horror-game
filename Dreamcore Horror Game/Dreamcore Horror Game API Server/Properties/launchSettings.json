@@ -9,7 +9,7 @@
     }
   },
   "profiles": {
-    /*
+
     "Dreamcore_Horror_Game_API_Server": {
       "commandName": "Project",
       "dotnetRunMessages": true,
@@ -20,7 +20,8 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    */
+    /*
+    
     "Dreamcore_Horror_Game_API_Server": {
       "commandName": "Project",
       "dotnetRunMessages": true,
@@ -31,6 +32,7 @@
         "ASPNETCORE_ENVIRONMENT": "Production"
       }
     },
+  */
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,

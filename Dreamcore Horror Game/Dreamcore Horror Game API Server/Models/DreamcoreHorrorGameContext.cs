@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
 using DreamcoreHorrorGameApiServer.Models.Database;
+using Microsoft.EntityFrameworkCore;
 
 namespace DreamcoreHorrorGameApiServer.Models;
 
@@ -74,7 +74,9 @@ public partial class DreamcoreHorrorGameContext : DbContext
                 .ValueGeneratedNever()
                 .HasColumnName("id");
             entity.Property(e => e.AbilityId).HasColumnName("ability_id");
-            entity.Property(e => e.AcquirementTimestamp).HasColumnName("acquirement_timestamp");
+            entity.Property(e => e.AcquirementTimestamp)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("acquirement_timestamp");
             entity.Property(e => e.PlayerId).HasColumnName("player_id");
 
             entity.HasOne(d => d.Ability).WithMany(p => p.AcquiredAbilities)
@@ -123,7 +125,9 @@ public partial class DreamcoreHorrorGameContext : DbContext
                 .ValueGeneratedNever()
                 .HasColumnName("id");
             entity.Property(e => e.ArtifactId).HasColumnName("artifact_id");
-            entity.Property(e => e.CollectionTimestamp).HasColumnName("collection_timestamp");
+            entity.Property(e => e.CollectionTimestamp)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("collection_timestamp");
             entity.Property(e => e.PlayerId).HasColumnName("player_id");
 
             entity.HasOne(d => d.Artifact).WithMany(p => p.CollectedArtifacts)
@@ -174,6 +178,7 @@ public partial class DreamcoreHorrorGameContext : DbContext
                 .ValueGeneratedNever()
                 .HasColumnName("id");
             entity.Property(e => e.DeveloperAccessLevelId).HasColumnName("developer_access_level_id");
+            entity.Property(e => e.IsOnline).HasColumnName("is_online");
             entity.Property(e => e.Login)
                 .HasMaxLength(255)
                 .HasColumnName("login");
@@ -240,7 +245,9 @@ public partial class DreamcoreHorrorGameContext : DbContext
             entity.Property(e => e.EndTimestamp).HasColumnName("end_timestamp");
             entity.Property(e => e.GameModeId).HasColumnName("game_mode_id");
             entity.Property(e => e.ServerId).HasColumnName("server_id");
-            entity.Property(e => e.StartTimestamp).HasColumnName("start_timestamp");
+            entity.Property(e => e.StartTimestamp)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("start_timestamp");
 
             entity.HasOne(d => d.GameMode).WithMany(p => p.GameSessions)
                 .HasForeignKey(d => d.GameModeId)
@@ -276,7 +283,9 @@ public partial class DreamcoreHorrorGameContext : DbContext
             entity.Property(e => e.RefreshToken)
                 .HasColumnType("character varying")
                 .HasColumnName("refresh_token");
-            entity.Property(e => e.RegistrationTimestamp).HasColumnName("registration_timestamp");
+            entity.Property(e => e.RegistrationTimestamp)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("registration_timestamp");
             entity.Property(e => e.SpiritEnergyPoints).HasColumnName("spirit_energy_points");
             entity.Property(e => e.Username)
                 .HasMaxLength(255)
@@ -313,7 +322,9 @@ public partial class DreamcoreHorrorGameContext : DbContext
             entity.Property(e => e.PlayedAsCreature).HasColumnName("played_as_creature");
             entity.Property(e => e.PlayerId).HasColumnName("player_id");
             entity.Property(e => e.SelfReviveCount).HasColumnName("self_revive_count");
-            entity.Property(e => e.StartTimestamp).HasColumnName("start_timestamp");
+            entity.Property(e => e.StartTimestamp)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("start_timestamp");
             entity.Property(e => e.TimeAlive).HasColumnName("time_alive");
             entity.Property(e => e.UsedCreatureId).HasColumnName("used_creature_id");
 
