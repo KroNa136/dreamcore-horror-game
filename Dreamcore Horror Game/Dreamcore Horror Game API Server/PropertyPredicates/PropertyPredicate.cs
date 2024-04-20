@@ -1,7 +1,7 @@
 ﻿using DreamcoreHorrorGameApiServer.ConstantValues;
 using System.Text.Json.Serialization;
 
-namespace DreamcoreHorrorGameApiServer.Models.PropertyPredicates;
+namespace DreamcoreHorrorGameApiServer.PropertyPredicates;
 
 [JsonPolymorphic(UnknownDerivedTypeHandling = JsonUnknownDerivedTypeHandling.FallBackToNearestAncestor)]
 [JsonDerivedType(derivedType: typeof(PropertyPredicate), typeDiscriminator: PropertyPredicateTypes.Base)]

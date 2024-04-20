@@ -1,4 +1,4 @@
-﻿using DreamcoreHorrorGameApiServer.Models.PropertyPredicates;
+﻿using DreamcoreHorrorGameApiServer.PropertyPredicates;
 
 namespace DreamcoreHorrorGameApiServer.Services;
 
