@@ -3,7 +3,7 @@ using DreamcoreHorrorGameApiServer.Controllers.Base;
 using DreamcoreHorrorGameApiServer.Extensions;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
-using DreamcoreHorrorGameApiServer.Models.PropertyPredicates;
+using DreamcoreHorrorGameApiServer.PropertyPredicates;
 using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

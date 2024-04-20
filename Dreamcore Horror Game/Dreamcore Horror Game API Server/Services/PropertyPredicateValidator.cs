@@ -1,6 +1,6 @@
 ﻿using DreamcoreHorrorGameApiServer.ConstantValues;
 using DreamcoreHorrorGameApiServer.Extensions;
-using DreamcoreHorrorGameApiServer.Models.PropertyPredicates;
+using DreamcoreHorrorGameApiServer.PropertyPredicates;
 using System.Reflection;
 using System.Text.Json;
 

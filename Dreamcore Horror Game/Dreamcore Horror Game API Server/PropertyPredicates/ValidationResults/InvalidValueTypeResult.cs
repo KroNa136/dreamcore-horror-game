@@ -1,4 +1,4 @@
-﻿namespace DreamcoreHorrorGameApiServer.Models.PropertyPredicates;
+﻿namespace DreamcoreHorrorGameApiServer.PropertyPredicates;
 
 public class InvalidValueTypeResult : PropertyPredicateValidationResult
 {
