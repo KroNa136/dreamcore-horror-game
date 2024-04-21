@@ -27,7 +27,11 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     protected readonly List<string> _requiredHeaders;
 
     protected readonly System.Linq.Expressions.Expression<Func<TEntity, object?>> _orderBySelector;
+
+    // This function may contain logic that manually clears unnecessary references in IQueryables to save traffic
+    // and data loading times. DO NOT SAVE any data returned by this function to the database!
     protected readonly Func<DreamcoreHorrorGameContext, Task<IQueryable<TEntity>>> _getAllWithFirstLevelRelations;
+
     protected readonly Func<DreamcoreHorrorGameContext, TEntity, Task>? _setRelationsFromForeignKeys;
 
     //private readonly Func<DreamcoreHorrorGameContext, DatabaseController<TEntity>> _derivedClassConstructor;

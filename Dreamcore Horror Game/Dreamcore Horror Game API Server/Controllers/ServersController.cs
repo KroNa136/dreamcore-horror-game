@@ -157,7 +157,7 @@ public class ServersController : UserController<Server>
                     return UnprocessableEntity(ErrorMessages.UnacceptableParameterValue);
 
                 var server = await GetServersWithEnoughFreeSlots(slots)
-                    .FirstOrDefaultAsync(async server => await HasWaitingSession(server, slots));
+                    .FirstOrDefaultWithAsyncPredicate(async server => await HasWaitingSession(server, slots));
 
                 return Ok(server?.IpAddress);
             });
