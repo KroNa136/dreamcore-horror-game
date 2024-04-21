@@ -8,7 +8,7 @@ public static class IEnumerableExtensions
     public static bool IsNotEmpty<TSource>(this IEnumerable<TSource> source)
         => source.Any();
 
-    public static async Task<TSource?> FirstOrDefaultAsync<TSource>(this ParallelQuery<TSource> source, Func<TSource, Task<bool>> predicateTask)
+    public static async Task<TSource?> FirstOrDefaultWithAsyncPredicate<TSource>(this ParallelQuery<TSource> source, Func<TSource, Task<bool>> predicateTask)
     {
         if (source is null)
             throw new ArgumentNullException(nameof(source));
