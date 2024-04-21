@@ -59,11 +59,11 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to.
     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
 
-    public abstract Task<IActionResult> GetAll();
-    public abstract Task<IActionResult> GetAllWithRelations();
+    public abstract Task<IActionResult> GetAll(int page, int showBy);
+    public abstract Task<IActionResult> GetAllWithRelations(int page, int showBy);
     public abstract Task<IActionResult> Get(Guid? id);
     public abstract Task<IActionResult> GetWithRelations(Guid? id);
-    public abstract Task<IActionResult> GetWhere(PropertyPredicate[] propertyPredicateCollection);
+    public abstract Task<IActionResult> GetWhere(PropertyPredicate[] propertyPredicateCollection, int page, int showBy);
     public abstract Task<IActionResult> Create(TEntity entity);
     public abstract Task<IActionResult> Edit(Guid? id, TEntity entity);
     public abstract Task<IActionResult> Delete(Guid? id);
@@ -78,11 +78,12 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
-    public async Task<IActionResult> GetAllEntitiesAsync()
+    public async Task<IActionResult> GetAllEntitiesAsync(int page, int showBy)
         => await ValidateHeadersAndHandleErrorsAsync(async () =>
         {
             var entities = await _context.Set<TEntity>()
                 .OrderBy(_orderBySelector)
+                .Page(page, showBy)
                 .ToListAsync();
 
             return Ok(entities);
@@ -90,11 +91,12 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
-    public async Task<IActionResult> GetAllEntitiesWithRelationsAsync()
+    public async Task<IActionResult> GetAllEntitiesWithRelationsAsync(int page, int showBy)
         => await ValidateHeadersAndHandleErrorsAsync(async () =>
         {
             var entities = await (await _getAllWithFirstLevelRelations(_context))
                 .OrderBy(_orderBySelector)
+                .Page(page, showBy)
                 .ToListAsync();
 
             return Ok(entities);
@@ -164,11 +166,10 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
-    public async Task<IActionResult> GetEntitiesWhereAsync(IEnumerable<PropertyPredicate> propertyPredicateCollection)
+    public async Task<IActionResult> GetEntitiesWhereAsync(IEnumerable<PropertyPredicate> propertyPredicateCollection, int page, int showBy)
         => await ValidateHeadersAndHandleErrorsAsync(propertyPredicateCollection, async propertyPredicateCollection =>
         {
             var entities = (await _getAllWithFirstLevelRelations(_context))
-                .OrderBy(_orderBySelector)
                 .AsForceParallel();
 
             bool validationResult = _propertyPredicateValidator.ValidatePropertyPredicateCollection
@@ -195,7 +196,12 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
                 };
             }
 
-            return Ok(entities);
+            var result = entities
+                .AsEnumerable()
+                .OrderBy(_orderBySelector.Compile())
+                .Page(page, showBy);
+
+            return Ok(result);
         });
 
     [ApiExplorerSettings(IgnoreApi = true)]
