@@ -55,15 +55,15 @@ public class CreaturesController : DatabaseEntityController<Creature>
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
-    public override async Task<IActionResult> GetAll()
+    public override async Task<IActionResult> GetAll(int page = 0, int showBy = 0)
         => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
-            .GetAllEntitiesAsync();
+            .GetAllEntitiesAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
-    public override async Task<IActionResult> GetAllWithRelations()
+    public override async Task<IActionResult> GetAllWithRelations(int page = 0, int showBy = 0)
         => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
-            .GetAllEntitiesWithRelationsAsync();
+            .GetAllEntitiesWithRelationsAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
@@ -79,9 +79,9 @@ public class CreaturesController : DatabaseEntityController<Creature>
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
-    public override async Task<IActionResult> GetWhere(PropertyPredicate[] predicateCollection)
+    public override async Task<IActionResult> GetWhere(PropertyPredicate[] predicateCollection, int page = 0, int showBy = 0)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .GetEntitiesWhereAsync(predicateCollection);
+            .GetEntitiesWhereAsync(predicateCollection, page, showBy);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.MediumOrFullAccessDeveloper)]
