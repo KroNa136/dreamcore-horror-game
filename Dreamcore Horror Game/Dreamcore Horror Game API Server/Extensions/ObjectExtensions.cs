@@ -7,7 +7,7 @@ namespace DreamcoreHorrorGameApiServer.Extensions;
 
 public static class ObjectExtensions
 {
-    private static readonly Dictionary<Type, Func<string, object>> s_supportedTypes = new()
+    private static readonly Dictionary<Type, Func<string, object>> s_supportedParseTypes = new()
     {
         { typeof(bool), value => bool.Parse(value) },
         { typeof(bool?), value => bool.Parse(value) },
@@ -109,7 +109,7 @@ public static class ObjectExtensions
         string? stringValue = value.ToString();
 
         return stringValue is null ? Convert.ChangeType(value, targetType)
-            : s_supportedTypes.TryGetValue(targetType, out var convertFunction) ? convertFunction(stringValue)
+            : s_supportedParseTypes.TryGetValue(targetType, out var convertFunction) ? convertFunction(stringValue)
             : targetType.GetInterfaces().Contains(typeof(IDatabaseEntity)) ? ParseFromJson(stringValue, targetType)
             : throw new NotSupportedException();
     }

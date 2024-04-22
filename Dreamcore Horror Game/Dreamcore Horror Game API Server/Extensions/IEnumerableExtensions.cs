@@ -8,7 +8,7 @@ public static class IEnumerableExtensions
     public static bool IsNotEmpty<TSource>(this IEnumerable<TSource> source)
         => source.Any();
 
-    public static IEnumerable<TSource> Page<TSource>(this IEnumerable<TSource> source, int page, int showBy)
+    public static IEnumerable<TSource> Paginate<TSource>(this IEnumerable<TSource> source, int page, int showBy)
         => page is > 0 && showBy is > 0
             ? source.Skip(showBy * (page - 1)).Take(showBy)
             : source;
