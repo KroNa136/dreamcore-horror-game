@@ -83,7 +83,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
         {
             var entities = await _context.Set<TEntity>()
                 .OrderBy(_orderBySelector)
-                .Page(page, showBy)
+                .Paginate(page, showBy)
                 .ToListAsync();
 
             return Ok(entities);
@@ -96,7 +96,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
         {
             var entities = await (await _getAllWithFirstLevelRelations(_context))
                 .OrderBy(_orderBySelector)
-                .Page(page, showBy)
+                .Paginate(page, showBy)
                 .ToListAsync();
 
             return Ok(entities);
@@ -110,8 +110,8 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             if (id is null)
                 return NotFound();
 
-            var entities = _context.Set<TEntity>();
-            var entity = await entities.FirstOrDefaultAsync(entity => entity.Id == id);
+            var entity = await _context.Set<TEntity>()
+                .FirstOrDefaultAsync(entity => entity.Id == id);
 
             if (entity is null)
                 return NotFound();
@@ -124,8 +124,10 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     public IActionResult GetEntity(Func<TEntity, bool> predicate)
         => ValidateHeadersAndHandleErrors(predicate, predicate =>
         {
-            var entities = _context.Set<TEntity>().AsQueryable().AsForceParallel();
-            var entity = entities.FirstOrDefault(entity => predicate(entity));
+            var entity = _context.Set<TEntity>()
+                .AsQueryable()
+                .AsForceParallel()
+                .FirstOrDefault(entity => predicate(entity));
 
             if (entity is null)
                 return NotFound();
@@ -141,8 +143,8 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             if (id is null)
                 return NotFound();
 
-            var entities = await _getAllWithFirstLevelRelations(_context);
-            var entity = await entities.FirstOrDefaultAsync(entity => entity.Id == id);
+            var entity = await (await _getAllWithFirstLevelRelations(_context))
+                .FirstOrDefaultAsync(entity => entity.Id == id);
 
             if (entity is null)
                 return NotFound();
@@ -155,8 +157,9 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     public async Task<IActionResult> GetEntityWithRelationsAsync(Func<TEntity, bool> predicate)
         => await ValidateHeadersAndHandleErrorsAsync(predicate, async predicate =>
         {
-            var entities = (await _getAllWithFirstLevelRelations(_context)).AsForceParallel();
-            var entity = entities.FirstOrDefault(entity => predicate(entity));
+            var entity = (await _getAllWithFirstLevelRelations(_context))
+                .AsForceParallel()
+                .FirstOrDefault(entity => predicate(entity));
 
             if (entity is null)
                 return NotFound();
@@ -196,12 +199,12 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
                 };
             }
 
-            var result = entities
+            var orderedAndPaginatedEntities = entities
                 .AsEnumerable()
                 .OrderBy(_orderBySelector.Compile())
-                .Page(page, showBy);
+                .Paginate(page, showBy);
 
-            return Ok(result);
+            return Ok(orderedAndPaginatedEntities);
         });
 
     [ApiExplorerSettings(IgnoreApi = true)]
