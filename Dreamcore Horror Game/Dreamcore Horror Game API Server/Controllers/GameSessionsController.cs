@@ -24,7 +24,7 @@ public class GameSessionsController : DatabaseEntityController<GameSession>
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
-        orderBySelector: gameSession => gameSession.StartTimestamp,
+        orderBySelectorExpression: gameSession => gameSession.StartTimestamp,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var servers = await context.Servers.ToListAsync();

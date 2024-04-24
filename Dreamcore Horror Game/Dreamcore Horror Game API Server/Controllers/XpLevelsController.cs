@@ -23,7 +23,7 @@ public class XpLevelsController : DatabaseEntityController<XpLevel>
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
-        orderBySelector: xpLevel => xpLevel.Number,
+        orderBySelectorExpression: xpLevel => xpLevel.Number,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var creatures = await context.Creatures.ToListAsync();

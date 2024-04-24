@@ -24,7 +24,7 @@ public class ArtifactsController : DatabaseEntityController<Artifact>
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
-        orderBySelector: artifact => artifact.AssetName,
+        orderBySelectorExpression: artifact => artifact.AssetName,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var rarityLevels = await context.RarityLevels.ToListAsync();

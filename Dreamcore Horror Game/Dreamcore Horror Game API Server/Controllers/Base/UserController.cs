@@ -6,6 +6,7 @@ using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace DreamcoreHorrorGameApiServer.Controllers.Base;
 
@@ -26,7 +27,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
         ITokenService tokenService,
         IPasswordHasher<TUser> passwordHasher,
         string alreadyExistsErrorMessage,
-        System.Linq.Expressions.Expression<Func<TUser, object?>> orderBySelector,
+        Expression<Func<TUser, object?>> orderBySelectorExpression,
         Func<DreamcoreHorrorGameContext, Task<IQueryable<TUser>>> getAllWithFirstLevelRelationsFunction,
         Func<DreamcoreHorrorGameContext, TUser, Task>? setRelationsFromForeignKeysFunction,
         Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> getByLoginFunction
@@ -35,7 +36,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
     (
         context,
         propertyPredicateValidator,
-        orderBySelector,
+        orderBySelectorExpression,
         getAllWithFirstLevelRelationsFunction,
         setRelationsFromForeignKeysFunction
     )
@@ -140,7 +141,8 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
             if (id is null)
                 return NotFound();
 
-            var user = await _context.Set<TUser>().FindAsync(id);
+            var user = await _context.Set<TUser>()
+                .FirstOrDefaultAsync(entity => entity.Id == id);
 
             if (user is null)
                 return NotFound();

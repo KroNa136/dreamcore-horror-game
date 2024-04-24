@@ -31,7 +31,7 @@ public class PlayersController : UserController<Player>
         tokenService: tokenService,
         passwordHasher: passwordHasher,
         alreadyExistsErrorMessage: ErrorMessages.PlayerAlreadyExists,
-        orderBySelector: player => player.Username,
+        orderBySelectorExpression: player => player.Username,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var xpLevels = await context.XpLevels.ToListAsync();

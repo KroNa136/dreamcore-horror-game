@@ -31,7 +31,7 @@ public class DevelopersController : UserController<Developer>
         tokenService: tokenService,
         passwordHasher: passwordHasher,
         alreadyExistsErrorMessage: ErrorMessages.DeveloperAlreadyExists,
-        orderBySelector: developer => developer.Login,
+        orderBySelectorExpression: developer => developer.Login,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var developerAccessLevels = await context.DeveloperAccessLevels.ToListAsync();
