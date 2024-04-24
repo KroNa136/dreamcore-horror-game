@@ -41,7 +41,7 @@ public class ServersController : UserController<Server>
         tokenService: tokenService,
         passwordHasher: passwordHasher,
         alreadyExistsErrorMessage: ErrorMessages.ServerAlreadyExists,
-        orderBySelector: server => server.IpAddress,
+        orderBySelectorExpression: server => server.IpAddress,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var gameSessions = await context.GameSessions.ToListAsync();

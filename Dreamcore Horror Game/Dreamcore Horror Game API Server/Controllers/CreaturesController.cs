@@ -24,7 +24,7 @@ public class CreaturesController : DatabaseEntityController<Creature>
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
-        orderBySelector: creature => creature.AssetName,
+        orderBySelectorExpression: creature => creature.AssetName,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var xpLevels = await context.XpLevels.ToListAsync();

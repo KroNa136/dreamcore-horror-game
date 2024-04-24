@@ -23,7 +23,7 @@ public class RarityLevelsController : DatabaseEntityController<RarityLevel>
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
-        orderBySelector: rarityLevel => rarityLevel.Probability,
+        orderBySelectorExpression: rarityLevel => rarityLevel.Probability,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var artifacts = await context.Artifacts.ToListAsync();

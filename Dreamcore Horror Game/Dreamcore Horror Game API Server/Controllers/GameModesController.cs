@@ -23,7 +23,7 @@ public class GameModesController : DatabaseEntityController<GameMode>
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
-        orderBySelector: gameMode => gameMode.AssetName,
+        orderBySelectorExpression: gameMode => gameMode.AssetName,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var gameSessions = await context.GameSessions.ToListAsync();

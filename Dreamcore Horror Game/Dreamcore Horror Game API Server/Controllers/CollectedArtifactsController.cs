@@ -24,7 +24,7 @@ public class CollectedArtifactsController : DatabaseEntityController<CollectedAr
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
-        orderBySelector: collectedArtifact => collectedArtifact.CollectionTimestamp,
+        orderBySelectorExpression: collectedArtifact => collectedArtifact.CollectionTimestamp,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var players = await context.Players.ToListAsync();

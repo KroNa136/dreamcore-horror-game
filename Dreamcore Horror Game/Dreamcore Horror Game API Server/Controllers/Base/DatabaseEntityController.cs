@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Net.Http.Headers;
 using System.Data;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace DreamcoreHorrorGameApiServer.Controllers.Base;
@@ -16,8 +17,10 @@ namespace DreamcoreHorrorGameApiServer.Controllers.Base;
 public abstract class DatabaseEntityController<TEntity> : ControllerBase
     where TEntity : class, IDatabaseEntity
 {
-    protected string AuthorizationToken => HttpContext.Request.Headers[HeaderNames.Authorization]
-        .ToString().Replace("Bearer ", string.Empty);
+    protected string AuthorizationToken
+        => HttpContext.Request.Headers[HeaderNames.Authorization]
+            .ToString()
+            .Replace("Bearer ", string.Empty);
 
     protected bool InvalidModelState => ModelState.IsValid is false;
 
@@ -26,7 +29,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
 
     protected readonly List<string> _requiredHeaders;
 
-    protected readonly System.Linq.Expressions.Expression<Func<TEntity, object?>> _orderBySelector;
+    protected readonly Expression<Func<TEntity, object?>> _orderBySelectorExpression;
 
     // This function may contain logic that manually clears unnecessary references in IQueryables to save traffic
     // and data loading times. DO NOT SAVE any data returned by this function to the database!
@@ -40,7 +43,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     (
         DreamcoreHorrorGameContext context,
         IPropertyPredicateValidator propertyPredicateValidator,
-        System.Linq.Expressions.Expression<Func<TEntity, object?>> orderBySelector,
+        Expression<Func<TEntity, object?>> orderBySelectorExpression,
         Func<DreamcoreHorrorGameContext, Task<IQueryable<TEntity>>> getAllWithFirstLevelRelationsFunction,
         Func<DreamcoreHorrorGameContext, TEntity, Task>? setRelationsFromForeignKeysFunction
     )
@@ -50,7 +53,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
 
         _requiredHeaders = new List<string>();
 
-        _orderBySelector = orderBySelector;
+        _orderBySelectorExpression = orderBySelectorExpression;
         _getAllWithFirstLevelRelations = getAllWithFirstLevelRelationsFunction;
         _setRelationsFromForeignKeys = setRelationsFromForeignKeysFunction;
     }
@@ -82,7 +85,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
         => await ValidateHeadersAndHandleErrorsAsync(async () =>
         {
             var entities = await _context.Set<TEntity>()
-                .OrderBy(_orderBySelector)
+                .OrderBy(_orderBySelectorExpression)
                 .Paginate(page, showBy)
                 .ToListAsync();
 
@@ -95,7 +98,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
         => await ValidateHeadersAndHandleErrorsAsync(async () =>
         {
             var entities = await (await _getAllWithFirstLevelRelations(_context))
-                .OrderBy(_orderBySelector)
+                .OrderBy(_orderBySelectorExpression)
                 .Paginate(page, showBy)
                 .ToListAsync();
 
@@ -169,7 +172,12 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
-    public async Task<IActionResult> GetEntitiesWhereAsync(IEnumerable<PropertyPredicate> propertyPredicateCollection, int page, int showBy)
+    public async Task<IActionResult> GetEntitiesWhereAsync
+    (
+        IEnumerable<PropertyPredicate> propertyPredicateCollection,
+        int page,
+        int showBy
+    )
         => await ValidateHeadersAndHandleErrorsAsync(propertyPredicateCollection, async propertyPredicateCollection =>
         {
             var entities = (await _getAllWithFirstLevelRelations(_context))
@@ -201,7 +209,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
 
             var orderedAndPaginatedEntities = entities
                 .AsEnumerable()
-                .OrderBy(_orderBySelector.Compile())
+                .OrderBy(_orderBySelectorExpression.Compile())
                 .Paginate(page, showBy);
 
             return Ok(orderedAndPaginatedEntities);
@@ -282,7 +290,8 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             if (id is null)
                 return NotFound();
 
-            var entity = await _context.Set<TEntity>().FindAsync(id);
+            var entity = await _context.Set<TEntity>()
+                .FirstOrDefaultAsync(entity => entity.Id == id);
 
             if (entity is null)
                 return NotFound();
@@ -295,17 +304,18 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             }
             catch (DbUpdateException ex)
             {
-                if (ex is DbUpdateConcurrencyException && await EntityExistsAsync(entity.Id) is false)
-                {
-                    // The most possible scenario for this case is when two users try to delete
-                    // the same entity one right after the other, so it makes sense to return Ok here
-                    // because the user's goal is accomplished - the entity doesn't exist anymore.
-                    return Ok();
-                }
-                else
-                {
+                if (ex is not DbUpdateConcurrencyException)
+                    // TODO: think of a way to check if this is a constraint violation or some other database failure
+                    //       because Npgsql unfortunately does not provide any clarification in its errors :(
                     return UnprocessableEntity(ErrorMessages.DeleteConstraintViolation);
-                }
+
+                if (await EntityExistsAsync(entity.Id) is false)
+                    // The most possible scenario for this case is when two users try to delete the same entity
+                    // one right after the other, so it makes sense to return Ok here because the user's goal
+                    // is accomplished - the entity doesn't exist anymore.
+                    return Ok();
+
+                return Conflict(ErrorMessages.DeleteConflict);
             }
 
             return Ok();
@@ -419,7 +429,8 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
 
         foreach (var header in headers)
         {
-            if (requestHeaders.ContainsKey(header) && requestHeaders[header].Equals(CorsHeaders.RequiredHeaderValue))
+            if (requestHeaders.ContainsKey(header)
+                && requestHeaders[header].Equals(CorsHeaders.RequiredHeaderValue))
                 return false;
         }
 
