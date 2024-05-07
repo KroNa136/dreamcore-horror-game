@@ -10,8 +10,7 @@ public static class JsonOptionsExtensions
         options.JsonSerializerOptions.AllowTrailingCommas = fromOptions.AllowTrailingCommas;
 
         if (fromOptions.Converters is not null && fromOptions.Converters.IsNotEmpty())
-            foreach (var converter in fromOptions.Converters)
-                options.JsonSerializerOptions.Converters.Add(converter);
+            fromOptions.Converters.ForEach(options.JsonSerializerOptions.Converters.Add);
 
         options.JsonSerializerOptions.DefaultBufferSize = fromOptions.DefaultBufferSize;
         options.JsonSerializerOptions.DefaultIgnoreCondition = fromOptions.DefaultIgnoreCondition;

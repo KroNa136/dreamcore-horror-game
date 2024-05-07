@@ -24,6 +24,7 @@ public class AbilitiesController : DatabaseEntityController<Ability>
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
         orderBySelectorExpression: ability => ability.AssetName,
+        orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var acquiredAbilities = await context.AcquiredAbilities.ToListAsync();

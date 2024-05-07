@@ -42,17 +42,13 @@ public static class ObjectExtensions
     };
 
     public static TResult ParseToType<TResult>(this object value)
-    {
-        object? obj = Parse(value, typeof(TResult));
-        return (TResult) obj;
-    }
+        => (TResult) Parse(value, typeof(TResult));
 
     public static TResult? ParseToTypeOrDefault<TResult>(this object value)
     {
         try
         {
-            object? obj = Parse(value, typeof(TResult));
-            return (TResult) obj;
+            return (TResult) Parse(value, typeof(TResult));
         }
         catch (Exception ex) when (ex is InvalidCastException or FormatException or OverflowException or JsonException)
         {
@@ -64,8 +60,7 @@ public static class ObjectExtensions
     {
         try
         {
-            object? obj = Parse(value, typeof(TResult));
-            objOfType = (TResult) obj;
+            objOfType = (TResult) Parse(value, typeof(TResult));
             return true;
         }
         catch (Exception ex) when (ex is InvalidCastException or FormatException or OverflowException or JsonException)
@@ -74,6 +69,12 @@ public static class ObjectExtensions
             return false;
         }
     }
+
+    public static bool CanBeParsedToType<TResult>(this object value)
+        => value.ParseToTypeOrDefault<TResult>() is not null;
+
+    public static bool CannotBeParsedToType<TResult>(this object value)
+        => value.ParseToTypeOrDefault<TResult>() is null;
 
     public static object? ParseToObjectOfType(this object value, Type type)
         => Parse(value, type);
@@ -104,13 +105,22 @@ public static class ObjectExtensions
         }
     }
 
+    public static bool CanBeParsedToType(this object value, Type type)
+        => value.ParseToObjectOfTypeOrDefault(type) is not null;
+
+    public static bool CannotBeParsedToType(this object value, Type type)
+        => value.ParseToObjectOfTypeOrDefault(type) is null;
+
     private static object Parse(object value, Type targetType)
     {
         string? stringValue = value.ToString();
 
-        return stringValue is null ? Convert.ChangeType(value, targetType)
-            : s_supportedParseTypes.TryGetValue(targetType, out var convertFunction) ? convertFunction(stringValue)
-            : targetType.GetInterfaces().Contains(typeof(IDatabaseEntity)) ? ParseFromJson(stringValue, targetType)
+        return stringValue is null
+            ? Convert.ChangeType(value, targetType)
+            : s_supportedParseTypes.TryGetValue(targetType, out var parse)
+            ? parse(stringValue)
+            : targetType.GetInterfaces().Contains(typeof(IDatabaseEntity))
+            ? ParseFromJson(stringValue, targetType)
             : throw new NotSupportedException();
     }
 

@@ -32,6 +32,7 @@ public class DevelopersController : UserController<Developer>
         passwordHasher: passwordHasher,
         alreadyExistsErrorMessage: ErrorMessages.DeveloperAlreadyExists,
         orderBySelectorExpression: developer => developer.Login,
+        orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var developerAccessLevels = await context.DeveloperAccessLevels.ToListAsync();

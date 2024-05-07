@@ -24,6 +24,7 @@ public class DeveloperAccessLevelsController : DatabaseEntityController<Develope
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
         orderBySelectorExpression: developerAccessLevel => developerAccessLevel.Name,
+        orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var developers = await context.Developers.ToListAsync();

@@ -25,6 +25,7 @@ public class AcquiredAbilitiesController : DatabaseEntityController<AcquiredAbil
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
         orderBySelectorExpression: acquiredAbility => acquiredAbility.AcquirementTimestamp,
+        orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var players = await context.Players.ToListAsync();
