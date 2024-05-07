@@ -1,12 +1,4 @@
 ﻿namespace DreamcoreHorrorGameApiServer.PropertyPredicates;
 
-public class BinaryPropertyPredicate : PropertyPredicate
-{
-    public object? Value { get; set; } = null;
-
-    public BinaryPropertyPredicate(string property, string Operator, object? value)
-        : base(property, Operator)
-    {
-        Value = value;
-    }
-}
+public record BinaryPropertyPredicate(string Property, string Operator, object? Value)
+    : PropertyPredicate(Property, Operator);

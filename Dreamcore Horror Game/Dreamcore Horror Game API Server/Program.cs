@@ -17,31 +17,13 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        string testToken = new TokenService()
-            .CreateAccessToken("test_login", AuthenticationRoles.FullAccessDeveloper);
-
-        Console.WriteLine($"TOKEN:\n{testToken}\n");
-
-        WebApplicationBuilder builder = CreateWebApplicationBuilder(args);
-        WebApplication app = builder.CreateWebApplication();
-
-        app.Run();
-    }
-
-    private static WebApplicationBuilder CreateWebApplicationBuilder(string[] args)
-    {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-
-        builder.AddControllersWithJsonOptions()
-            .AddSwaggerGenerator()
-            .AddEndpointsApiExplorer()
-            .AddProjectDependencies()
-            .AddCorsPolicies()
-            .AddAuthentication();
+        PrintTestAccessToken();
 
         try
         {
-            builder.AddDatabaseContext();
+            ConfiguredWebApplicationBuilder(args)
+                .ConfiguredWebApplication()
+                .Run();
         }
         catch (SettingsPropertyNotFoundException)
         {
@@ -49,14 +31,47 @@ public class Program
             Console.WriteLine("Database connection string not found in the configuration.");
             Environment.Exit(-1);
         }
-
-        return builder;
     }
+
+    private static void PrintTestAccessToken() => Console.WriteLine
+    (
+        $"TOKEN:\n{ new TokenService().CreateAccessToken("test_login", AuthenticationRoles.FullAccessDeveloper) }\n"
+    );
+
+    private static WebApplicationBuilder ConfiguredWebApplicationBuilder(string[] args)
+        => WebApplication.CreateBuilder(args)
+            .WithControllersAndJsonOptions()
+            .WithSwaggerGenerator()
+            .WithEndpointsApiExplorer()
+            .WithProjectDependencies()
+            .WithCorsPolicies()
+            .WithAuthentication()
+            .WithDatabaseContext();
 }
 
 file static class WebApplicationBuilderExtensions
 {
-    internal static WebApplicationBuilder AddControllersWithJsonOptions(this WebApplicationBuilder builder)
+    public static WebApplication ConfiguredWebApplication(this WebApplicationBuilder builder)
+    {
+        WebApplication app = builder.Build();
+
+        app.UseHttpsRedirection()
+            .UseCors(CorsPolicyNames.Default)
+            .UseAuthentication()
+            .UseAuthorization();
+
+        if (app.Environment.IsEnvironment(Environments.Development))
+        {
+            app.UseSwagger()
+                .UseSwaggerUI();
+        }
+
+        app.MapControllers();
+
+        return app;
+    }
+
+    public static WebApplicationBuilder WithControllersAndJsonOptions(this WebApplicationBuilder builder)
     {
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
@@ -67,19 +82,19 @@ file static class WebApplicationBuilderExtensions
         return builder;
     }
 
-    internal static WebApplicationBuilder AddSwaggerGenerator(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder WithSwaggerGenerator(this WebApplicationBuilder builder)
     {
         builder.Services.AddSwaggerGen();
         return builder;
     }
 
-    internal static WebApplicationBuilder AddEndpointsApiExplorer(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder WithEndpointsApiExplorer(this WebApplicationBuilder builder)
     {
         builder.Services.AddEndpointsApiExplorer();
         return builder;
     }
 
-    internal static WebApplicationBuilder AddProjectDependencies(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder WithProjectDependencies(this WebApplicationBuilder builder)
     {
         builder.Services
             .AddSingleton<IJsonSerializerOptionsProvider, JsonSerializerOptionsProvider>()
@@ -93,7 +108,7 @@ file static class WebApplicationBuilderExtensions
         return builder;
     }
 
-    internal static WebApplicationBuilder AddCorsPolicies(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder WithCorsPolicies(this WebApplicationBuilder builder)
     {
         builder.Services.AddCors(options =>
         {
@@ -120,7 +135,7 @@ file static class WebApplicationBuilderExtensions
         return builder;
     }
 
-    internal static WebApplicationBuilder AddAuthentication(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder WithAuthentication(this WebApplicationBuilder builder)
     {
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(AuthenticationSchemes.Access, options =>
@@ -159,7 +174,7 @@ file static class WebApplicationBuilderExtensions
         return builder;
     }
 
-    internal static WebApplicationBuilder AddDatabaseContext(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder WithDatabaseContext(this WebApplicationBuilder builder)
     {
         string? defaultConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -174,25 +189,5 @@ file static class WebApplicationBuilderExtensions
         );
 
         return builder;
-    }
-
-    internal static WebApplication CreateWebApplication(this WebApplicationBuilder builder)
-    {
-        WebApplication app = builder.Build();
-
-        app.UseHttpsRedirection()
-            .UseCors(CorsPolicyNames.Default)
-            .UseAuthentication()
-            .UseAuthorization();
-
-        if (app.Environment.IsEnvironment(Environments.Development))
-        {
-            app.UseSwagger()
-                .UseSwaggerUI();
-        }
-
-        app.MapControllers();
-
-        return app;
     }
 }

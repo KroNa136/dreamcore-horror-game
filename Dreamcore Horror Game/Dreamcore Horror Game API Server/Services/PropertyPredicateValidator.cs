@@ -1,6 +1,7 @@
 ﻿using DreamcoreHorrorGameApiServer.ConstantValues;
 using DreamcoreHorrorGameApiServer.Extensions;
 using DreamcoreHorrorGameApiServer.PropertyPredicates;
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Text.Json;
 
@@ -8,189 +9,184 @@ namespace DreamcoreHorrorGameApiServer.Services;
 
 public class PropertyPredicateValidator : IPropertyPredicateValidator
 {
-    protected readonly List<UnaryOperator> _unaryOperators = new()
-    {
-        new UnaryOperator
-        {
-            Name = "is null",
-            IgnoreTypes = true,
-            Operation = value => value is null
-        },
-        new UnaryOperator
-        {
-            Name = "is not null",
-            IgnoreTypes = true,
-            Operation = value => value is not null
-        },
-    };
+    protected readonly ImmutableList<UnaryOperator> _unaryOperators = ImmutableList<UnaryOperator>.Empty
+        .Add(new UnaryOperator
+        (
+            Name: "is null",
+            IgnoreTypes: true,
+            Operation: value => value is null
+        ))
+        .Add(new UnaryOperator
+        (
+            Name: "is not null",
+            IgnoreTypes: true,
+            Operation: value => value is not null
+        ));
 
-    protected readonly List<BinaryOperator> _binaryOperators = new()
-    {
-        new BinaryOperator
-        {
-            Name = "equals",
-            IgnoreTypes = false,
-            Operation = (firstValue, secondValue)
+    protected readonly ImmutableList<BinaryOperator> _binaryOperators = ImmutableList<BinaryOperator>.Empty
+        .Add(new BinaryOperator
+        (
+            Name: "equals",
+            IgnoreTypes: false,
+            Operation: (firstValue, secondValue)
                 => firstValue is not null
                 && secondValue is not null
                 && firstValue.Equals(secondValue)
-        },
-        new BinaryOperator
-        {
-            Name = "in",
-            IgnoreTypes = false,
-            Operation = (value, range)
+        ))
+        .Add(new BinaryOperator
+        (
+            Name: "in",
+            IgnoreTypes: false,
+            Operation: (value, range)
                 => value is not null
                 && range is not null
                 && (range is IEnumerable<object?> collection
                     && collection.Contains(value)
                     || value.Equals(range)
                 )
-        },
-        new BinaryOperator
-        {
-            Name = "starts with",
-            IgnoreTypes = true,
-            Operation = (value, start)
+        ))
+        .Add(new BinaryOperator
+        (
+            Name: "starts with",
+            IgnoreTypes: true,
+            Operation: (value, start)
                 => value is not null
                 && start is not null
                 && value.ToString() is string _value
                 && start.ToString() is string _start
                 && _value.StartsWith(_start)
-        },
-        new BinaryOperator
-        {
-            Name = "starts with ignore case",
-            IgnoreTypes = true,
-            Operation = (value, start)
+        ))
+        .Add(new BinaryOperator
+        (
+            Name: "starts with ignore case",
+            IgnoreTypes: true,
+            Operation: (value, start)
                 => value is not null
                 && start is not null
                 && value.ToString() is string _value
                 && start.ToString() is string _start
                 && _value.ToLower().StartsWith(_start.ToLower())
-        },
-        new BinaryOperator
-        {
-            Name = "contains substring",
-            IgnoreTypes = true,
-            Operation = (value, substring)
+        ))
+        .Add(new BinaryOperator
+        (
+            Name: "contains substring",
+            IgnoreTypes: true,
+            Operation: (value, substring)
                 => value is not null
                 && substring is not null
                 && value.ToString() is string _value
                 && substring.ToString() is string _substring
                 && _value.Contains(_substring)
-        },
-        new BinaryOperator
-        {
-            Name = "contains substring ignore case",
-            IgnoreTypes = true,
-            Operation = (value, substring)
+        ))
+        .Add(new BinaryOperator
+        (
+            Name: "contains substring ignore case",
+            IgnoreTypes: true,
+            Operation: (value, substring)
                 => value is not null
                 && substring is not null
                 && value.ToString() is string _value
                 && substring.ToString() is string _substring
                 && _value.ToLower().Contains(_substring.ToLower())
-        },
-        new BinaryOperator
-        {
-            Name = "ends with",
-            IgnoreTypes = true,
-            Operation = (value, end)
+        ))
+        .Add(new BinaryOperator
+        (
+            Name: "ends with",
+            IgnoreTypes: true,
+            Operation: (value, end)
                 => value is not null
                 && end is not null
                 && value.ToString() is string _value
                 && end.ToString() is string _end
                 && _value.EndsWith(_end)
-        },
-        new BinaryOperator
-        {
-            Name = "ends with ignore case",
-            IgnoreTypes = true,
-            Operation = (value, end)
+        ))
+        .Add(new BinaryOperator
+        (
+            Name: "ends with ignore case",
+            IgnoreTypes: true,
+            Operation: (value, end)
                 => value is not null
                 && end is not null
                 && value.ToString() is string _value
                 && end.ToString() is string _end
                 && _value.ToLower().EndsWith(_end.ToLower())
-        },
-        new BinaryOperator
-        {
-            Name = "less than",
-            IgnoreTypes = false,
-            Operation = (firstValue, secondValue)
+        ))
+        .Add(new BinaryOperator
+        (
+            Name: "less than",
+            IgnoreTypes: false,
+            Operation: (firstValue, secondValue)
                 => firstValue is IComparable _firstValue
                 && secondValue is IComparable _secondValue
                 && _firstValue.CompareTo(_secondValue) is < 0
-        },
-        new BinaryOperator
-        {
-            Name = "less than or equal to",
-            IgnoreTypes = false,
-            Operation = (firstValue, secondValue)
+        ))
+        .Add(new BinaryOperator
+        (
+            Name: "less than or equal to",
+            IgnoreTypes: false,
+            Operation: (firstValue, secondValue)
                 => firstValue is IComparable _firstValue
                 && secondValue is IComparable _secondValue
                 && _firstValue.CompareTo(_secondValue) is <= 0
-        },
-        new BinaryOperator
-        {
-            Name = "equal to",
-            IgnoreTypes = false,
-            Operation = (firstValue, secondValue)
+        ))
+        .Add(new BinaryOperator
+        (
+            Name: "equal to",
+            IgnoreTypes: false,
+            Operation: (firstValue, secondValue)
                 => firstValue is IComparable _firstValue
                 && secondValue is IComparable _secondValue
                 && _firstValue.CompareTo(_secondValue) is 0
-        },
-        new BinaryOperator
-        {
-            Name = "greater than or equal to",
-            IgnoreTypes = false,
-            Operation = (firstValue, secondValue)
+        ))
+        .Add(new BinaryOperator
+        (
+            Name: "greater than or equal to",
+            IgnoreTypes: false,
+            Operation: (firstValue, secondValue)
                 => firstValue is IComparable _firstValue
                 && secondValue is IComparable _secondValue
                 && _firstValue.CompareTo(_secondValue) is >= 0
-        },
-        new BinaryOperator
-        {
-            Name = "greater than",
-            IgnoreTypes = false,
-            Operation = (firstValue, secondValue)
+        ))
+        .Add(new BinaryOperator
+        (
+            Name: "greater than",
+            IgnoreTypes: false,
+            Operation: (firstValue, secondValue)
                 => firstValue is IComparable _firstValue
                 && secondValue is IComparable _secondValue
                 && _firstValue.CompareTo(_secondValue) is > 0
-        }
-    };
+        ));
 
-    protected readonly List<TernaryOperator> _ternaryOperators = new()
-    {
-        new TernaryOperator
-        {
-            Name = "between",
-            IgnoreTypes = false,
-            Operation = (value, start, end)
+    protected readonly ImmutableList<TernaryOperator> _ternaryOperators = ImmutableList<TernaryOperator>.Empty
+        .Add(new TernaryOperator
+        (
+            Name: "between",
+            IgnoreTypes: false,
+            Operation: (value, start, end)
                 => value is IComparable _value
                 && start is IComparable _start
                 && end is IComparable _end
                 && _start.CompareTo(_end) is <= 0
                 && _value.CompareTo(_start) is >= 0
                 && _value.CompareTo(_end) is <= 0
-        },
-        new TernaryOperator
-        {
-            Name = "between exclusive",
-            IgnoreTypes = false,
-            Operation = (value, start, end)
+        ))
+        .Add(new TernaryOperator
+        (
+            Name: "between exclusive",
+            IgnoreTypes: false,
+            Operation: (value, start, end)
                 => value is IComparable _value
                 && start is IComparable _start
                 && end is IComparable _end
                 && _start.CompareTo(_end) is < 0
                 && _value.CompareTo(_start) is > 0
                 && _value.CompareTo(_end) is < 0
-        },
-        new TernaryOperator
-        {
-            Name = "starts with and ends with",
-            IgnoreTypes = true,
-            Operation = (value, start, end)
+        ))
+        .Add(new TernaryOperator
+        (
+            Name: "starts with and ends with",
+            IgnoreTypes: true,
+            Operation: (value, start, end)
                 => value is not null
                 && start is not null
                 && end is not null
@@ -199,12 +195,12 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && end.ToString() is string _end
                 && _value.StartsWith(_start)
                 && _value.EndsWith(_end)
-        },
-        new TernaryOperator
-        {
-            Name = "starts with and ends with ignore case",
-            IgnoreTypes = true,
-            Operation = (value, start, end)
+        ))
+        .Add(new TernaryOperator
+        (
+            Name: "starts with and ends with ignore case",
+            IgnoreTypes: true,
+            Operation: (value, start, end)
                 => value is not null
                 && start is not null
                 && end is not null
@@ -213,14 +209,26 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && end.ToString() is string _end
                 && _value.ToLower().StartsWith(_start.ToLower())
                 && _value.ToLower().EndsWith(_end.ToLower())
-        }
-    };
+        ));
 
     public PropertyPredicateOperator? GetOperator(string name)
         => _unaryOperators.Find(op => op.Name.Equals(name)) as PropertyPredicateOperator
         ?? _binaryOperators.Find(op => op.Name.Equals(name)) as PropertyPredicateOperator
         ?? _ternaryOperators.Find(op => op.Name.Equals(name)) as PropertyPredicateOperator
         ?? null;
+
+    public object GetValidValue(object value, Type propertyType, bool ignoreTypes)
+    {
+        if (value is JsonElement jsonElement)
+            value = GetValueFromJsonElement(jsonElement);
+
+        if (ignoreTypes)
+            return value;
+
+        return value is IEnumerable<object> collection
+            ? collection.Select(item => GetValidValue(item, propertyType, false))
+            : value.ParseToObjectOfType(propertyType) ?? throw new InvalidCastException();
+    }
 
     public bool ValidatePropertyPredicateCollection
     (
@@ -231,13 +239,13 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
     {
         foreach (PropertyPredicate predicate in propertyPredicateCollection)
         {
-            if (predicate.IsEmptyProperty)
+            if (predicate.IsEmptyProperty())
             {
                 errorMessage = ErrorMessages.EmptyPropertyInPropertyPredicate;
                 return false;
             }
 
-            if (predicate.IsEmptyOperator)
+            if (predicate.IsEmptyOperator())
             {
                 errorMessage = ErrorMessages.EmptyOperatorInPropertyPredicate;
                 return false;
@@ -268,19 +276,6 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
 
         errorMessage = string.Empty;
         return true;
-    }
-
-    public object? GetValidValue(object value, Type propertyType, bool ignoreTypes)
-    {
-        if (value is JsonElement jsonElement)
-            value = GetValueFromJsonElement(jsonElement);
-
-        if (ignoreTypes)
-            return value;
-
-        return value is IEnumerable<object> collection
-            ? collection.Select(item => GetValidValue(item, propertyType, false))
-            : value.ParseToObjectOfType(propertyType);
     }
 
     private static PropertyInfo? GetProperty(Type type, string name)
@@ -331,7 +326,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
 
         if (firstValueValidationResult is not SuccessResult)
             return firstValueValidationResult;
-        else if (secondValueValidationResult is not SuccessResult)
+
+        if (secondValueValidationResult is not SuccessResult)
             return secondValueValidationResult;
 
         return new SuccessResult();
@@ -346,21 +342,14 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
         {
             if (value is IEnumerable<object> collection)
             {
-                foreach (var item in collection)
-                {
-                    if (item.ParseToObjectOfTypeOrDefault(type) is null)
-                        return new InvalidValueTypeResult();
-                }
-
-                return new SuccessResult();
+                return collection.All(item => item.CanBeParsedToType(type))
+                    ? new SuccessResult()
+                    : new InvalidValueTypeResult();
             }
-            else
-            {
-                if (value.ParseToObjectOfTypeOrDefault(type) is null)
-                    return new InvalidValueTypeResult();
 
-                return new SuccessResult();
-            }
+            return value.CanBeParsedToType(type)
+                ? new SuccessResult()
+                : new InvalidValueTypeResult();
         }
         catch (NotSupportedException)
         {
@@ -373,7 +362,10 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
         {
             JsonValueKind.Object => jsonElement.GetRawText(),
             JsonValueKind.Array => jsonElement.EnumerateArray().Cast<object>()
-                .Select(item => item is JsonElement innerJsonElement ? GetValueFromJsonElement(innerJsonElement) : item),
+                .Select(item => item is JsonElement innerJsonElement
+                    ? GetValueFromJsonElement(innerJsonElement)
+                    : item
+                ),
             JsonValueKind.String => jsonElement.GetString()!,
             JsonValueKind.Number => jsonElement.GetDouble(),
             JsonValueKind.True => true,

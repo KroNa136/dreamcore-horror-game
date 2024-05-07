@@ -1,6 +1,4 @@
 ﻿namespace DreamcoreHorrorGameApiServer.PropertyPredicates;
 
-public class UnaryOperator : PropertyPredicateOperator
-{
-    public Func<object?, bool> Operation { get; init; } = x => throw new NotImplementedException();
-}
+public record UnaryOperator(string Name, bool IgnoreTypes, Func<object?, bool> Operation)
+    : PropertyPredicateOperator(Name, IgnoreTypes);

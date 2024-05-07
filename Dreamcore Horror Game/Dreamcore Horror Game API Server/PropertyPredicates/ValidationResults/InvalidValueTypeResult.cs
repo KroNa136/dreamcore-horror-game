@@ -1,6 +1,4 @@
 ﻿namespace DreamcoreHorrorGameApiServer.PropertyPredicates;
 
-public class InvalidValueTypeResult : PropertyPredicateValidationResult
-{
-    public override string Message => "One of the predicates had a value of invalid type.";
-}
+public record InvalidValueTypeResult()
+    : PropertyPredicateValidationResult("One of the predicates had a value of invalid type.");

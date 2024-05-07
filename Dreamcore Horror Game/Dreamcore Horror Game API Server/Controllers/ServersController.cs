@@ -1,4 +1,5 @@
-﻿using DreamcoreHorrorGameApiServer.ConstantValues;
+﻿using DreamcoreHorrorGameApiServer.Comparers;
+using DreamcoreHorrorGameApiServer.ConstantValues;
 using DreamcoreHorrorGameApiServer.Controllers.Base;
 using DreamcoreHorrorGameApiServer.Extensions;
 using DreamcoreHorrorGameApiServer.Models;
@@ -42,6 +43,7 @@ public class ServersController : UserController<Server>
         passwordHasher: passwordHasher,
         alreadyExistsErrorMessage: ErrorMessages.ServerAlreadyExists,
         orderBySelectorExpression: server => server.IpAddress,
+        orderByComparer: new IPAddressComparer(),
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
             var gameSessions = await context.GameSessions.ToListAsync();

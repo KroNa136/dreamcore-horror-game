@@ -1,19 +1,3 @@
 ﻿namespace DreamcoreHorrorGameApiServer.Models;
 
-public class LoginData
-{
-    public string? Login { get; set; }
-    public string? Password { get; set; }
-
-    public LoginData(string? login, string? password)
-    {
-        Login = login;
-        Password = password;
-    }
-
-    public bool IsEmptyLogin => string.IsNullOrEmpty(Login);
-    public bool IsNotEmptyLogin => string.IsNullOrEmpty(Login) is false;
-
-    public bool IsEmptyPassword => string.IsNullOrEmpty(Password);
-    public bool IsNotEmptyPassword => string.IsNullOrEmpty(Password) is false;
-}
+public record struct LoginData(string? Login, string? Password);

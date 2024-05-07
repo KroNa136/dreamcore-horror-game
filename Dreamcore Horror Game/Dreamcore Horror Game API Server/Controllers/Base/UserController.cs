@@ -28,6 +28,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
         IPasswordHasher<TUser> passwordHasher,
         string alreadyExistsErrorMessage,
         Expression<Func<TUser, object?>> orderBySelectorExpression,
+        IComparer<object?>? orderByComparer,
         Func<DreamcoreHorrorGameContext, Task<IQueryable<TUser>>> getAllWithFirstLevelRelationsFunction,
         Func<DreamcoreHorrorGameContext, TUser, Task>? setRelationsFromForeignKeysFunction,
         Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> getByLoginFunction
@@ -37,6 +38,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
         context,
         propertyPredicateValidator,
         orderBySelectorExpression,
+        orderByComparer,
         getAllWithFirstLevelRelationsFunction,
         setRelationsFromForeignKeysFunction
     )
@@ -102,7 +104,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
     public async Task<IActionResult> LoginAsUserAsync(LoginData loginData)
         => await ValidateHeadersAndHandleErrorsAsync(loginData, async loginData =>
         {
-            if (loginData.IsEmptyLogin || loginData.IsEmptyPassword)
+            if (loginData.IsEmptyLogin() || loginData.IsEmptyPassword())
                 return BadRequest(ErrorMessages.EmptyLoginOrPassword);
 
             var user = await _getByLogin(_context, loginData.Login);
@@ -110,8 +112,14 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
             if (user is null)
                 return NotFound();
 
+            /*
             if (user.IsOnline)
                 return UnprocessableEntity(ErrorMessages.UserIsAlreadyLoggedIn);
+
+            This may cause problems if, for example, some player experiences a game crash and tries to log in again.
+            The system would consider them being still online, and wouldn't let them sign in.
+            TODO: consider doing something to make sure it's still the same person logging in (maybe an IP check or smth)
+            */
 
             if (VerifyPassword(user, loginData.Password) is false)
                 return Unauthorized();
@@ -173,7 +181,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
     public async Task<IActionResult> ChangeUserPasswordAsync(LoginData loginData, string newPassword)
         => await ValidateHeadersAndHandleErrorsAsync(loginData, newPassword, async (loginData, newPassword) =>
         {
-            if (loginData.IsEmptyLogin || loginData.IsEmptyPassword || newPassword.IsEmpty())
+            if (loginData.IsEmptyLogin() || loginData.IsEmptyPassword() || newPassword.IsEmpty())
                 return BadRequest(ErrorMessages.EmptyLoginOrPassword);
 
             var user = await _getByLogin(_context, loginData.Login);

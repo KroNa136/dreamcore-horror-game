@@ -8,6 +8,20 @@ public static class IEnumerableExtensions
     public static bool IsNotEmpty<TSource>(this IEnumerable<TSource> source)
         => source.Any();
 
+    public static IEnumerable<TSource> ForEach<TSource>(this IEnumerable<TSource> source, Action<TSource> action)
+    {
+        if (source is null)
+            throw new ArgumentNullException(nameof(source));
+
+        if (action == null)
+            throw new ArgumentNullException(nameof(action));
+
+        foreach (var item in source)
+            action(item);
+
+        return source;
+    }
+
     public static IEnumerable<TSource> Paginate<TSource>(this IEnumerable<TSource> source, int page, int showBy)
         => page is > 0 && showBy is > 0
             ? source.Skip(showBy * (page - 1)).Take(showBy)
@@ -21,9 +35,9 @@ public static class IEnumerableExtensions
         if (predicateTask is null)
             throw new ArgumentNullException(nameof(predicateTask));
 
-        foreach (var element in source)
-            if (await predicateTask(element))
-                return element;
+        foreach (var item in source)
+            if (await predicateTask(item))
+                return item;
 
         return default;
     }
