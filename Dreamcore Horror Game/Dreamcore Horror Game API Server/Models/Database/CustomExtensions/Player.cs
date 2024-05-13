@@ -1,11 +1,13 @@
 ﻿using DreamcoreHorrorGameApiServer.ConstantValues;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace DreamcoreHorrorGameApiServer.Models.Database;
 
 public partial class Player : IDatabaseEntity, IUser, IEquatable<Player>
 {
     [NotMapped]
+    [JsonInclude]
     public string DisplayName => Username;
     [NotMapped]
     public string Login => Email;

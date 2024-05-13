@@ -66,6 +66,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to.
     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
 
+    public abstract Task<IActionResult> GetCount();
     public abstract Task<IActionResult> GetAll(int page, int showBy);
     public abstract Task<IActionResult> GetAllWithRelations(int page, int showBy);
     public abstract Task<IActionResult> Get(Guid? id);
@@ -85,15 +86,19 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
+    public async Task<IActionResult> GetCountAsync()
+        => await ValidateHeadersAndHandleErrorsAsync(async () => Ok(_context.Set<TEntity>().Count()));
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
     public async Task<IActionResult> GetAllEntitiesAsync(int page, int showBy)
         => await ValidateHeadersAndHandleErrorsAsync(async () =>
         {
             var entities = await _context.Set<TEntity>()
                 .OrderBy(_orderBySelectorExpression)
-                .Paginate(page, showBy)
                 .ToListAsync();
 
-            return Ok(entities);
+            return Ok(entities.PaginatedAndWithPageCount(page, showBy));
         });
 
     [ApiExplorerSettings(IgnoreApi = true)]
@@ -103,10 +108,9 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
         {
             var entities = await (await _getAllWithFirstLevelRelations(_context))
                 .OrderBy(_orderBySelectorExpression)
-                .Paginate(page, showBy)
                 .ToListAsync();
 
-            return Ok(entities);
+            return Ok(entities.PaginatedAndWithPageCount(page, showBy));
         });
 
     [ApiExplorerSettings(IgnoreApi = true)]
@@ -205,9 +209,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
                 ? entitiesEnumerable.OrderBy(_orderBySelectorExpression.Compile(), _orderByComparer)
                 : entitiesEnumerable.OrderBy(_orderBySelectorExpression.Compile());
 
-            var orderedAndPaginatedEntities = orderedEntities.Paginate(page, showBy);
-
-            return Ok(orderedAndPaginatedEntities);
+            return Ok(orderedEntities.PaginatedAndWithPageCount(page, showBy));
         });
 
     [ApiExplorerSettings(IgnoreApi = true)]
@@ -425,10 +427,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
         var validHeaders = headers.Where(header => requestHeaders.ContainsKey(header)
                 && requestHeaders[header].Equals(CorsHeaders.RequiredHeaderValue));
 
-        if (validHeaders.Any())
-            return false;
-
-        return true;
+        return validHeaders.IsEmpty();
     }
 
     protected static PropertyInfo? GetProperty(Type type, string name)

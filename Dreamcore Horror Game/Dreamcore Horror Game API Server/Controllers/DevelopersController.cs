@@ -67,6 +67,12 @@ public class DevelopersController : UserController<Developer>
     { }
 
     [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public override async Task<IActionResult> GetCount()
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+            .GetCountAsync();
+
+    [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public override async Task<IActionResult> GetAll(int page = 0, int showBy = 0)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
@@ -98,9 +104,9 @@ public class DevelopersController : UserController<Developer>
 
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult GetByLogin(string login)
-        => RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .GetEntity(developer => developer.Login.Equals(login));
+    public async Task<IActionResult> GetByLogin(string login)
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+            .GetEntityWithRelationsAsync(developer => developer.Login.Equals(login));
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
@@ -140,9 +146,9 @@ public class DevelopersController : UserController<Developer>
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
-    public override async Task<IActionResult> Logout(Guid? id)
+    public override async Task<IActionResult> Logout(string login)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
-            .LogoutAsUserAsync(id);
+            .LogoutAsUserAsync(login);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
@@ -155,4 +161,10 @@ public class DevelopersController : UserController<Developer>
     public override async Task<IActionResult> GetAccessToken(string login)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
             .GetAccessTokenForUserAsync(login);
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public override async Task<IActionResult> VerifyAccessToken()
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+            .VerifyAccessTokenAsync();
 }

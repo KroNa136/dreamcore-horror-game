@@ -2,6 +2,7 @@
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
 using DreamcoreHorrorGameApiServer.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
@@ -16,12 +17,34 @@ public class TestOutputController : ControllerBase
     private readonly DreamcoreHorrorGameContext _context;
     private readonly ITokenService _tokenService;
     private readonly IJsonSerializerOptionsProvider _jsonSerializerOptionsProvider;
+    private readonly IPasswordHasher<Developer> _developerPasswordHasher;
 
-    public TestOutputController(DreamcoreHorrorGameContext context, ITokenService tokenService, IJsonSerializerOptionsProvider jsonSerializerOptionsProvider)
+    public TestOutputController(DreamcoreHorrorGameContext context, ITokenService tokenService, IJsonSerializerOptionsProvider jsonSerializerOptionsProvider, IPasswordHasher<Developer> passwordHasher)
     {
         _context = context;
         _tokenService = tokenService;
         _jsonSerializerOptionsProvider = jsonSerializerOptionsProvider;
+        _developerPasswordHasher = passwordHasher;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CreateAdmin()
+    {
+        var developer = new Developer
+        {
+            Id = Guid.NewGuid(),
+            Login = "admin",
+            IsOnline = false,
+            DeveloperAccessLevel = _context.DeveloperAccessLevels.First(l => l.Name.Equals("Full Access Developer"))
+        };
+
+        developer.Password = _developerPasswordHasher.HashPassword(developer, "admin");
+        developer.RefreshToken = _tokenService.CreateRefreshToken(developer.Login, AuthenticationRoles.FullAccessDeveloper);
+
+        _context.Developers.Add(developer);
+        await _context.SaveChangesAsync();
+
+        return Ok();
     }
 
     [HttpGet]

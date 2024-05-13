@@ -65,6 +65,12 @@ public class ServersController : UserController<Server>
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public override async Task<IActionResult> GetCount()
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+            .GetCountAsync();
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAll(int page = 0, int showBy = 0)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
             .GetAllEntitiesAsync(page, showBy);
@@ -133,9 +139,9 @@ public class ServersController : UserController<Server>
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Server)]
-    public override async Task<IActionResult> Logout(Guid? id)
+    public override async Task<IActionResult> Logout(string ipAddress)
         => await RequireHeaders(CorsHeaders.GameServer)
-            .LogoutAsUserAsync(id);
+            .LogoutAsUserAsync(ipAddress);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Server)]
@@ -148,6 +154,12 @@ public class ServersController : UserController<Server>
     public override async Task<IActionResult> GetAccessToken(string ipAddress)
         => await RequireHeaders(CorsHeaders.GameServer)
             .GetAccessTokenForUserAsync(ipAddress);
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Server)]
+    public override async Task<IActionResult> VerifyAccessToken()
+        => await RequireHeaders(CorsHeaders.GameServer)
+            .VerifyAccessTokenAsync();
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]

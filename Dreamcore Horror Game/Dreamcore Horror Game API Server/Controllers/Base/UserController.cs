@@ -53,9 +53,10 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
 
     public override abstract Task<IActionResult> Create(TUser entity);
     public abstract Task<IActionResult> Login(LoginData loginData);
-    public abstract Task<IActionResult> Logout(Guid? id);
+    public abstract Task<IActionResult> Logout(string login);
     public abstract Task<IActionResult> ChangePassword(LoginData loginData, string newPassword);
     public abstract Task<IActionResult> GetAccessToken(string login);
+    public abstract Task<IActionResult> VerifyAccessToken();
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
@@ -143,20 +144,16 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
-    public async Task<IActionResult> LogoutAsUserAsync(Guid? id)
-        => await ValidateHeadersAndHandleErrorsAsync(id, async id =>
+    public async Task<IActionResult> LogoutAsUserAsync(string login)
+        => await ValidateHeadersAndHandleErrorsAsync(login, async login =>
         {
-            if (id is null)
+            if (login.IsEmpty())
                 return NotFound();
 
-            var user = await _context.Set<TUser>()
-                .FirstOrDefaultAsync(entity => entity.Id == id);
+            var user = await _getByLogin(_context, login);
 
             if (user is null)
                 return NotFound();
-
-            if (VerifyRefreshToken(user, AuthorizationToken) is false)
-                return Unauthorized();
 
             if (user.IsOnline is false)
                 return UnprocessableEntity(ErrorMessages.UserIsAlreadyLoggedOut);
@@ -228,6 +225,11 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
 
             return Ok(_tokenService.CreateAccessToken(user.Login, user.Role));
         });
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [NonAction]
+    public async Task<IActionResult> VerifyAccessTokenAsync()
+        => await ValidateHeadersAndHandleErrorsAsync(async () => Ok());
 
     protected bool VerifyPassword(TUser user, string? password)
         => _passwordHasher.VerifyHashedPassword(user, user.Password, password ?? string.Empty)

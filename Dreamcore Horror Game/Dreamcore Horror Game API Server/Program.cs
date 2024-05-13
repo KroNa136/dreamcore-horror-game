@@ -18,6 +18,7 @@ public class Program
     public static void Main(string[] args)
     {
         PrintTestAccessToken();
+        PrintTestRefreshToken();
 
         try
         {
@@ -35,7 +36,12 @@ public class Program
 
     private static void PrintTestAccessToken() => Console.WriteLine
     (
-        $"TOKEN:\n{ new TokenService().CreateAccessToken("test_login", AuthenticationRoles.FullAccessDeveloper) }\n"
+        $"ACCESS TOKEN:\n{ new TokenService().CreateAccessToken("test_login", AuthenticationRoles.FullAccessDeveloper) }\n"
+    );
+
+    private static void PrintTestRefreshToken() => Console.WriteLine
+    (
+        $"REFRESH TOKEN:\n{new TokenService().CreateRefreshToken("test_login", AuthenticationRoles.FullAccessDeveloper)}\n"
     );
 
     private static WebApplicationBuilder ConfiguredWebApplicationBuilder(string[] args)

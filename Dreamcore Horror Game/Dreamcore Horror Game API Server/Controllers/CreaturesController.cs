@@ -55,6 +55,12 @@ public class CreaturesController : DatabaseEntityController<Creature>
     { }
 
     [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public override async Task<IActionResult> GetCount()
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+            .GetCountAsync();
+
+    [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public override async Task<IActionResult> GetAll(int page = 0, int showBy = 0)
         => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)

@@ -64,6 +64,12 @@ public class GameSessionsController : DatabaseEntityController<GameSession>
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
+    public override async Task<IActionResult> GetCount()
+        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+            .GetCountAsync();
+
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAll(int page = 0, int showBy = 0)
         => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
             .GetAllEntitiesAsync(page, showBy);

@@ -1,4 +1,8 @@
-﻿namespace DreamcoreHorrorGameApiServer.Extensions;
+﻿using DreamcoreHorrorGameApiServer.Models;
+using DreamcoreHorrorGameApiServer.Models.Database;
+using Elfie.Serialization;
+
+namespace DreamcoreHorrorGameApiServer.Extensions;
 
 public static class IEnumerableExtensions
 {
@@ -26,6 +30,19 @@ public static class IEnumerableExtensions
         => page is > 0 && showBy is > 0
             ? source.Skip(showBy * (page - 1)).Take(showBy)
             : source;
+
+    public static long PageCount<TSource>(this IEnumerable<TSource> source, int showBy)
+        => showBy > 0
+            ? (long) Math.Ceiling((float) source.Count() / showBy)
+            : -1;
+
+    public static CollectionWithPageCount<TSource> WithPageCount<TSource>(this IEnumerable<TSource> entities, long pageCount)
+        => new(entities, pageCount);
+
+    public static CollectionWithPageCount<TSource> PaginatedAndWithPageCount<TSource>(this IEnumerable<TSource> source, int page, int showBy)
+        => source
+            .Paginate(page, showBy)
+            .WithPageCount(source.PageCount(showBy));
 
     public static async Task<TSource?> FirstOrDefaultWithAsyncPredicate<TSource>(this IEnumerable<TSource> source, Func<TSource, Task<bool>> predicateTask)
     {
