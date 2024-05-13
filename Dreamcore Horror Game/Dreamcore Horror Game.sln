@@ -5,7 +5,7 @@ VisualStudioVersion = 17.4.33403.182
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dreamcore Horror Game API Server", "Dreamcore Horror Game API Server\Dreamcore Horror Game API Server.csproj", "{C02AA169-D038-41CF-A46B-7103AF9B14AB}"
 EndProject
-Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "application-for-developers", "application-for-developers\application-for-developers.esproj", "{916D9EFF-4D2A-40DF-8E37-D6A77E6A8195}"
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "application-for-developers", "application-for-developers\application-for-developers.esproj", "{735887D7-D010-48A1-9C13-16177EEF4814}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,18 +23,18 @@ Global
 		{C02AA169-D038-41CF-A46B-7103AF9B14AB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C02AA169-D038-41CF-A46B-7103AF9B14AB}.Release|x64.ActiveCfg = Release|Any CPU
 		{C02AA169-D038-41CF-A46B-7103AF9B14AB}.Release|x64.Build.0 = Release|Any CPU
-		{916D9EFF-4D2A-40DF-8E37-D6A77E6A8195}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{916D9EFF-4D2A-40DF-8E37-D6A77E6A8195}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{916D9EFF-4D2A-40DF-8E37-D6A77E6A8195}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{916D9EFF-4D2A-40DF-8E37-D6A77E6A8195}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{916D9EFF-4D2A-40DF-8E37-D6A77E6A8195}.Debug|x64.Build.0 = Debug|Any CPU
-		{916D9EFF-4D2A-40DF-8E37-D6A77E6A8195}.Debug|x64.Deploy.0 = Debug|Any CPU
-		{916D9EFF-4D2A-40DF-8E37-D6A77E6A8195}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{916D9EFF-4D2A-40DF-8E37-D6A77E6A8195}.Release|Any CPU.Build.0 = Release|Any CPU
-		{916D9EFF-4D2A-40DF-8E37-D6A77E6A8195}.Release|Any CPU.Deploy.0 = Release|Any CPU
-		{916D9EFF-4D2A-40DF-8E37-D6A77E6A8195}.Release|x64.ActiveCfg = Release|Any CPU
-		{916D9EFF-4D2A-40DF-8E37-D6A77E6A8195}.Release|x64.Build.0 = Release|Any CPU
-		{916D9EFF-4D2A-40DF-8E37-D6A77E6A8195}.Release|x64.Deploy.0 = Release|Any CPU
+		{735887D7-D010-48A1-9C13-16177EEF4814}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{735887D7-D010-48A1-9C13-16177EEF4814}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{735887D7-D010-48A1-9C13-16177EEF4814}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{735887D7-D010-48A1-9C13-16177EEF4814}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{735887D7-D010-48A1-9C13-16177EEF4814}.Debug|x64.Build.0 = Debug|Any CPU
+		{735887D7-D010-48A1-9C13-16177EEF4814}.Debug|x64.Deploy.0 = Debug|Any CPU
+		{735887D7-D010-48A1-9C13-16177EEF4814}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{735887D7-D010-48A1-9C13-16177EEF4814}.Release|Any CPU.Build.0 = Release|Any CPU
+		{735887D7-D010-48A1-9C13-16177EEF4814}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{735887D7-D010-48A1-9C13-16177EEF4814}.Release|x64.ActiveCfg = Release|Any CPU
+		{735887D7-D010-48A1-9C13-16177EEF4814}.Release|x64.Build.0 = Release|Any CPU
+		{735887D7-D010-48A1-9C13-16177EEF4814}.Release|x64.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
