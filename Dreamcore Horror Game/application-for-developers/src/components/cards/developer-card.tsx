@@ -4,21 +4,21 @@ import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import { Button, CardActions } from "@mui/material";
-import { displayName, Ability } from "../../database";
+import { displayName, Developer } from "../../database";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import DeleteAbilityModal from "../deletion-modals/delete-ability-modal";
+import DeleteDeveloperModal from "../deletion-modals/delete-developer-modal";
 import { canDelete, canEdit } from "../../auth-manager";
 
-interface AbilityCardProps {
-  ability: Ability
+interface DeveloperCardProps {
+  developer: Developer
 }
 
-export default function AbilityCard(props: AbilityCardProps) {
+export default function DeveloperCard(props: DeveloperCardProps) {
   const navigate = useNavigate();
 
-  const { ability } = props;
+  const { developer } = props;
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
 
   return (
@@ -26,23 +26,23 @@ export default function AbilityCard(props: AbilityCardProps) {
       <Card sx={{ backgroundColor: "#fbfbfb" }}>
         <CardContent>
           <Typography gutterBottom variant="h5" component="div">
-            {displayName(ability)}
+            {displayName(developer)}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            ID: {ability.id}
+            ID: {developer.id}
           </Typography>
         </CardContent>
         <CardActions sx={{ display: "flex", justifyContent: "center" }}>
-          <Button size="small" color="primary" variant="outlined" component={Link} to={`/ability/${ability.id}`}>Перейти</Button>
+          <Button size="small" color="primary" variant="outlined" component={Link} to={`/developer/${developer.id}`}>Перейти</Button>
           {canEdit() &&
-            <Button size="small" color="primary" variant="outlined" component={Link} to={`/editAbility/${ability.id}`}>Редактировать</Button>
+            <Button size="small" color="primary" variant="outlined" component={Link} to={`/editDeveloper/${developer.id}`}>Редактировать</Button>
           }
           {canDelete() &&
             <Button size="small" color="error" variant="outlined" onClick={() => setDeleteModalOpen(true)}>Удалить</Button>
           }
         </CardActions>
       </Card>
-      <DeleteAbilityModal open={deleteModalOpen} setOpen={setDeleteModalOpen} ability={ability} onDelete={() => navigate(0)} />
+      <DeleteDeveloperModal open={deleteModalOpen} setOpen={setDeleteModalOpen} developer={developer} onDelete={() => navigate(0)} />
     </Grid>
   );
 }

@@ -4,21 +4,21 @@ import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import { Button, CardActions } from "@mui/material";
-import { displayName, Ability } from "../../database";
+import { displayName, CollectedArtifact } from "../../database";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import DeleteAbilityModal from "../deletion-modals/delete-ability-modal";
+import DeleteCollectedArtifactModal from "../deletion-modals/delete-collected-artifact-modal";
 import { canDelete, canEdit } from "../../auth-manager";
 
-interface AbilityCardProps {
-  ability: Ability
+interface CollectedArtifactCardProps {
+  collectedArtifact: CollectedArtifact
 }
 
-export default function AbilityCard(props: AbilityCardProps) {
+export default function CollectedArtifactCard(props: CollectedArtifactCardProps) {
   const navigate = useNavigate();
 
-  const { ability } = props;
+  const { collectedArtifact } = props;
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
 
   return (
@@ -26,23 +26,23 @@ export default function AbilityCard(props: AbilityCardProps) {
       <Card sx={{ backgroundColor: "#fbfbfb" }}>
         <CardContent>
           <Typography gutterBottom variant="h5" component="div">
-            {displayName(ability)}
+            {displayName(collectedArtifact)}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            ID: {ability.id}
+            ID: {collectedArtifact.id}
           </Typography>
         </CardContent>
         <CardActions sx={{ display: "flex", justifyContent: "center" }}>
-          <Button size="small" color="primary" variant="outlined" component={Link} to={`/ability/${ability.id}`}>Перейти</Button>
+          <Button size="small" color="primary" variant="outlined" component={Link} to={`/collectedArtifact/${collectedArtifact.id}`}>Перейти</Button>
           {canEdit() &&
-            <Button size="small" color="primary" variant="outlined" component={Link} to={`/editAbility/${ability.id}`}>Редактировать</Button>
+            <Button size="small" color="primary" variant="outlined" component={Link} to={`/editCollectedArtifact/${collectedArtifact.id}`}>Редактировать</Button>
           }
           {canDelete() &&
             <Button size="small" color="error" variant="outlined" onClick={() => setDeleteModalOpen(true)}>Удалить</Button>
           }
         </CardActions>
       </Card>
-      <DeleteAbilityModal open={deleteModalOpen} setOpen={setDeleteModalOpen} ability={ability} onDelete={() => navigate(0)} />
+      <DeleteCollectedArtifactModal open={deleteModalOpen} setOpen={setDeleteModalOpen} collectedArtifact={collectedArtifact} onDelete={() => navigate(0)} />
     </Grid>
   );
 }

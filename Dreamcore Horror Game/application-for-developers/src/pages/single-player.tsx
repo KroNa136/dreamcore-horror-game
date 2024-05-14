@@ -94,14 +94,14 @@ export default function SinglePlayer() {
               </Typography>
             </Grid>
           </Grid>
-          {canEdit() &&
-            <Grid container spacing={4} direction="row" justifyContent="start" alignItems="center" my={4} px={2}>
+          <Grid container spacing={4} direction="row" justifyContent="start" alignItems="center" my={4} px={2}>
+            {canEdit() &&
               <Button size="medium" variant="outlined" color="primary" sx={{ mx: 1 }} component={Link} to={`/editPlayer/${player.id}`}>Редактировать</Button>
-              {canDelete() &&
-                <Button size="medium" variant="outlined" color="error" sx={{ mx: 1 }} onClick={() => setDeleteModalOpen(true)}>Удалить</Button>
-              }
+            }
+            {canDelete() &&
+              <Button size="medium" variant="outlined" color="error" sx={{ mx: 1 }} onClick={() => setDeleteModalOpen(true)}>Удалить</Button>
+            }
             </Grid>
-          }
           <Grid container spacing={4} direction="row" justifyContent="center" alignItems="center" my={4} px={2}>
             <Button size="medium" variant="contained" color="primary" sx={{ mx: 1 }} component={Link} to={"/players"}>Вернуться к игрокам</Button>
           </Grid>

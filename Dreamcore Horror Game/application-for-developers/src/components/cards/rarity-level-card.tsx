@@ -4,21 +4,21 @@ import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import { Button, CardActions } from "@mui/material";
-import { displayName, Ability } from "../../database";
+import { displayName, RarityLevel } from "../../database";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import DeleteAbilityModal from "../deletion-modals/delete-ability-modal";
+import DeleteRarityLevelModal from "../deletion-modals/delete-rarity-level-modal";
 import { canDelete, canEdit } from "../../auth-manager";
 
-interface AbilityCardProps {
-  ability: Ability
+interface RarityLevelCardProps {
+  rarityLevel: RarityLevel
 }
 
-export default function AbilityCard(props: AbilityCardProps) {
+export default function RarityLevelCard(props: RarityLevelCardProps) {
   const navigate = useNavigate();
 
-  const { ability } = props;
+  const { rarityLevel } = props;
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
 
   return (
@@ -26,23 +26,23 @@ export default function AbilityCard(props: AbilityCardProps) {
       <Card sx={{ backgroundColor: "#fbfbfb" }}>
         <CardContent>
           <Typography gutterBottom variant="h5" component="div">
-            {displayName(ability)}
+            {displayName(rarityLevel)}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            ID: {ability.id}
+            ID: {rarityLevel.id}
           </Typography>
         </CardContent>
         <CardActions sx={{ display: "flex", justifyContent: "center" }}>
-          <Button size="small" color="primary" variant="outlined" component={Link} to={`/ability/${ability.id}`}>Перейти</Button>
+          <Button size="small" color="primary" variant="outlined" component={Link} to={`/rarityLevel/${rarityLevel.id}`}>Перейти</Button>
           {canEdit() &&
-            <Button size="small" color="primary" variant="outlined" component={Link} to={`/editAbility/${ability.id}`}>Редактировать</Button>
+            <Button size="small" color="primary" variant="outlined" component={Link} to={`/editRarityLevel/${rarityLevel.id}`}>Редактировать</Button>
           }
           {canDelete() &&
             <Button size="small" color="error" variant="outlined" onClick={() => setDeleteModalOpen(true)}>Удалить</Button>
           }
         </CardActions>
       </Card>
-      <DeleteAbilityModal open={deleteModalOpen} setOpen={setDeleteModalOpen} ability={ability} onDelete={() => navigate(0)} />
+      <DeleteRarityLevelModal open={deleteModalOpen} setOpen={setDeleteModalOpen} rarityLevel={rarityLevel} onDelete={() => navigate(0)} />
     </Grid>
   );
 }
