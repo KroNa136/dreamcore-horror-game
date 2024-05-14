@@ -1,15 +1,15 @@
-import * as React from 'react';
-import Typography from '@mui/material/Typography';
-import Grid from '@mui/material/Grid';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import { Button, CardActions } from '@mui/material';
-import { displayName, Player } from '../../database';
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import DeletePlayerModal from '../deletion-modals/delete-player-modal';
-import { canDelete, canEdit } from '../../auth-manager';
+import * as React from "react";
+import Typography from "@mui/material/Typography";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import { Button, CardActions } from "@mui/material";
+import { displayName, Player } from "../../database";
+import { Link } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import DeletePlayerModal from "../deletion-modals/delete-player-modal";
+import { canDelete, canEdit } from "../../auth-manager";
 
 interface PlayerCardProps {
   player: Player

@@ -1,21 +1,21 @@
-import * as React from 'react';
-import CssBaseline from '@mui/material/CssBaseline';
-import Grid from '@mui/material/Grid';
-import Container from '@mui/material/Container';
-import { ThemeProvider } from '@mui/material/styles';
-import Header from '../components/header';
-import Footer from '../components/footer';
+import * as React from "react";
+import CssBaseline from "@mui/material/CssBaseline";
+import Grid from "@mui/material/Grid";
+import Container from "@mui/material/Container";
+import { ThemeProvider } from "@mui/material/styles";
+import Header from "../components/header";
+import Footer from "../components/footer";
 import { defaultTheme } from "../themes";
-import { Button, Typography } from '@mui/material';
-import { displayName, Player, XpLevel } from '../database';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getPlayer } from '../requests';
-import { useEffect, useState } from 'react';
-import XpLevelCard from '../components/cards/xp-level-card';
-import NoDataTypography from '../components/no-data-typography';
-import { toReadableUtcDateTime, toYesNo } from '../value-format-helper';
-import DeletePlayerModal from '../components/deletion-modals/delete-player-modal';
-import { canDelete, canEdit } from '../auth-manager';
+import { Button, Typography } from "@mui/material";
+import { displayName, Player, XpLevel } from "../database";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { getPlayer } from "../requests";
+import { useEffect, useState } from "react";
+import XpLevelCard from "../components/cards/xp-level-card";
+import NoDataTypography from "../components/no-data-typography";
+import { toReadableUtcDateTime, toYesNo } from "../value-format-helper";
+import DeletePlayerModal from "../components/deletion-modals/delete-player-modal";
+import { canDelete, canEdit } from "../auth-manager";
 
 export default function SinglePlayer() {
   const navigate = useNavigate();

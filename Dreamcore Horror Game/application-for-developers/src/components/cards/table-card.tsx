@@ -1,10 +1,10 @@
-import * as React from 'react';
-import Typography from '@mui/material/Typography';
-import Grid from '@mui/material/Grid';
-import Card from '@mui/material/Card';
-import CardActionArea from '@mui/material/CardActionArea';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
+import * as React from "react";
+import Typography from "@mui/material/Typography";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import CardActionArea from "@mui/material/CardActionArea";
+import CardContent from "@mui/material/CardContent";
+import CardMedia from "@mui/material/CardMedia";
 
 interface TableCardProps {
   table: {
@@ -23,7 +23,7 @@ export default function TableCard(props: TableCardProps) {
   return (
     <Grid item xs={12} md={6}>
       <CardActionArea component="a" href={table.link}>
-        <Card sx={{ display: 'flex', backgroundColor: "#fbfbfb" }}>
+        <Card sx={{ display: "flex", backgroundColor: "#fbfbfb" }}>
           <CardContent sx={{ flex: 1 }}>
             <Typography component="h2" variant="h5">
               {table.title}
@@ -37,7 +37,7 @@ export default function TableCard(props: TableCardProps) {
           </CardContent>
           <CardMedia
             component="img"
-            sx={{ width: 64, height: 64, display: { xs: 'none', sm: 'block' }, alignSelf: 'center', mx: 2 }}
+            sx={{ width: 64, height: 64, display: { xs: "none", sm: "block" }, alignSelf: "center", mx: 2 }}
             image={table.image}
             alt={table.imageLabel}
           />

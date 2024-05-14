@@ -1,11 +1,11 @@
-import axios from 'axios';
-import { signIn, signOut } from './auth-manager';
+import axios from "axios";
+import { signIn, signOut } from "./auth-manager";
 import {
   Ability, AcquiredAbility, Artifact, CollectedArtifact, Creature, Developer, DeveloperAccessLevel, GameMode,
   GameSession, Player, PlayerSession, RarityLevel, Server, XpLevel, Abilities, AcquiredAbilities, Artifacts,
   CollectedArtifacts, Creatures, Developers, DeveloperAccessLevels, GameModes, GameSessions, Players,
   PlayerSessions, RarityLevels, Servers, XpLevels
-} from './database';
+} from "./database";
 
 axios.defaults.baseURL = "https://localhost:8008/api/";
 axios.defaults.headers.common = {

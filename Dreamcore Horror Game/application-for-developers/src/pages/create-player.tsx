@@ -1,23 +1,23 @@
-import * as React from 'react';
-import Button from '@mui/material/Button';
-import CssBaseline from '@mui/material/CssBaseline';
-import TextField from '@mui/material/TextField';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Container from '@mui/material/Container';
-import { ThemeProvider } from '@mui/material/styles';
+import * as React from "react";
+import Button from "@mui/material/Button";
+import CssBaseline from "@mui/material/CssBaseline";
+import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Container from "@mui/material/Container";
+import { ThemeProvider } from "@mui/material/styles";
 import { defaultTheme } from "../themes";
-import { createPlayer, getXpLevels } from '../requests';
-import { useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select } from '@mui/material';
-import { displayName, Player, XpLevel } from '../database';
-import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
-import dayjs from 'dayjs';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { useAppDispatch, useAppSelector } from '../redux/hooks';
-import { actions } from '../redux/slices/player-form-slice';
-import Footer from '../components/footer';
+import { createPlayer, getXpLevels } from "../requests";
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select } from "@mui/material";
+import { displayName, Player, XpLevel } from "../database";
+import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import { actions } from "../redux/slices/player-form-slice";
+import Footer from "../components/footer";
 
 export default function CreatePlayer() {
   const navigate = useNavigate();
@@ -61,9 +61,9 @@ export default function CreatePlayer() {
         <Box
           sx={{
             marginTop: 10,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
         >
           <Typography component="h4" variant="h4">

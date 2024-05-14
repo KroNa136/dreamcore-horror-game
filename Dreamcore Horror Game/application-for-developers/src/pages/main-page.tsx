@@ -1,20 +1,20 @@
-import * as React from 'react';
-import CssBaseline from '@mui/material/CssBaseline';
-import Grid from '@mui/material/Grid';
-import Container from '@mui/material/Container';
-import { ThemeProvider } from '@mui/material/styles';
-import Header from '../components/header';
-import TableCard from '../components/cards/table-card';
-import Footer from '../components/footer';
+import * as React from "react";
+import CssBaseline from "@mui/material/CssBaseline";
+import Grid from "@mui/material/Grid";
+import Container from "@mui/material/Container";
+import { ThemeProvider } from "@mui/material/styles";
+import Header from "../components/header";
+import TableCard from "../components/cards/table-card";
+import Footer from "../components/footer";
 import { defaultTheme } from "../themes";
-import { Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { Typography } from "@mui/material";
+import { useEffect, useState } from "react";
 import {
   getAbilityCount, getAcquiredAbilityCount, getArtifactCount, getCollectedArtifactCount, getCreatureCount, getDeveloperCount,
   getDeveloperAccessLevelCount, getGameModeCount, getGameSessionCount, getPlayerCount, getPlayerSessionCount, getRarityLevelCount,
   getServerCount, getXpLevelCount
-} from '../requests';
-import { canViewDevelopers } from '../auth-manager';
+} from "../requests";
+import { canViewDevelopers } from "../auth-manager";
 
 export default function MainPage() {
   const [abilityCount, setAbilityCount] = useState<number>(0);
@@ -51,121 +51,121 @@ export default function MainPage() {
 
   const gameContentTables = [
     {
-      title: 'Способности',
+      title: "Способности",
       databaseTitle: "abilities",
       entryCount: abilityCount,
-      image: '/table_icons/abilities.png',
-      imageLabel: 'Способности',
+      image: "/table_icons/abilities.png",
+      imageLabel: "Способности",
       link: "/abilities",
     },
     {
-      title: 'Артефакты',
+      title: "Артефакты",
       databaseTitle: "artifacts",
       entryCount: artifactCount,
-      image: '/table_icons/artifacts.png',
-      imageLabel: 'Артефакты',
+      image: "/table_icons/artifacts.png",
+      imageLabel: "Артефакты",
       link: "/artifacts",
     },
     {
-      title: 'Существа',
+      title: "Существа",
       databaseTitle: "creatures",
       entryCount: creatureCount,
-      image: '/table_icons/creatures.png',
-      imageLabel: 'Существа',
+      image: "/table_icons/creatures.png",
+      imageLabel: "Существа",
       link: "/creatures",
     },
     {
-      title: 'Игровые режимы',
+      title: "Игровые режимы",
       databaseTitle: "game_modes",
       entryCount: gameModeCount,
-      image: '/table_icons/game_modes.png',
-      imageLabel: 'Игровые режимы',
+      image: "/table_icons/game_modes.png",
+      imageLabel: "Игровые режимы",
       link: "/gameModes",
     },
     {
-      title: 'Уровни редкости',
+      title: "Уровни редкости",
       databaseTitle: "rarity_levels",
       entryCount: rarityLevelCount,
-      image: '/table_icons/rarity_levels.png',
-      imageLabel: 'Уровни редкости',
+      image: "/table_icons/rarity_levels.png",
+      imageLabel: "Уровни редкости",
       link: "/rarityLevels",
     },
     {
-      title: 'Уровни опыта',
+      title: "Уровни опыта",
       databaseTitle: "xp_levels",
       entryCount: xpLevelCount,
-      image: '/table_icons/xp_levels.png',
-      imageLabel: 'Уровни опыта',
+      image: "/table_icons/xp_levels.png",
+      imageLabel: "Уровни опыта",
       link: "/xpLevels",
     },
   ];
 
   const onlineGameTables = [
     {
-      title: 'Приобретённые способности',
+      title: "Приобретённые способности",
       databaseTitle: "acquired_abilities",
       entryCount: acquiredAbilityCount,
-      image: '/table_icons/acquired_abilities.png',
-      imageLabel: 'Приобретённые способности',
+      image: "/table_icons/acquired_abilities.png",
+      imageLabel: "Приобретённые способности",
       link: "/acquiredAbilities",
     },
     {
-      title: 'Собранные артефакты',
+      title: "Собранные артефакты",
       databaseTitle: "collected_artifacts",
       entryCount: collectedArtifactCount,
-      image: '/table_icons/collected_artifacts.png',
-      imageLabel: 'Собранные артефакты',
+      image: "/table_icons/collected_artifacts.png",
+      imageLabel: "Собранные артефакты",
       link: "/collectedArtifacts",
     },
     {
-      title: 'Игровые сеансы',
+      title: "Игровые сеансы",
       databaseTitle: "game_sessions",
       entryCount: gameSessionCount,
-      image: '/table_icons/game_sessions.png',
-      imageLabel: 'Игровые сеансы',
+      image: "/table_icons/game_sessions.png",
+      imageLabel: "Игровые сеансы",
       link: "/gameSessions",
     },
     {
-      title: 'Сеансы игроков',
+      title: "Сеансы игроков",
       databaseTitle: "player_sessions",
       entryCount: playerSessionCount,
-      image: '/table_icons/player_sessions.png',
-      imageLabel: 'Сеансы игроков',
+      image: "/table_icons/player_sessions.png",
+      imageLabel: "Сеансы игроков",
       link: "/playerSessions",
     },
     {
-      title: 'Игроки',
+      title: "Игроки",
       databaseTitle: "players",
       entryCount: playerCount,
-      image: '/table_icons/players.png',
-      imageLabel: 'Игроки',
+      image: "/table_icons/players.png",
+      imageLabel: "Игроки",
       link: "/players",
     },
     {
-      title: 'Серверы',
+      title: "Серверы",
       databaseTitle: "servers",
       entryCount: serverCount,
-      image: '/table_icons/servers.png',
-      imageLabel: 'Серверы',
+      image: "/table_icons/servers.png",
+      imageLabel: "Серверы",
       link: "/servers",
     },
   ];
 
   const developerTables = [
     {
-      title: 'Уровни доступа',
+      title: "Уровни доступа",
       databaseTitle: "developer_access_levels",
       entryCount: developerAccessLevelCount,
-      image: '/table_icons/developer_access_levels.png',
-      imageLabel: 'Уровни доступа',
+      image: "/table_icons/developer_access_levels.png",
+      imageLabel: "Уровни доступа",
       link: "/developerAccessLevels",
     },
     {
-      title: 'Разработчики',
+      title: "Разработчики",
       databaseTitle: "developers",
       entryCount: developerCount,
-      image: '/table_icons/developers.png',
-      imageLabel: 'Разработчики',
+      image: "/table_icons/developers.png",
+      imageLabel: "Разработчики",
       link: "/developers",
     },
   ];

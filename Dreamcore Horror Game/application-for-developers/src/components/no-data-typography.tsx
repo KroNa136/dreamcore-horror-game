@@ -1,5 +1,5 @@
-import * as React from 'react';
-import Typography from '@mui/material/Typography';
+import * as React from "react";
+import Typography from "@mui/material/Typography";
 
 export default function NoDataTypography() {
   return (

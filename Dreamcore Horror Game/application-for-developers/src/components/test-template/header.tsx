@@ -1,10 +1,10 @@
-import * as React from 'react';
-import Toolbar from '@mui/material/Toolbar';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import SearchIcon from '@mui/icons-material/Search';
-import Typography from '@mui/material/Typography';
-import Link from '@mui/material/Link';
+import * as React from "react";
+import Toolbar from "@mui/material/Toolbar";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import SearchIcon from "@mui/icons-material/Search";
+import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
 
 interface HeaderProps {
   sections: ReadonlyArray<{
@@ -19,7 +19,7 @@ export default function Header(props: HeaderProps) {
 
   return (
     <React.Fragment>
-      <Toolbar sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Toolbar sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Button size="small">Subscribe</Button>
         <Typography
           component="h2"
@@ -41,7 +41,7 @@ export default function Header(props: HeaderProps) {
       <Toolbar
         component="nav"
         variant="dense"
-        sx={{ justifyContent: 'space-between', overflowX: 'auto' }}
+        sx={{ justifyContent: "space-between", overflowX: "auto" }}
       >
         {sections.map((section) => (
           <Link

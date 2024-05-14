@@ -1,9 +1,9 @@
-import * as React from 'react';
-import Typography from '@mui/material/Typography';
-import Grid from '@mui/material/Grid';
-import { Backdrop, Box, Button, Fade, Modal } from '@mui/material';
-import { displayName, CollectedArtifact } from '../../database';
-import { deleteCollectedArtifact } from '../../requests';
+import * as React from "react";
+import Typography from "@mui/material/Typography";
+import Grid from "@mui/material/Grid";
+import { Backdrop, Box, Button, Fade, Modal } from "@mui/material";
+import { displayName, CollectedArtifact } from "../../database";
+import { deleteCollectedArtifact } from "../../requests";
 
 interface DeleteCollectedArtifactModalProps {
   open: boolean,
@@ -39,12 +39,12 @@ export default function DeleteCollectedArtifactModal(props: DeleteCollectedArtif
     >
       <Fade in={props.open}>
         <Box sx={{
-          position: 'absolute' as 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
+          position: "absolute" as "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
           width: 480,
-          bgcolor: 'background.paper',
+          bgcolor: "background.paper",
           boxShadow: 24,
           p: 4,
         }}>

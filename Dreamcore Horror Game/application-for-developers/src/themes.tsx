@@ -1,5 +1,5 @@
-import { createTheme } from '@mui/material/styles';
-import { brown } from '@mui/material/colors';
+import { createTheme } from "@mui/material/styles";
+import { brown } from "@mui/material/colors";
 
 export const defaultTheme = createTheme({
   palette: {

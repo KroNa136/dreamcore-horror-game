@@ -1,19 +1,19 @@
-import * as React from 'react';
-import CssBaseline from '@mui/material/CssBaseline';
-import Grid from '@mui/material/Grid';
-import Container from '@mui/material/Container';
-import { ThemeProvider } from '@mui/material/styles';
-import Header from '../components/header';
-import PlayerCard from '../components/cards/player-card';
-import Footer from '../components/footer';
+import * as React from "react";
+import CssBaseline from "@mui/material/CssBaseline";
+import Grid from "@mui/material/Grid";
+import Container from "@mui/material/Container";
+import { ThemeProvider } from "@mui/material/styles";
+import Header from "../components/header";
+import PlayerCard from "../components/cards/player-card";
+import Footer from "../components/footer";
 import { defaultTheme } from "../themes";
-import { Button, TextField, Typography } from '@mui/material';
-import CustomPagination from '../components/custom-pagination';
-import { useEffect, useState } from 'react';
-import { getPlayers, getPlayersWhereDisplayName } from '../requests';
-import { Player } from '../database';
-import { createSearchParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { canCreate } from '../auth-manager';
+import { Button, TextField, Typography } from "@mui/material";
+import CustomPagination from "../components/custom-pagination";
+import { useEffect, useState } from "react";
+import { getPlayers, getPlayersWhereDisplayName } from "../requests";
+import { Player } from "../database";
+import { createSearchParams, Link, useNavigate, useSearchParams } from "react-router-dom";
+import { canCreate } from "../auth-manager";
 
 interface TableProps {
   defaultShowBy: number,

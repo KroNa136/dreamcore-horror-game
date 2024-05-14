@@ -1,19 +1,19 @@
-import * as React from 'react';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import CssBaseline from '@mui/material/CssBaseline';
-import TextField from '@mui/material/TextField';
-import Box from '@mui/material/Box';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import Typography from '@mui/material/Typography';
-import Container from '@mui/material/Container';
-import { ThemeProvider } from '@mui/material/styles';
+import * as React from "react";
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import CssBaseline from "@mui/material/CssBaseline";
+import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import Typography from "@mui/material/Typography";
+import Container from "@mui/material/Container";
+import { ThemeProvider } from "@mui/material/styles";
 import { defaultTheme } from "../themes";
-import { loginAsDeveloper, LoginData } from '../requests';
-import { useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { isSignedIn as isAlreadySignedIn } from '../auth-manager';
-import Footer from '../components/footer';
+import { loginAsDeveloper, LoginData } from "../requests";
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { isSignedIn as isAlreadySignedIn } from "../auth-manager";
+import Footer from "../components/footer";
 
 export default function SignIn() {
   const [signedIn, setSignedIn] = useState<boolean>(false);
@@ -53,12 +53,12 @@ export default function SignIn() {
         <Box
           sx={{
             marginTop: 10,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
         >
-          <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
+          <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
             <LockOutlinedIcon />
           </Avatar>
           <Typography component="h1" variant="h5">

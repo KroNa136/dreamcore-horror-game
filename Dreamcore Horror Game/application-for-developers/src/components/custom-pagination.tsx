@@ -1,6 +1,6 @@
 import { Container, Pagination, PaginationItem } from "@mui/material";
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { ChangeEvent } from "react";
 import { createSearchParams, useNavigate } from "react-router-dom";
 
