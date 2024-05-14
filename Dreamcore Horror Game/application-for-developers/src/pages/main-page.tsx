@@ -110,11 +110,11 @@ export default function MainPage() {
       link: "/acquiredAbilities",
     },
     {
-      title: "Собранные артефакты",
+      title: "Подобранные артефакты",
       databaseTitle: "collected_artifacts",
       entryCount: collectedArtifactCount,
       image: "/table_icons/collected_artifacts.png",
-      imageLabel: "Собранные артефакты",
+      imageLabel: "Подобранные артефакты",
       link: "/collectedArtifacts",
     },
     {

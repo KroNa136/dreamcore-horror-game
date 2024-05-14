@@ -52,7 +52,7 @@ export default function DeleteCollectedArtifactModal(props: DeleteCollectedArtif
             Подтверждение
           </Typography>
           <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-            Вы точно хотите удалить собранный артефакт {displayName(props.collectedArtifact)}?
+            Вы точно хотите удалить подобранный артефакт {displayName(props.collectedArtifact)}?
           </Typography>
           <Grid container justifyContent="center" mt={3}>
             <Button size="medium" color="error" variant="outlined" sx={{ mx: 2 }} onClick={handleDelete}>Да</Button>

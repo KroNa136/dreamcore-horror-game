@@ -95,7 +95,7 @@ export default function AllCollectedArtifacts(props: TableProps) {
       <Container maxWidth="lg">
         <Header />
         <main>
-          <Typography component="h3" variant="h3" align="left" my={4}>Собранные артефакты</Typography>
+          <Typography component="h3" variant="h3" align="left" my={4}>Подобранные артефакты</Typography>
           <Grid container spacing={4} direction="row" justifyContent="space-between" alignItems="center" my={4} px={2}>
             {canCreate() &&
               <Button size="medium" variant="contained" color="primary" sx={{ mx: 1 }} component={Link} to={"/createCollectedArtifact"}>Создать</Button>

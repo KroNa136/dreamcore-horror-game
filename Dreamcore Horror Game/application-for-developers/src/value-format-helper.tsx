@@ -9,3 +9,11 @@ export const toReadableUtcDateTime = (value: string) => new Date(value).toLocale
   second: "numeric",
   timeZone: "UTC"
 });
+
+export const toReadableTime = (value: string) => {
+  const hhmmss = value.split(":");
+  const hours = parseInt(hhmmss[0]);
+  const minutes = parseInt(hhmmss[1]);
+  const seconds = parseInt(hhmmss[2]);
+  return `${hours} ч ${minutes} мин ${seconds} сек`;
+}
