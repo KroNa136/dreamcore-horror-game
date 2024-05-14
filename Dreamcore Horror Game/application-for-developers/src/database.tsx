@@ -1,6 +1,9 @@
 import { toReadableUtcDateTime } from "./value-format-helper";
 
-export function displayName(entity: DatabaseEntity | {} | null | undefined): string | undefined {
+export function displayName(entity: DatabaseEntity | null | undefined): string | undefined {
+  if (entity === null || entity === undefined) {
+    return "NULL";
+  }
   // checking for the existance of unique class fields to determine the type of entity
   // (yeah, typescript is really stupid when it comes to object type checks)
   if ((entity as Ability).acquiredAbilities !== undefined && (entity as Ability).assetName !== undefined) {
@@ -70,8 +73,8 @@ export class AcquiredAbility implements DatabaseEntity {
   playerId: string = "";
   abilityId: string = "";
   acquirementTimestamp: string = defaultTimestamp;
-  ability: Ability | {} = {};
-  player: Player | {} = {};
+  ability: Ability | undefined;
+  player: Player | undefined;
 }
 
 export class Artifact implements DatabaseEntity {
@@ -79,7 +82,7 @@ export class Artifact implements DatabaseEntity {
   assetName: string = "";
   rarityLevelId: string = "";
   collectedArtifacts: CollectedArtifact[] = [];
-  rarityLevel: RarityLevel | {} = {};
+  rarityLevel: RarityLevel | undefined;
 }
 
 export class CollectedArtifact implements DatabaseEntity {
@@ -87,8 +90,8 @@ export class CollectedArtifact implements DatabaseEntity {
   playerId: string = "";
   artifactId: string = "";
   collectionTimestamp: string = defaultTimestamp;
-  artifact: Artifact | {} = {};
-  player: Player | {} = {};
+  artifact: Artifact | undefined;
+  player: Player | undefined;
 }
 
 export class Creature implements DatabaseEntity {
@@ -98,7 +101,7 @@ export class Creature implements DatabaseEntity {
   health: number = 0;
   movementSpeed: number = 0;
   playerSessions: PlayerSession[] = [];
-  requiredXpLevel: XpLevel | {} = {};
+  requiredXpLevel: XpLevel | undefined;
 }
 
 export class Developer implements DatabaseEntity {
@@ -108,7 +111,7 @@ export class Developer implements DatabaseEntity {
   refreshToken: string | null = null;
   developerAccessLevelId: string = "";
   isOnline: boolean = false;
-  developerAccessLevel: DeveloperAccessLevel | {} = {};
+  developerAccessLevel: DeveloperAccessLevel | undefined;
 }
 
 export class DeveloperAccessLevel implements DatabaseEntity {
@@ -132,7 +135,7 @@ export class GameSession implements DatabaseEntity {
   gameModeId: string = "";
   startTimestamp: string = defaultTimestamp;
   endTimestamp: string | null = null;
-  gameMode: GameMode | {} = {};
+  gameMode: GameMode | undefined;
   playerSessions: PlayerSession[] = [];
   server: Server | null = null;
 }
@@ -153,7 +156,7 @@ export class Player implements DatabaseEntity {
   acquiredAbilities: AcquiredAbility[] = [];
   collectedArtifacts: CollectedArtifact[] = [];
   playerSessions: PlayerSession[] = [];
-  xpLevel: XpLevel | {} = {};
+  xpLevel: XpLevel | undefined;
 }
 
 export class PlayerSession implements DatabaseEntity {
@@ -169,8 +172,8 @@ export class PlayerSession implements DatabaseEntity {
   usedCreatureId: string | null = null;
   selfReviveCount: number | null = null;
   allyReviveCount: number | null = null;
-  gameSession: GameSession | {} = {};
-  player: Player | {} = {};
+  gameSession: GameSession | undefined;
+  player: Player | undefined;
   usedCreature: Creature | null = null;
 }
 

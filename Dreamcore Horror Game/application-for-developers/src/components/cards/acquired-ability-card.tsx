@@ -33,7 +33,7 @@ export default function AcquiredAbilityCard(props: AcquiredAbilityCardProps) {
           </Typography>
         </CardContent>
         <CardActions sx={{ display: "flex", justifyContent: "center" }}>
-          <Button size="small" color="primary" variant="outlined" component={Link} to={`/acquiredAcquiredAbility/${acquiredAbility.id}`}>Перейти</Button>
+          <Button size="small" color="primary" variant="outlined" component={Link} to={`/acquiredAbility/${acquiredAbility.id}`}>Перейти</Button>
           {canEdit() &&
             <Button size="small" color="primary" variant="outlined" component={Link} to={`/editAcquiredAbility/${acquiredAbility.id}`}>Редактировать</Button>
           }

@@ -7,7 +7,7 @@ import Header from "../components/header";
 import Footer from "../components/footer";
 import { defaultTheme } from "../themes";
 import { Button, Typography } from "@mui/material";
-import { displayName, Player, XpLevel } from "../database";
+import { displayName, Player } from "../database";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getPlayer } from "../requests";
 import { useEffect, useState } from "react";
@@ -76,7 +76,7 @@ export default function SinglePlayer() {
               <Typography component="p" variant="body1" align="left">
                 <b>Уровень опыта</b>:
               </Typography>
-              {player.xpLevel && Object.keys(player.xpLevel).length > 0 ? <XpLevelCard xpLevel={player.xpLevel as XpLevel} /> : <NoDataTypography />}
+              {player.xpLevel ? <XpLevelCard xpLevel={player.xpLevel} /> : <NoDataTypography />}
             </Grid>
             <Grid item xs={12}>
               <Typography component="p" variant="body1" align="left">
