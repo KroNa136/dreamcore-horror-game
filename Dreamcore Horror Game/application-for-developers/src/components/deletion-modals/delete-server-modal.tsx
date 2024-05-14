@@ -2,8 +2,8 @@ import * as React from 'react';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import { Backdrop, Box, Button, Fade, Modal } from '@mui/material';
-import { displayName, Server } from '../database';
-import { deleteServer } from '../requests';
+import { displayName, Server } from '../../database';
+import { deleteServer } from '../../requests';
 
 interface DeleteServerModalProps {
   open: boolean,

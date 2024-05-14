@@ -4,7 +4,7 @@ import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
 import { ThemeProvider } from '@mui/material/styles';
 import Header from '../components/header';
-import TableCard from '../components/table-card';
+import TableCard from '../components/cards/table-card';
 import Footer from '../components/footer';
 import { defaultTheme } from "../themes";
 import { Typography } from '@mui/material';

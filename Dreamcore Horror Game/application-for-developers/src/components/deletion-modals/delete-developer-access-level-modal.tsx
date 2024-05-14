@@ -2,8 +2,8 @@ import * as React from 'react';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import { Backdrop, Box, Button, Fade, Modal } from '@mui/material';
-import { displayName, DeveloperAccessLevel } from '../database';
-import { deleteDeveloperAccessLevel } from '../requests';
+import { displayName, DeveloperAccessLevel } from '../../database';
+import { deleteDeveloperAccessLevel } from '../../requests';
 
 interface DeleteDeveloperAccessLevelModalProps {
   open: boolean,

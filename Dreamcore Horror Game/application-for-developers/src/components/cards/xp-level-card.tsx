@@ -8,7 +8,7 @@ import { displayName, XpLevel } from '../../database';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DeleteXpLevelModal from './../deletion-modals/delete-xp-level-modal';
+import DeleteXpLevelModal from '../deletion-modals/delete-xp-level-modal';
 import { canDelete, canEdit } from '../../auth-manager';
 
 interface XpLevelCardProps {

@@ -2,8 +2,8 @@ import * as React from 'react';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import { Backdrop, Box, Button, Fade, Modal } from '@mui/material';
-import { displayName, GameMode } from '../database';
-import { deleteGameMode } from '../requests';
+import { displayName, GameMode } from '../../database';
+import { deleteGameMode } from '../../requests';
 
 interface DeleteGameModeModalProps {
   open: boolean,
