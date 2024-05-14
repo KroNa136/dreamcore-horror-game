@@ -22,7 +22,7 @@ import AllDevelopers from "./pages/all-developers";
 import SingleDeveloper from "./pages/single-developer";
 
 import AllDeveloperAccessLevels from "./pages/all-developer-access-levels";
-import SingleDeveloperAccessLevels from "./pages/single-developer-access-level";
+import SingleDeveloperAccessLevel from "./pages/single-developer-access-level";
 
 import AllGameModes from "./pages/all-game-modes";
 import SingleGameMode from "./pages/single-game-mode";
@@ -49,7 +49,6 @@ import SingleXpLevel from "./pages/single-xp-level";
 
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { isSignedIn } from "./auth-manager";
-import SingleDeveloperAccessLevel from "./pages/single-developer-access-level";
 
 const IfSignedIn = ({ children }: { children: JSX.Element }) => {
   return isSignedIn() ? children : <Navigate to="/signIn"/>
