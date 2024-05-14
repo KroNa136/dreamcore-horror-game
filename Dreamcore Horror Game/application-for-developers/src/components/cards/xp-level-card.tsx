@@ -4,12 +4,12 @@ import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import { Button, CardActions } from '@mui/material';
-import { displayName, XpLevel } from '../database';
+import { displayName, XpLevel } from '../../database';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DeleteXpLevelModal from './delete-xp-level-modal';
-import { canDelete, canEdit } from '../auth-manager';
+import DeleteXpLevelModal from './../deletion-modals/delete-xp-level-modal';
+import { canDelete, canEdit } from '../../auth-manager';
 
 interface XpLevelCardProps {
   xpLevel: XpLevel

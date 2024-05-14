@@ -2,8 +2,8 @@ import * as React from 'react';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import { Backdrop, Box, Button, Fade, Modal } from '@mui/material';
-import { displayName, Ability } from '../database';
-import { deleteAbility } from '../requests';
+import { displayName, Ability } from '../../database';
+import { deleteAbility } from '../../requests';
 
 interface DeleteAbilityModalProps {
   open: boolean,

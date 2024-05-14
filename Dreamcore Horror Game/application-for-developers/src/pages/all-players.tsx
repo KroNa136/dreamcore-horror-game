@@ -4,7 +4,7 @@ import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
 import { ThemeProvider } from '@mui/material/styles';
 import Header from '../components/header';
-import PlayerCard from '../components/player-card';
+import PlayerCard from '../components/cards/player-card';
 import Footer from '../components/footer';
 import { defaultTheme } from "../themes";
 import { Button, TextField, Typography } from '@mui/material';

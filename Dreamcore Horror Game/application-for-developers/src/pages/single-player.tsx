@@ -11,10 +11,10 @@ import { displayName, Player, XpLevel } from '../database';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getPlayer } from '../requests';
 import { useEffect, useState } from 'react';
-import XpLevelCard from '../components/xp-level-card';
+import XpLevelCard from '../components/cards/xp-level-card';
 import NoDataTypography from '../components/no-data-typography';
 import { toReadableUtcDateTime, toYesNo } from '../value-format-helper';
-import DeletePlayerModal from '../components/delete-player-modal';
+import DeletePlayerModal from '../components/deletion-modals/delete-player-modal';
 import { canDelete, canEdit } from '../auth-manager';
 
 export default function SinglePlayer() {
