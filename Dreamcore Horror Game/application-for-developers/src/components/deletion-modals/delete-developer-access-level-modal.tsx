@@ -52,7 +52,7 @@ export default function DeleteDeveloperAccessLevelModal(props: DeleteDeveloperAc
             Подтверждение
           </Typography>
           <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-            Вы точно хотите удалить уровень доступа {displayName(props.developerAccessLevel)}?
+            Вы точно хотите удалить уровень доступа разработчиков {displayName(props.developerAccessLevel)}?
           </Typography>
           <Grid container justifyContent="center" mt={3}>
             <Button size="medium" color="error" variant="outlined" sx={{ mx: 2 }} onClick={handleDelete}>Да</Button>

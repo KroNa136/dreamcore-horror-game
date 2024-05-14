@@ -14,7 +14,7 @@ const lowAccessDeveloper = "Low Access Developer";
 const mediumAccessDeveloper = "Medium Access Developer";
 const fullAccessDeveloper = "Full Access Developer";
 
-export function canViewDevelopers(): boolean {
+export function canViewDevelopmentTables(): boolean {
   const currentAccessLevel = getCurrentDeveloperAccessLevel();
   return currentAccessLevel === fullAccessDeveloper;
 }

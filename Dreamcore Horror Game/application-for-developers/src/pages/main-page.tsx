@@ -14,7 +14,7 @@ import {
   getDeveloperAccessLevelCount, getGameModeCount, getGameSessionCount, getPlayerCount, getPlayerSessionCount, getRarityLevelCount,
   getServerCount, getXpLevelCount
 } from "../requests";
-import { canViewDevelopers } from "../auth-manager";
+import { canViewDevelopmentTables } from "../auth-manager";
 
 export default function MainPage() {
   const [abilityCount, setAbilityCount] = useState<number>(0);
@@ -153,11 +153,11 @@ export default function MainPage() {
 
   const developerTables = [
     {
-      title: "Уровни доступа",
+      title: "Уровни доступа разработчиков",
       databaseTitle: "developer_access_levels",
       entryCount: developerAccessLevelCount,
       image: "/table_icons/developer_access_levels.png",
-      imageLabel: "Уровни доступа",
+      imageLabel: "Уровни доступа разработчиков",
       link: "/developerAccessLevels",
     },
     {
@@ -192,9 +192,9 @@ export default function MainPage() {
               ))}
             </Grid>
           </div>
-          {canViewDevelopers() &&
+          {canViewDevelopmentTables() &&
             <div>
-              <Typography component="h3" variant="h3" align="left" my={4}>Разработчики</Typography>
+              <Typography component="h3" variant="h3" align="left" my={4}>Разработка</Typography>
               <Grid container spacing={4}>
                 {developerTables.map((table) => (
                   <TableCard key={table.title} table={table} />

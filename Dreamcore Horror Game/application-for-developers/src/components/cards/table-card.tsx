@@ -24,6 +24,12 @@ export default function TableCard(props: TableCardProps) {
     <Grid item xs={12} md={6}>
       <CardActionArea component="a" href={table.link}>
         <Card sx={{ display: "flex", backgroundColor: "#fbfbfb" }}>
+          <CardMedia
+            component="img"
+            sx={{ width: 64, height: 64, display: { xs: "none", sm: "block" }, alignSelf: "center", mx: 2 }}
+            image={table.image}
+            alt={table.imageLabel}
+          />
           <CardContent sx={{ flex: 1 }}>
             <Typography component="h2" variant="h5">
               {table.title}
@@ -35,12 +41,6 @@ export default function TableCard(props: TableCardProps) {
               Всего записей: {table.entryCount.toString()}
             </Typography>
           </CardContent>
-          <CardMedia
-            component="img"
-            sx={{ width: 64, height: 64, display: { xs: "none", sm: "block" }, alignSelf: "center", mx: 2 }}
-            image={table.image}
-            alt={table.imageLabel}
-          />
         </Card>
       </CardActionArea>
     </Grid>
