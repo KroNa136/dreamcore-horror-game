@@ -13,5 +13,5 @@ public partial class Artifact
 
     public virtual ICollection<CollectedArtifact> CollectedArtifacts { get; set; } = new List<CollectedArtifact>();
 
-    public virtual RarityLevel RarityLevel { get; set; } = null!;
+    public virtual RarityLevel? RarityLevel { get; set; }
 }

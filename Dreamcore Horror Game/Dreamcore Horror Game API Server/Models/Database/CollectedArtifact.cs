@@ -13,7 +13,7 @@ public partial class CollectedArtifact
 
     public DateTime CollectionTimestamp { get; set; }
 
-    public virtual Artifact Artifact { get; set; } = null!;
+    public virtual Artifact? Artifact { get; set; }
 
-    public virtual Player Player { get; set; } = null!;
+    public virtual Player? Player { get; set; }
 }

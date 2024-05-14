@@ -13,7 +13,7 @@ public partial class AcquiredAbility
 
     public DateTime AcquirementTimestamp { get; set; }
 
-    public virtual Ability Ability { get; set; } = null!;
+    public virtual Ability? Ability { get; set; }
 
-    public virtual Player Player { get; set; } = null!;
+    public virtual Player? Player { get; set; }
 }

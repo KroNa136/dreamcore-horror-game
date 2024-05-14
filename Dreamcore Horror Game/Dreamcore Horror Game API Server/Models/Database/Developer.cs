@@ -17,5 +17,5 @@ public partial class Developer
 
     public bool IsOnline { get; set; }
 
-    public virtual DeveloperAccessLevel DeveloperAccessLevel { get; set; } = null!;
+    public virtual DeveloperAccessLevel? DeveloperAccessLevel { get; set; }
 }

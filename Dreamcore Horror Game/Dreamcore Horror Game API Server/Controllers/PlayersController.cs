@@ -44,7 +44,7 @@ public class PlayersController : UserController<Player>
 
             await players.ForEachAsync(player =>
             {
-                player.XpLevel.Players.Clear();
+                player.XpLevel?.Players.Clear();
             });
 
             return players;

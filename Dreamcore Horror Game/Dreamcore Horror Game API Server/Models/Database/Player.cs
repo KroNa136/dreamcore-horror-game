@@ -35,5 +35,5 @@ public partial class Player
 
     public virtual ICollection<PlayerSession> PlayerSessions { get; set; } = new List<PlayerSession>();
 
-    public virtual XpLevel XpLevel { get; set; } = null!;
+    public virtual XpLevel? XpLevel { get; set; }
 }

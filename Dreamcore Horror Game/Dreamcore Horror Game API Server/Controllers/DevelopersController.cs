@@ -41,7 +41,7 @@ public class DevelopersController : UserController<Developer>
 
             await developers.ForEachAsync(developer =>
             {
-                developer.DeveloperAccessLevel.Developers.Clear();
+                developer.DeveloperAccessLevel?.Developers.Clear();
             });
 
             return developers;

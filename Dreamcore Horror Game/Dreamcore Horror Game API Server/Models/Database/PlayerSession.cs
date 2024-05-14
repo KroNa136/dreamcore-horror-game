@@ -29,9 +29,9 @@ public partial class PlayerSession
 
     public short? AllyReviveCount { get; set; }
 
-    public virtual GameSession GameSession { get; set; } = null!;
+    public virtual GameSession? GameSession { get; set; }
 
-    public virtual Player Player { get; set; } = null!;
+    public virtual Player? Player { get; set; }
 
     public virtual Creature? UsedCreature { get; set; }
 }

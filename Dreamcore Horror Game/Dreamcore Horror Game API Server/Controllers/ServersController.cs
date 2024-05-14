@@ -184,7 +184,8 @@ public class ServersController : UserController<Server>
 
     private int GetCurrentPlayerCount(Server server)
         => _context.PlayerSessions
-            .Where(playerSession => playerSession.EndTimestamp == null && playerSession.GameSession.ServerId == server.Id)
+            .Where(playerSession => playerSession.EndTimestamp == null
+                && playerSession.GameSession != null && playerSession.GameSession.ServerId == server.Id)
             .Count();
 
     private async Task<bool> HasWaitingSession(Server server, int slots)

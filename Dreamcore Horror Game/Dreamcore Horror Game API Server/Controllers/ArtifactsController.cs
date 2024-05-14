@@ -35,7 +35,7 @@ public class ArtifactsController : DatabaseEntityController<Artifact>
 
             await artifacts.ForEachAsync(artifact =>
             {
-                artifact.RarityLevel.Artifacts.Clear();
+                artifact.RarityLevel?.Artifacts.Clear();
             });
 
             return artifacts;

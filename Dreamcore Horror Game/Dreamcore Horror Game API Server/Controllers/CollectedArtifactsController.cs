@@ -35,8 +35,8 @@ public class CollectedArtifactsController : DatabaseEntityController<CollectedAr
 
             await collectedArtifacts.ForEachAsync(collectedArtifact =>
             {
-                collectedArtifact.Player.CollectedArtifacts.Clear();
-                collectedArtifact.Artifact.CollectedArtifacts.Clear();
+                collectedArtifact.Player?.CollectedArtifacts.Clear();
+                collectedArtifact.Artifact?.CollectedArtifacts.Clear();
             });
 
             return collectedArtifacts;

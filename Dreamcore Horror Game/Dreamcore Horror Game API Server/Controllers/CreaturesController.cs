@@ -35,7 +35,7 @@ public class CreaturesController : DatabaseEntityController<Creature>
 
             await creatures.ForEachAsync(creature =>
             {
-                creature.RequiredXpLevel.Creatures.Clear();
+                creature.RequiredXpLevel?.Creatures.Clear();
             });
 
             return creatures;

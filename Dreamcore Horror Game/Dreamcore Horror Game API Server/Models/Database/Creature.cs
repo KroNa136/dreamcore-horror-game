@@ -17,5 +17,5 @@ public partial class Creature
 
     public virtual ICollection<PlayerSession> PlayerSessions { get; set; } = new List<PlayerSession>();
 
-    public virtual XpLevel RequiredXpLevel { get; set; } = null!;
+    public virtual XpLevel? RequiredXpLevel { get; set; }
 }

@@ -36,7 +36,7 @@ public class GameSessionsController : DatabaseEntityController<GameSession>
 
             await gameSessions.ForEachAsync(gameSession =>
             {
-                gameSession.GameMode.GameSessions.Clear();
+                gameSession.GameMode?.GameSessions.Clear();
                 gameSession.Server?.GameSessions.Clear();
             });
 

@@ -15,7 +15,7 @@ public partial class GameSession
 
     public DateTime? EndTimestamp { get; set; }
 
-    public virtual GameMode GameMode { get; set; } = null!;
+    public virtual GameMode? GameMode { get; set; }
 
     public virtual ICollection<PlayerSession> PlayerSessions { get; set; } = new List<PlayerSession>();
 

@@ -35,8 +35,8 @@ public class AcquiredAbilitiesController : DatabaseEntityController<AcquiredAbil
 
             await acquiredAbilities.ForEachAsync(acquiredAbility =>
             {
-                acquiredAbility.Player.AcquiredAbilities.Clear();
-                acquiredAbility.Ability.AcquiredAbilities.Clear();
+                acquiredAbility.Player?.AcquiredAbilities.Clear();
+                acquiredAbility.Ability?.AcquiredAbilities.Clear();
             });
 
             return acquiredAbilities;
