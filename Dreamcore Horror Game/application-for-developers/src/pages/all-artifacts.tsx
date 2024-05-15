@@ -97,7 +97,7 @@ export default function AllArtifacts(props: TableProps) {
               <Button size="medium" variant="contained" color="primary" sx={{ mx: 1 }} component={Link} to={"/createArtifact"}>Создать</Button>
             }
             <Grid justifyContent="end" alignItems="center" justifySelf="end">
-              <TextField sx={{ mx: 1, mb: 2, width: 500 }} size="small" margin="normal" id="search" label="Поиск" name="search" onChange={e => setSearchQuery(e.target.value)} />
+              <TextField sx={{ mx: 1, mb: 2, width: 450 }} size="small" margin="normal" id="search" label="Поиск" name="search" onChange={e => setSearchQuery(e.target.value)} />
               <Button size="medium" variant="outlined" color="primary" sx={{ mx: 1, mt: 2 }} onClick={handleSearchClick}>Найти</Button>
             </Grid>
           </Grid>
