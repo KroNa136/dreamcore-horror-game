@@ -28,6 +28,10 @@ public class PlayerSessionsController : DatabaseEntityController<PlayerSession>
         orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>
         {
+            // Although the server of the game session is not a first-level relation,
+            // it is required to create a display name for a player session
+            var servers = await context.Servers.ToListAsync();
+
             var gameSessions = await context.GameSessions.ToListAsync();
             var players = await context.Players.ToListAsync();
             var creatures = await context.Creatures.ToListAsync();
