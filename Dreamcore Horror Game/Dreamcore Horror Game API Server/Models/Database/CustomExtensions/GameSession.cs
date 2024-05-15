@@ -5,7 +5,7 @@ namespace DreamcoreHorrorGameApiServer.Models.Database;
 public partial class GameSession : IDatabaseEntity, IEquatable<GameSession>
 {
     [NotMapped]
-    public string DisplayName => $"На сервере {Server?.DisplayName ?? "NULL"} в {StartTimestamp}";
+    public string DisplayName => $"На сервере {Server?.DisplayName ?? "NULL"} {StartTimestamp}";
 
     public bool Equals(GameSession? other)
     {
