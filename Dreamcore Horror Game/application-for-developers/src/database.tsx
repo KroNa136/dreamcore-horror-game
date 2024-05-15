@@ -5,7 +5,6 @@ export function displayName(entity: DatabaseEntity | null | undefined): string |
     return "NULL";
   }
   // checking for the existance of unique class fields to determine the type of entity
-  // (yeah, typescript is really stupid when it comes to object type checks)
   if ((entity as Ability).acquiredAbilities !== undefined && (entity as Ability).assetName !== undefined) {
     return (entity as Ability).assetName;
   }
@@ -37,7 +36,7 @@ export function displayName(entity: DatabaseEntity | null | undefined): string |
     return (entity as Player).username;
   }
   else if ((entity as PlayerSession).playedAsCreature !== undefined) {
-    if (((entity as PlayerSession).gameSession as GameSession).gameMode !== undefined) {
+    if ((entity as PlayerSession).gameSession?.gameMode !== undefined && ((entity as PlayerSession).gameSession as GameSession).gameMode !== undefined) {
       return `У игрока ${displayName((entity as PlayerSession).player) ?? "NULL"} на сервере ${displayName(((entity as PlayerSession).gameSession as GameSession).server) ?? "NULL"} в ${toReadableUtcDateTime((entity as PlayerSession).startTimestamp)}`;
     }
     else {

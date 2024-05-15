@@ -16,7 +16,7 @@ import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { actions } from "../redux/slices/player-form-slice";
+import { actions, resetState } from "../redux/slices/player-form-slice";
 import Footer from "../components/footer";
 
 export default function EditPlayer() {
@@ -26,7 +26,10 @@ export default function EditPlayer() {
   const dispatch = useAppDispatch();
   const state = useAppSelector(state => state.playerForm);
 
+  const [xpLevels, setXpLevels] = useState<XpLevel[]>([]);
+
   useEffect(() => {
+    resetState(dispatch);
     getPlayer(params.id)
       .then(player => {
         dispatch(actions.setId(player.id));
@@ -41,11 +44,6 @@ export default function EditPlayer() {
         dispatch(actions.setAbilityPoints(player.abilityPoints));
         dispatch(actions.setSpiritEnergyPoints(player.spiritEnergyPoints));
       });
-  }, []);
-
-  const [xpLevels, setXpLevels] = useState<XpLevel[]>([]);
-
-  useEffect(() => {
     getXpLevels()
       .then(xpLevels => setXpLevels(xpLevels.items));
   }, []);

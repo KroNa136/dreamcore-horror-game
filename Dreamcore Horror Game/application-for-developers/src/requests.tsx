@@ -47,7 +47,8 @@ async function getAccessToken() {
   catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {
-        alert("Закончился срок действия refresh-токена авторизации. Пожалуйста, выйдите из системы и войдите заново.")
+        alert("Закончился срок действия refresh-токена авторизации. Пожалуйста, выйдите из системы и войдите заново.");
+        signOut();
       }
       console.log(error.response?.data);
       alert("Возникла ошибка HTTP. Подробности смотрите в консоли.");
@@ -190,43 +191,43 @@ async function getAllWithRelations<TEntities>(controllerUrl: string, page: numbe
   }
 }
 
-export const getAbilities = async (page: number | undefined, showBy: number | undefined) =>
+export const getAbilities = async (page?: number | undefined, showBy?: number | undefined) =>
   await getAllWithRelations<Abilities>("Abilities", page, showBy, { items: [], pageCount: 0 });
 
-export const getAcquiredAbilities = async (page: number | undefined, showBy: number | undefined) =>
+export const getAcquiredAbilities = async (page?: number | undefined, showBy?: number | undefined) =>
   await getAllWithRelations<AcquiredAbilities>("AcquiredAbilities", page, showBy, { items: [], pageCount: 0 });
 
-export const getArtifacts = async (page: number | undefined, showBy: number | undefined) =>
+export const getArtifacts = async (page?: number | undefined, showBy?: number | undefined) =>
   await getAllWithRelations<Artifacts>("Artifacts", page, showBy, { items: [], pageCount: 0 });
 
-export const getCollectedArtifacts = async (page: number | undefined, showBy: number | undefined) =>
+export const getCollectedArtifacts = async (page?: number | undefined, showBy?: number | undefined) =>
   await getAllWithRelations<CollectedArtifacts>("CollectedArtifacts", page, showBy, { items: [], pageCount: 0 });
 
-export const getCreatures = async (page: number | undefined, showBy: number | undefined) =>
+export const getCreatures = async (page?: number | undefined, showBy?: number | undefined) =>
   await getAllWithRelations<Creatures>("Creatures", page, showBy, { items: [], pageCount: 0 });
 
-export const getDevelopers = async (page: number | undefined, showBy: number | undefined) =>
+export const getDevelopers = async (page?: number | undefined, showBy?: number | undefined) =>
   await getAllWithRelations<Developers>("Developers", page, showBy, { items: [], pageCount: 0 });
 
-export const getDeveloperAccessLevels = async (page: number | undefined, showBy: number | undefined) =>
+export const getDeveloperAccessLevels = async (page?: number | undefined, showBy?: number | undefined) =>
   await getAllWithRelations<DeveloperAccessLevels>("DeveloperAccessLevels", page, showBy, { items: [], pageCount: 0 });
 
-export const getGameModes = async (page: number | undefined, showBy: number | undefined) =>
+export const getGameModes = async (page?: number | undefined, showBy?: number | undefined) =>
   await getAllWithRelations<GameModes>("GameModes", page, showBy, { items: [], pageCount: 0 });
 
-export const getGameSessions = async (page: number | undefined, showBy: number | undefined) =>
+export const getGameSessions = async (page?: number | undefined, showBy?: number | undefined) =>
   await getAllWithRelations<GameSessions>("GameSessions", page, showBy, { items: [], pageCount: 0 });
 
-export const getPlayers = async (page: number | undefined, showBy: number | undefined) =>
+export const getPlayers = async (page?: number | undefined, showBy?: number | undefined) =>
   await getAllWithRelations<Players>("Players", page, showBy, { items: [], pageCount: 0 });
 
-export const getPlayerSessions = async (page: number | undefined, showBy: number | undefined) =>
+export const getPlayerSessions = async (page?: number | undefined, showBy?: number | undefined) =>
   await getAllWithRelations<PlayerSessions>("PlayerSessions", page, showBy, { items: [], pageCount: 0 });
 
-export const getRarityLevels = async (page: number | undefined, showBy: number | undefined) =>
+export const getRarityLevels = async (page?: number | undefined, showBy?: number | undefined) =>
   await getAllWithRelations<RarityLevels>("RarityLevels", page, showBy, { items: [], pageCount: 0 });
 
-export const getServers = async (page: number | undefined, showBy: number | undefined) =>
+export const getServers = async (page?: number | undefined, showBy?: number | undefined) =>
   await getAllWithRelations<Servers>("Servers", page, showBy, { items: [], pageCount: 0 });
 
 export const getXpLevels = async (page?: number | undefined, showBy?: number | undefined) =>

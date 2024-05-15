@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, ThunkDispatch } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../store";
 
@@ -16,7 +16,7 @@ interface PlayerFormState {
   spiritEnergyPoints: number
 }
 
-const initialState : PlayerFormState = {
+const initialState: PlayerFormState = {
   id: "",
   username: "",
   email: "",
@@ -28,7 +28,7 @@ const initialState : PlayerFormState = {
   xp: 0,
   abilityPoints: 0,
   spiritEnergyPoints: 0
-}
+};
 
 const playerFormSlice = createSlice({
   name: "playerForm",
@@ -50,5 +50,19 @@ const playerFormSlice = createSlice({
 
 export const state = (state: RootState) => state.playerForm;
 export const actions = playerFormSlice.actions;
+
+export const resetState = (dispatch: ThunkDispatch<any, any, any>) => {
+  dispatch(actions.setId(initialState.id));
+  dispatch(actions.setUsername(initialState.username));
+  dispatch(actions.setEmail(initialState.email));
+  dispatch(actions.setPassword(initialState.password));
+  dispatch(actions.setRefreshToken(initialState.refreshToken));
+  dispatch(actions.setRegistrationTimestamp(initialState.registrationTimestamp));
+  dispatch(actions.setCollectOptionalData(initialState.collectOptionalData));
+  dispatch(actions.setXpLevelId(initialState.xpLevelId));
+  dispatch(actions.setXp(initialState.xp));
+  dispatch(actions.setAbilityPoints(initialState.abilityPoints));
+  dispatch(actions.setSpiritEnergyPoints(initialState.spiritEnergyPoints));
+}
 
 export default playerFormSlice.reducer;
