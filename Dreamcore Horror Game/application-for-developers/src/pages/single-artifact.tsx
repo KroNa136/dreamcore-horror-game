@@ -13,7 +13,7 @@ import { getArtifact } from "../requests";
 import { useEffect, useState } from "react";
 import NoDataTypography from "../components/no-data-typography";
 import DeleteArtifactModal from "../components/deletion-modals/delete-artifact-modal";
-import { canDelete, canEdit } from "../auth-manager";
+import { canDelete, canEdit } from "../auth-state";
 import RarityLevelCard from "../components/cards/rarity-level-card";
 
 export default function SingleArtifact() {

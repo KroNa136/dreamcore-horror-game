@@ -9,9 +9,9 @@ import { ThemeProvider } from "@mui/material/styles";
 import { defaultTheme } from "../themes";
 import { editPlayer, getPlayer, getXpLevels } from "../requests";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select } from "@mui/material";
-import { displayName, Player, XpLevel } from "../database";
+import { displayName, Player } from "../database";
 import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -25,8 +25,6 @@ export default function EditPlayer() {
 
   const dispatch = useAppDispatch();
   const state = useAppSelector(state => state.playerForm);
-
-  const [xpLevels, setXpLevels] = useState<XpLevel[]>([]);
 
   useEffect(() => {
     resetState(dispatch);
@@ -45,7 +43,7 @@ export default function EditPlayer() {
         dispatch(actions.setSpiritEnergyPoints(player.spiritEnergyPoints));
       });
     getXpLevels()
-      .then(xpLevels => setXpLevels(xpLevels.items));
+      .then(xpLevels => dispatch(actions.setXpLevels(xpLevels.items)));
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -137,7 +135,7 @@ export default function EditPlayer() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {xpLevels.map(xpLevel => (
+                {state.xpLevels.map(xpLevel => (
                   <MenuItem key={xpLevel.id} value={xpLevel.id}>{displayName(xpLevel)}</MenuItem>
                 ))}
               </Select>

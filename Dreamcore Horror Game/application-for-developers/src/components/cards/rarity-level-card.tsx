@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DeleteRarityLevelModal from "../deletion-modals/delete-rarity-level-modal";
-import { canDelete, canEdit } from "../../auth-manager";
+import { canDelete, canEdit } from "../../auth-state";
 
 interface RarityLevelCardProps {
   rarityLevel: RarityLevel

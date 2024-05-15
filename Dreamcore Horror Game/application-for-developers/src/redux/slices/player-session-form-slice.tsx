@@ -1,6 +1,7 @@
 import { createSlice, ThunkDispatch } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../store";
+import { Creature, GameSession, Player } from "../../database";
 
 interface PlayerSessionFormState {
   id: string,
@@ -15,6 +16,9 @@ interface PlayerSessionFormState {
   usedCreatureId: string | null,
   selfReviveCount: number | null,
   allyReviveCount: number | null,
+  gameSessions: GameSession[],
+  players: Player[],
+  creatures: Creature[],
 }
 
 const initialState: PlayerSessionFormState = {
@@ -30,6 +34,9 @@ const initialState: PlayerSessionFormState = {
   usedCreatureId: null,
   selfReviveCount: null,
   allyReviveCount: null,
+  gameSessions: [],
+  players: [],
+  creatures: [],
 };
 
 const playerSessionFormSlice = createSlice({
@@ -48,6 +55,9 @@ const playerSessionFormSlice = createSlice({
     setUsedCreatureId: (state, action: PayloadAction<string | null>) => { state.usedCreatureId = action.payload },
     setSelfReviveCount: (state, action: PayloadAction<number | null>) => { state.selfReviveCount = action.payload },
     setAllyReviveCount: (state, action: PayloadAction<number | null>) => { state.allyReviveCount = action.payload },
+    setGameSessions: (state, action: PayloadAction<GameSession[]>) => { state.gameSessions = action.payload },
+    setPlayers: (state, action: PayloadAction<Player[]>) => { state.players = action.payload },
+    setCreatures: (state, action: PayloadAction<Creature[]>) => { state.creatures = action.payload },
   },
 });
 
@@ -67,6 +77,9 @@ export const resetState = (dispatch: ThunkDispatch<any, any, any>) => {
   dispatch(actions.setUsedCreatureId(initialState.usedCreatureId));
   dispatch(actions.setSelfReviveCount(initialState.selfReviveCount));
   dispatch(actions.setAllyReviveCount(initialState.allyReviveCount));
+  dispatch(actions.setGameSessions(initialState.gameSessions));
+  dispatch(actions.setPlayers(initialState.players));
+  dispatch(actions.setCreatures(initialState.creatures));
 };
 
 export default playerSessionFormSlice.reducer;

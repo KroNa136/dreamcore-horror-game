@@ -8,9 +8,9 @@ import { ThemeProvider } from "@mui/material/styles";
 import { defaultTheme } from "../themes";
 import { editPlayerSession, getPlayerSession, getPlayers, getGameSessions, getCreatures } from "../requests";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, TextField } from "@mui/material";
-import { displayName, PlayerSession, Player, GameSession, Creature } from "../database";
+import { displayName, PlayerSession } from "../database";
 import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -24,10 +24,6 @@ export default function EditPlayerSession() {
 
   const dispatch = useAppDispatch();
   const state = useAppSelector(state => state.playerSessionForm);
-
-  const [gameSessions, setGameSessions] = useState<GameSession[]>([]);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [creatures, setCreatures] = useState<Creature[]>([]);
 
   useEffect(() => {
     resetState(dispatch);
@@ -47,11 +43,11 @@ export default function EditPlayerSession() {
         dispatch(actions.setAllyReviveCount(playerSession.allyReviveCount));
       });
     getGameSessions()
-      .then(gameSessions => setGameSessions(gameSessions.items));
+      .then(gameSessions => dispatch(actions.setGameSessions(gameSessions.items)));
     getPlayers()
-      .then(players => setPlayers(players.items));
+      .then(players => dispatch(actions.setPlayers(players.items)));
     getCreatures()
-      .then(creatures => setCreatures(creatures.items));
+      .then(creatures => dispatch(actions.setCreatures(creatures.items)));
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -108,7 +104,7 @@ export default function EditPlayerSession() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {gameSessions.map(gameSession => (
+                {state.gameSessions.map(gameSession => (
                   <MenuItem key={gameSession.id} value={gameSession.id}>{displayName(gameSession)}</MenuItem>
                 ))}
               </Select>
@@ -126,7 +122,7 @@ export default function EditPlayerSession() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {players.map(player => (
+                {state.players.map(player => (
                   <MenuItem key={player.id} value={player.id}>{displayName(player)}</MenuItem>
                 ))}
               </Select>
@@ -189,7 +185,7 @@ export default function EditPlayerSession() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {creatures.map(creature => (
+                {state.creatures.map(creature => (
                   <MenuItem key={creature.id} value={creature.id}>{displayName(creature)}</MenuItem>
                 ))}
               </Select>

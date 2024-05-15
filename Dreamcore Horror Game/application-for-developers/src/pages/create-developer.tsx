@@ -9,9 +9,9 @@ import { ThemeProvider } from "@mui/material/styles";
 import { defaultTheme } from "../themes";
 import { createDeveloper, getDeveloperAccessLevels } from "../requests";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
-import { displayName, Developer, DeveloperAccessLevel } from "../database";
+import { displayName, Developer } from "../database";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { actions, resetState } from "../redux/slices/developer-form-slice";
 import Footer from "../components/footer";
@@ -22,12 +22,10 @@ export default function CreateDeveloper() {
   const dispatch = useAppDispatch();
   const state = useAppSelector(state => state.developerForm);
 
-  const [developerAccessLevels, setDeveloperAccessLevels] = useState<DeveloperAccessLevel[]>([]);
-
   useEffect(() => {
     resetState(dispatch);
     getDeveloperAccessLevels()
-      .then(developerAccessLevels => setDeveloperAccessLevels(developerAccessLevels.items));
+      .then(developerAccessLevels => dispatch(actions.setDeveloperAccessLevels(developerAccessLevels.items)));
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -95,7 +93,7 @@ export default function CreateDeveloper() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {developerAccessLevels.map(developerAccessLevel => (
+                {state.developerAccessLevels.map(developerAccessLevel => (
                   <MenuItem key={developerAccessLevel.id} value={developerAccessLevel.id}>{displayName(developerAccessLevel)}</MenuItem>
                 ))}
               </Select>

@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import NoDataTypography from "../components/no-data-typography";
 import { toReadableUtcDateTime } from "../value-format-helper";
 import DeleteGameSessionModal from "../components/deletion-modals/delete-game-session-modal";
-import { canDelete, canEdit } from "../auth-manager";
+import { canDelete, canEdit } from "../auth-state";
 import ServerCard from "../components/cards/server-card";
 import GameModeCard from "../components/cards/game-mode-card";
 

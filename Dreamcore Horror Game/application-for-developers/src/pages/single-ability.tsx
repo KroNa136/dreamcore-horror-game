@@ -12,7 +12,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { getAbility } from "../requests";
 import { useEffect, useState } from "react";
 import DeleteAbilityModal from "../components/deletion-modals/delete-ability-modal";
-import { canDelete, canEdit } from "../auth-manager";
+import { canDelete, canEdit } from "../auth-state";
 
 export default function SingleAbility() {
   const navigate = useNavigate();

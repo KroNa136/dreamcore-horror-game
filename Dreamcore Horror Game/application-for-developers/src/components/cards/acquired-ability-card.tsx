@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DeleteAcquiredAbilityModal from "../deletion-modals/delete-acquired-ability-modal";
-import { canDelete, canEdit } from "../../auth-manager";
+import { canDelete, canEdit } from "../../auth-state";
 
 interface AcquiredAbilityCardProps {
   acquiredAbility: AcquiredAbility

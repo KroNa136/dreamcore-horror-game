@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import XpLevelCard from "../components/cards/xp-level-card";
 import NoDataTypography from "../components/no-data-typography";
 import DeleteCreatureModal from "../components/deletion-modals/delete-creature-modal";
-import { canDelete, canEdit } from "../auth-manager";
+import { canDelete, canEdit } from "../auth-state";
 
 export default function SingleCreature() {
   const navigate = useNavigate();

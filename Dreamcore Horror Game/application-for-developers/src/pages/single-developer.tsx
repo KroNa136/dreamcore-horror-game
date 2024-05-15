@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import NoDataTypography from "../components/no-data-typography";
 import { toYesNo } from "../value-format-helper";
 import DeleteDeveloperModal from "../components/deletion-modals/delete-developer-modal";
-import { canDelete, canEdit } from "../auth-manager";
+import { canDelete, canEdit } from "../auth-state";
 import DeveloperAccessLevelCard from "../components/cards/developer-access-level-card";
 
 export default function SingleDeveloper() {

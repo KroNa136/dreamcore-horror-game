@@ -1,4 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
+import signInFormReducer from "./slices/sign-in-form-slice";
 import abilityFormReducer from "./slices/ability-form-slice";
 import acquiredAbilityFormReducer from "./slices/acquired-ability-form-slice";
 import artifactFormReducer from "./slices/artifact-form-slice";
@@ -16,6 +17,7 @@ import xpLevelFormReducer from "./slices/xp-level-form-slice";
 
 export const store = configureStore({
   reducer: {
+    signInForm: signInFormReducer,
     abilityForm: abilityFormReducer,
     acquiredAbilityForm: acquiredAbilityFormReducer,
     artifactForm: artifactFormReducer,

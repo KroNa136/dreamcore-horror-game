@@ -59,7 +59,7 @@ export default function EditDeveloperAccessLevel() {
           }}
         >
           <Typography component="h4" variant="h4">
-            Редактирование уровня доступа разработчика
+            Редактирование уровня доступа разработчиков
           </Typography>
           <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
             <TextField

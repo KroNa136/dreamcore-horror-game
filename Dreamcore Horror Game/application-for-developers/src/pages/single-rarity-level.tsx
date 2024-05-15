@@ -12,7 +12,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { getRarityLevel } from "../requests";
 import { useEffect, useState } from "react";
 import DeleteRarityLevelModal from "../components/deletion-modals/delete-rarity-level-modal";
-import { canDelete, canEdit } from "../auth-manager";
+import { canDelete, canEdit } from "../auth-state";
 
 export default function SingleRarityLevel() {
   const navigate = useNavigate();

@@ -12,7 +12,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { getXpLevel } from "../requests";
 import { useEffect, useState } from "react";
 import DeleteXpLevelModal from "../components/deletion-modals/delete-xp-level-modal";
-import { canDelete, canEdit } from "../auth-manager";
+import { canDelete, canEdit } from "../auth-state";
 
 export default function SingleXpLevel() {
   const navigate = useNavigate();

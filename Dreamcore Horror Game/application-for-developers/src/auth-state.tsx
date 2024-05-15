@@ -6,6 +6,10 @@ export function getCurrentLogin(): string {
   return sessionStorage.getItem("login") ?? "";
 }
 
+export function getCurrentRefreshToken(): string {
+  return sessionStorage.getItem("refreshToken") ?? "";
+}
+
 function getCurrentDeveloperAccessLevel(): string {
   return sessionStorage.getItem("developerAccessLevel") ?? "";
 }

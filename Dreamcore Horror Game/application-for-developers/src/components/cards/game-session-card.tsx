@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DeleteGameSessionModal from "../deletion-modals/delete-game-session-modal";
-import { canDelete, canEdit } from "../../auth-manager";
+import { canDelete, canEdit } from "../../auth-state";
 
 interface GameSessionCardProps {
   gameSession: GameSession

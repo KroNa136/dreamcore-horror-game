@@ -52,7 +52,7 @@ export default function CreateDeveloperAccessLevel() {
           }}
         >
           <Typography component="h4" variant="h4">
-            Создание уровня доступа разработчика
+            Создание уровня доступа разработчиков
           </Typography>
           <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
             <TextField

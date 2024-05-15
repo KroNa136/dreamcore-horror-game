@@ -1,6 +1,7 @@
 import { createSlice, ThunkDispatch } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../store";
+import { DeveloperAccessLevel } from "../../database";
 
 interface DeveloperFormState {
   id: string,
@@ -8,6 +9,7 @@ interface DeveloperFormState {
   password: string,
   refreshToken: string | null,
   developerAccessLevelId: string,
+  developerAccessLevels: DeveloperAccessLevel[],
 }
 
 const initialState: DeveloperFormState = {
@@ -16,6 +18,7 @@ const initialState: DeveloperFormState = {
   password: "",
   refreshToken: null,
   developerAccessLevelId: "",
+  developerAccessLevels: [],
 };
 
 const developerFormSlice = createSlice({
@@ -27,6 +30,7 @@ const developerFormSlice = createSlice({
     setPassword: (state, action: PayloadAction<string>) => { state.password = action.payload },
     setRefreshToken: (state, action: PayloadAction<string | null>) => { state.refreshToken = action.payload },
     setDeveloperAccessLevelId: (state, action: PayloadAction<string>) => { state.developerAccessLevelId = action.payload },
+    setDeveloperAccessLevels: (state, action: PayloadAction<DeveloperAccessLevel[]>) => { state.developerAccessLevels = action.payload },
   },
 });
 
@@ -39,6 +43,7 @@ export const resetState = (dispatch: ThunkDispatch<any, any, any>) => {
   dispatch(actions.setPassword(initialState.password));
   dispatch(actions.setRefreshToken(initialState.refreshToken));
   dispatch(actions.setDeveloperAccessLevelId(initialState.developerAccessLevelId));
+  dispatch(actions.setDeveloperAccessLevels(initialState.developerAccessLevels));
 };
 
 export default developerFormSlice.reducer;

@@ -59,7 +59,7 @@ import SingleRarityLevel from "./pages/single-rarity-level";
 import SingleServer from "./pages/single-server";
 import SingleXpLevel from "./pages/single-xp-level";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { isSignedIn } from "./auth-manager";
+import { isSignedIn } from "./auth-state";
 
 const IfSignedIn = ({ children }: { children: JSX.Element }) => {
   return isSignedIn() ? children : <Navigate to="/signIn"/>

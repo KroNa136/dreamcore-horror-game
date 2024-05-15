@@ -1,6 +1,7 @@
 import { createSlice, ThunkDispatch } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../store";
+import { GameMode, Server } from "../../database";
 
 interface GameSessionFormState {
   id: string,
@@ -8,6 +9,8 @@ interface GameSessionFormState {
   gameModeId: string,
   startTimestamp: string,
   endTimestamp: string | null,
+  servers: Server[],
+  gameModes: GameMode[],
 }
 
 const initialState: GameSessionFormState = {
@@ -16,6 +19,8 @@ const initialState: GameSessionFormState = {
   gameModeId: "",
   startTimestamp: "1970-01-01T00:00:00.000Z",
   endTimestamp: null,
+  servers: [],
+  gameModes: [],
 };
 
 const gameSessionFormSlice = createSlice({
@@ -27,6 +32,8 @@ const gameSessionFormSlice = createSlice({
     setGameModeId: (state, action: PayloadAction<string>) => { state.gameModeId = action.payload },
     setStartTimestamp: (state, action: PayloadAction<string>) => { state.startTimestamp = action.payload },
     setEndTimestamp: (state, action: PayloadAction<string | null>) => { state.endTimestamp = action.payload },
+    setServers: (state, action: PayloadAction<Server[]>) => { state.servers = action.payload },
+    setGameModes: (state, action: PayloadAction<GameMode[]>) => { state.gameModes = action.payload },
   },
 });
 
@@ -39,6 +46,8 @@ export const resetState = (dispatch: ThunkDispatch<any, any, any>) => {
   dispatch(actions.setGameModeId(initialState.gameModeId));
   dispatch(actions.setStartTimestamp(initialState.startTimestamp));
   dispatch(actions.setEndTimestamp(initialState.endTimestamp));
+  dispatch(actions.setServers(initialState.servers));
+  dispatch(actions.setGameModes(initialState.gameModes));
 };
 
 export default gameSessionFormSlice.reducer;

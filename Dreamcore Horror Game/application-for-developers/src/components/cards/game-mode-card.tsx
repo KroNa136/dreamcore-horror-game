@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DeleteGameModeModal from "../deletion-modals/delete-game-mode-modal";
-import { canDelete, canEdit } from "../../auth-manager";
+import { canDelete, canEdit } from "../../auth-state";
 
 interface GameModeCardProps {
   gameMode: GameMode

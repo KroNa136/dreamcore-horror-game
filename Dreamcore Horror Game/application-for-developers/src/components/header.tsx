@@ -5,23 +5,17 @@ import IconButton from "@mui/material/IconButton";
 import { Container, Typography } from "@mui/material";
 import { logoutAsDeveloper } from "../requests";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { getCurrentLogin } from "../auth-manager";
+import { getCurrentLogin } from "../auth-state";
 
 export default function Header() {
-  const [signedOut, setSignedOut] = useState<boolean>(false);
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
     const result = await logoutAsDeveloper();
-    setSignedOut(result);
-  }
-
-  useEffect(() => {
-    if (signedOut) {
+    if (result) {
       navigate("/signIn");
     }
-  }, [signedOut]);
+  }
 
   return (
     <React.Fragment>

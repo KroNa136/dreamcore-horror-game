@@ -9,11 +9,11 @@ import { ThemeProvider } from "@mui/material/styles";
 import { defaultTheme } from "../themes";
 import { createCreature, getXpLevels } from "../requests";
 import { useNavigate } from "react-router-dom";
-import { Creature, displayName, XpLevel } from "../database";
+import { Creature, displayName } from "../database";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { actions, resetState } from "../redux/slices/creature-form-slice";
 import Footer from "../components/footer";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 
 export default function CreateCreature() {
@@ -22,12 +22,10 @@ export default function CreateCreature() {
   const dispatch = useAppDispatch();
   const state = useAppSelector(state => state.creatureForm);
 
-  const [xpLevels, setXpLevels] = useState<XpLevel[]>([]);
-
   useEffect(() => {
     resetState(dispatch);
     getXpLevels()
-      .then(xpLevels => setXpLevels(xpLevels.items));
+      .then(xpLevels => dispatch(actions.setXpLevels(xpLevels.items)));
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -86,7 +84,7 @@ export default function CreateCreature() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {xpLevels.map(xpLevel => (
+                {state.xpLevels.map(xpLevel => (
                   <MenuItem key={xpLevel.id} value={xpLevel.id}>{displayName(xpLevel)}</MenuItem>
                 ))}
               </Select>

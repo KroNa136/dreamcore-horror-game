@@ -11,28 +11,17 @@ import { ThemeProvider } from "@mui/material/styles";
 import { defaultTheme } from "../themes";
 import { loginAsDeveloper, LoginData } from "../requests";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { isSignedIn as isAlreadySignedIn } from "../auth-manager";
+import { useEffect } from "react";
+import { isSignedIn as isAlreadySignedIn } from "../auth-state";
 import Footer from "../components/footer";
+import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import { actions, resetState } from "../redux/slices/sign-in-form-slice";
 
 export default function SignIn() {
-  const [signedIn, setSignedIn] = useState<boolean>(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const login = data.get("login")?.toString();
-    const password = data.get("password")?.toString();
-    const loginData: LoginData = {
-      login: login ?? "",
-      password: password ?? "",
-    };
-    const result = await loginAsDeveloper(loginData);
-    if (result === true) {
-      setSignedIn(true);
-    }
-  };
+  const dispatch = useAppDispatch();
+  const state = useAppSelector(state => state.signInForm);
 
   useEffect(() => {
     if (isAlreadySignedIn()) {
@@ -40,11 +29,20 @@ export default function SignIn() {
     }
   }, []);
 
-  useEffect(() => {
-    if (signedIn) {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const loginData: LoginData = {
+      login: state.login,
+      password: state.password
+    };
+
+    const result = await loginAsDeveloper(loginData);
+    if (result) {
+      resetState(dispatch);
       navigate("/");
     }
-  }, [signedIn]);
+  };
 
   return (
     <ThemeProvider theme={defaultTheme}>
@@ -73,6 +71,7 @@ export default function SignIn() {
               label="Логин"
               name="login"
               autoFocus
+              onChange={e => dispatch(actions.setLogin(e.target.value))}
             />
             <TextField
               margin="normal"
@@ -82,6 +81,7 @@ export default function SignIn() {
               label="Пароль"
               type="password"
               id="password"
+              onChange={e => dispatch(actions.setPassword(e.target.value))}
             />
             <Button
               type="submit"
@@ -97,11 +97,6 @@ export default function SignIn() {
               <Grid item xs>
                 <Link href="#" variant="body2">
                   Забыли пароль?
-                </Link>
-              </Grid>
-              <Grid item>
-                <Link href="#" variant="body2">
-                  {"Don't have an account? Sign Up"}
                 </Link>
               </Grid>
             </Grid>

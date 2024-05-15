@@ -14,7 +14,7 @@ import {
   getDeveloperAccessLevelCount, getGameModeCount, getGameSessionCount, getPlayerCount, getPlayerSessionCount, getRarityLevelCount,
   getServerCount, getXpLevelCount
 } from "../requests";
-import { canViewDevelopmentTables } from "../auth-manager";
+import { canViewDevelopmentTables } from "../auth-state";
 
 export default function MainPage() {
   const [abilityCount, setAbilityCount] = useState<number>(0);
@@ -203,8 +203,8 @@ export default function MainPage() {
             </div>
           }
         </main>
+        <Footer />
       </Container>
-      <Footer/>
     </ThemeProvider>
   );
 }

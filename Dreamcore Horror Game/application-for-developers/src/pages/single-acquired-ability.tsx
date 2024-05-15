@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import NoDataTypography from "../components/no-data-typography";
 import { toReadableUtcDateTime } from "../value-format-helper";
 import DeleteAcquiredAbilityModal from "../components/deletion-modals/delete-acquired-ability-modal";
-import { canDelete, canEdit } from "../auth-manager";
+import { canDelete, canEdit } from "../auth-state";
 import PlayerCard from "../components/cards/player-card";
 import AbilityCard from "../components/cards/ability-card";
 

@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import NoDataTypography from "../components/no-data-typography";
 import { toReadableTime, toReadableUtcDateTime, toYesNo } from "../value-format-helper";
 import DeletePlayerSessionModal from "../components/deletion-modals/delete-player-session-modal";
-import { canDelete, canEdit } from "../auth-manager";
+import { canDelete, canEdit } from "../auth-state";
 import GameSessionCard from "../components/cards/game-session-card";
 import PlayerCard from "../components/cards/player-card";
 import CreatureCard from "../components/cards/creature-card";
@@ -117,7 +117,7 @@ export default function SinglePlayerSession() {
             }
             </Grid>
           <Grid container spacing={4} direction="row" justifyContent="center" alignItems="center" my={4} px={2}>
-            <Button size="medium" variant="contained" color="primary" sx={{ mx: 1 }} component={Link} to={"/playerSessions"}>Вернуться к сеансам игрока</Button>
+            <Button size="medium" variant="contained" color="primary" sx={{ mx: 1 }} component={Link} to={"/playerSessions"}>Вернуться к сеансам игроков</Button>
           </Grid>
         </main>
         <Footer />

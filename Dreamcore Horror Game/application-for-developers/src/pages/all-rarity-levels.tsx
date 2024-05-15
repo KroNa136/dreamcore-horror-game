@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 import { getRarityLevels, getRarityLevelsWhereDisplayName } from "../requests";
 import { RarityLevel } from "../database";
 import { createSearchParams, Link, useNavigate, useSearchParams } from "react-router-dom";
-import { canCreate } from "../auth-manager";
+import { canCreate } from "../auth-state";
 
 interface TableProps {
   defaultShowBy: number,
@@ -73,10 +73,6 @@ export default function AllRarityLevels(props: TableProps) {
     getAllAndHandleSearch();
   }, [searchParams]);
 
-  const handleSearchQueryChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
-  };
-
   const handleSearchClick = () => {
     setSearchParams(searchParams => {
       if (searchQuery !== "") {
@@ -101,7 +97,7 @@ export default function AllRarityLevels(props: TableProps) {
               <Button size="medium" variant="contained" color="primary" sx={{ mx: 1 }} component={Link} to={"/createRarityLevel"}>Создать</Button>
             }
             <Grid justifyContent="end" alignItems="center" justifySelf="end">
-              <TextField sx={{ mx: 1, mb: 2, width: 500 }} size="small" margin="normal" id="search" label="Поиск" name="search" onChange={handleSearchQueryChange} />
+              <TextField sx={{ mx: 1, mb: 2, width: 500 }} size="small" margin="normal" id="search" label="Поиск" name="search" onChange={e => setSearchQuery(e.target.value)} />
               <Button size="medium" variant="outlined" color="primary" sx={{ mx: 1, mt: 2 }} onClick={handleSearchClick}>Найти</Button>
             </Grid>
           </Grid>

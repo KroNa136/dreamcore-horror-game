@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import NoDataTypography from "../components/no-data-typography";
 import { toReadableTime, toYesNo } from "../value-format-helper";
 import DeleteGameModeModal from "../components/deletion-modals/delete-game-mode-modal";
-import { canDelete, canEdit } from "../auth-manager";
+import { canDelete, canEdit } from "../auth-state";
 
 export default function SingleGameMode() {
   const navigate = useNavigate();

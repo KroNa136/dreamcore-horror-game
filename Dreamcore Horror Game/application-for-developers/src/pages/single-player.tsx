@@ -15,7 +15,7 @@ import XpLevelCard from "../components/cards/xp-level-card";
 import NoDataTypography from "../components/no-data-typography";
 import { toReadableUtcDateTime, toYesNo } from "../value-format-helper";
 import DeletePlayerModal from "../components/deletion-modals/delete-player-modal";
-import { canDelete, canEdit } from "../auth-manager";
+import { canDelete, canEdit } from "../auth-state";
 
 export default function SinglePlayer() {
   const navigate = useNavigate();

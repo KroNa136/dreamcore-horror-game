@@ -8,9 +8,9 @@ import { ThemeProvider } from "@mui/material/styles";
 import { defaultTheme } from "../themes";
 import { editGameSession, getGameModes, getGameSession, getServers } from "../requests";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
-import { displayName, GameSession, Server, GameMode } from "../database";
+import { displayName, GameSession } from "../database";
 import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -25,9 +25,6 @@ export default function EditGameSession() {
   const dispatch = useAppDispatch();
   const state = useAppSelector(state => state.gameSessionForm);
 
-  const [servers, setServers] = useState<Server[]>([]);
-  const [gameModes, setGameModes] = useState<GameMode[]>([]);
-
   useEffect(() => {
     resetState(dispatch);
     getGameSession(params.id)
@@ -39,9 +36,9 @@ export default function EditGameSession() {
         dispatch(actions.setEndTimestamp(gameSession.endTimestamp));
       });
     getServers()
-      .then(servers => setServers(servers.items));
+      .then(servers => dispatch(actions.setServers(servers.items)));
     getGameModes()
-      .then(gameModes => setGameModes(gameModes.items));
+      .then(gameModes => dispatch(actions.setGameModes(gameModes.items)));
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -91,7 +88,7 @@ export default function EditGameSession() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {servers.map(server => (
+                {state.servers.map(server => (
                   <MenuItem key={server.id} value={server.id}>{displayName(server)}</MenuItem>
                 ))}
               </Select>
@@ -109,7 +106,7 @@ export default function EditGameSession() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {gameModes.map(gameMode => (
+                {state.gameModes.map(gameMode => (
                   <MenuItem key={gameMode.id} value={gameMode.id}>{displayName(gameMode)}</MenuItem>
                 ))}
               </Select>

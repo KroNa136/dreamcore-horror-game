@@ -9,8 +9,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import { defaultTheme } from "../themes";
 import { editCreature, getCreature, getXpLevels } from "../requests";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { Creature, displayName, XpLevel } from "../database";
+import { useEffect } from "react";
+import { Creature, displayName } from "../database";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { actions, resetState } from "../redux/slices/creature-form-slice";
 import Footer from "../components/footer";
@@ -23,8 +23,6 @@ export default function EditCreature() {
   const dispatch = useAppDispatch();
   const state = useAppSelector(state => state.creatureForm);
 
-  const [xpLevels, setXpLevels] = useState<XpLevel[]>([]);
-
   useEffect(() => {
     resetState(dispatch);
     getCreature(params.id)
@@ -36,7 +34,7 @@ export default function EditCreature() {
         dispatch(actions.setMovementSpeed(creature.movementSpeed));
       });
     getXpLevels()
-      .then(xpLevels => setXpLevels(xpLevels.items));
+      .then(xpLevels => dispatch(actions.setXpLevels(xpLevels.items)));
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -97,7 +95,7 @@ export default function EditCreature() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {xpLevels.map(xpLevel => (
+                {state.xpLevels.map(xpLevel => (
                   <MenuItem key={xpLevel.id} value={xpLevel.id}>{displayName(xpLevel)}</MenuItem>
                 ))}
               </Select>

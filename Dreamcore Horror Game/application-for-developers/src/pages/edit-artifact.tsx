@@ -9,8 +9,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import { defaultTheme } from "../themes";
 import { editArtifact, getArtifact, getRarityLevels } from "../requests";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { Artifact, displayName, RarityLevel } from "../database";
+import { useEffect } from "react";
+import { Artifact, displayName } from "../database";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { actions, resetState } from "../redux/slices/artifact-form-slice";
 import Footer from "../components/footer";
@@ -23,8 +23,6 @@ export default function EditArtifact() {
   const dispatch = useAppDispatch();
   const state = useAppSelector(state => state.artifactForm);
 
-  const [rarityLevels, setRarityLevels] = useState<RarityLevel[]>([]);
-
   useEffect(() => {
     resetState(dispatch);
     getArtifact(params.id)
@@ -34,7 +32,7 @@ export default function EditArtifact() {
         dispatch(actions.setRarityLevelId(artifact.rarityLevelId));
       });
     getRarityLevels()
-      .then(rarityLevels => setRarityLevels(rarityLevels.items));
+      .then(rarityLevels => dispatch(actions.setRarityLevels(rarityLevels.items)));
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -93,7 +91,7 @@ export default function EditArtifact() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {rarityLevels.map(rarityLevel => (
+                {state.rarityLevels.map(rarityLevel => (
                   <MenuItem key={rarityLevel.id} value={rarityLevel.id}>{displayName(rarityLevel)}</MenuItem>
                 ))}
               </Select>

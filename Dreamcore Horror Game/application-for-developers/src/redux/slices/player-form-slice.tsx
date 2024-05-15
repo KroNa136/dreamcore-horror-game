@@ -1,6 +1,7 @@
 import { createSlice, ThunkDispatch } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../store";
+import { XpLevel } from "../../database";
 
 interface PlayerFormState {
   id: string,
@@ -13,7 +14,8 @@ interface PlayerFormState {
   xpLevelId: string,
   xp: number,
   abilityPoints: number,
-  spiritEnergyPoints: number
+  spiritEnergyPoints: number,
+  xpLevels: XpLevel[],
 }
 
 const initialState: PlayerFormState = {
@@ -27,7 +29,8 @@ const initialState: PlayerFormState = {
   xpLevelId: "",
   xp: 0,
   abilityPoints: 0,
-  spiritEnergyPoints: 0
+  spiritEnergyPoints: 0,
+  xpLevels: [],
 };
 
 const playerFormSlice = createSlice({
@@ -45,6 +48,7 @@ const playerFormSlice = createSlice({
     setXp: (state, action: PayloadAction<number>) => { state.xp = action.payload },
     setAbilityPoints: (state, action: PayloadAction<number>) => { state.abilityPoints = action.payload },
     setSpiritEnergyPoints: (state, action: PayloadAction<number>) => { state.spiritEnergyPoints = action.payload },
+    setXpLevels: (state, action: PayloadAction<XpLevel[]>) => { state.xpLevels = action.payload },
   },
 });
 
@@ -63,6 +67,7 @@ export const resetState = (dispatch: ThunkDispatch<any, any, any>) => {
   dispatch(actions.setXp(initialState.xp));
   dispatch(actions.setAbilityPoints(initialState.abilityPoints));
   dispatch(actions.setSpiritEnergyPoints(initialState.spiritEnergyPoints));
+  dispatch(actions.setXpLevels(initialState.xpLevels));
 }
 
 export default playerFormSlice.reducer;

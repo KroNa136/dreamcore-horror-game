@@ -7,14 +7,11 @@ import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { ThemeProvider } from "@mui/material/styles";
 import { defaultTheme } from "../themes";
-import { editDeveloper, getDeveloper, getDeveloperAccessLevels, getXpLevels } from "../requests";
+import { editDeveloper, getDeveloper, getDeveloperAccessLevels } from "../requests";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select } from "@mui/material";
-import { displayName, Developer, XpLevel, DeveloperAccessLevel } from "../database";
-import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import dayjs from "dayjs";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { useEffect } from "react";
+import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
+import { displayName, Developer } from "../database";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { actions, resetState } from "../redux/slices/developer-form-slice";
 import Footer from "../components/footer";
@@ -25,8 +22,6 @@ export default function EditDeveloper() {
 
   const dispatch = useAppDispatch();
   const state = useAppSelector(state => state.developerForm);
-
-  const [developerAccessLevels, setDeveloperAccessLevels] = useState<DeveloperAccessLevel[]>([]);
 
   useEffect(() => {
     resetState(dispatch);
@@ -39,7 +34,7 @@ export default function EditDeveloper() {
         dispatch(actions.setDeveloperAccessLevelId(developer.developerAccessLevelId));
       });
     getDeveloperAccessLevels()
-      .then(developerAccessLevels => setDeveloperAccessLevels(developerAccessLevels.items));
+      .then(developerAccessLevels => dispatch(actions.setDeveloperAccessLevels(developerAccessLevels.items)));
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -100,7 +95,7 @@ export default function EditDeveloper() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {developerAccessLevels.map(developerAccessLevel => (
+                {state.developerAccessLevels.map(developerAccessLevel => (
                   <MenuItem key={developerAccessLevel.id} value={developerAccessLevel.id}>{displayName(developerAccessLevel)}</MenuItem>
                 ))}
               </Select>

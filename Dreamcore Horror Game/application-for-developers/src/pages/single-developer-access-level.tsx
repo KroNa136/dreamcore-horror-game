@@ -12,7 +12,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { getDeveloperAccessLevel } from "../requests";
 import { useEffect, useState } from "react";
 import DeleteDeveloperAccessLevelModal from "../components/deletion-modals/delete-developer-access-level-modal";
-import { canDelete, canEdit } from "../auth-manager";
+import { canDelete, canEdit } from "../auth-state";
 
 export default function SingleDeveloperAccessLevel() {
   const navigate = useNavigate();

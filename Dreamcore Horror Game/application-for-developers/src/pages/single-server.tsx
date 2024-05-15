@@ -13,7 +13,7 @@ import { getServer } from "../requests";
 import { useEffect, useState } from "react";
 import { toYesNo } from "../value-format-helper";
 import DeleteServerModal from "../components/deletion-modals/delete-server-modal";
-import { canDelete, canEdit } from "../auth-manager";
+import { canDelete, canEdit } from "../auth-state";
 
 export default function SingleServer() {
   const navigate = useNavigate();

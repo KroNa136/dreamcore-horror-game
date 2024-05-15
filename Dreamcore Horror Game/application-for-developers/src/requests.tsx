@@ -1,5 +1,5 @@
 import axios from "axios";
-import { signIn, signOut } from "./auth-manager";
+import { getCurrentLogin, getCurrentRefreshToken, signIn, signOut } from "./auth-state";
 import {
   Ability, AcquiredAbility, Artifact, CollectedArtifact, Creature, Developer, DeveloperAccessLevel, GameMode,
   GameSession, Player, PlayerSession, RarityLevel, Server, XpLevel, Abilities, AcquiredAbilities, Artifacts,
@@ -36,10 +36,10 @@ async function getAccessToken() {
   try {
     const response = await axios.get("Developers/GetAccessToken", {
       headers: {
-        "Authorization": "Bearer ".concat(sessionStorage.getItem("refreshToken") ?? "")
+        Authorization: "Bearer ".concat(getCurrentRefreshToken())
       },
       params: {
-        login: sessionStorage.getItem("login"),
+        login: getCurrentLogin()
       }
     });
     return response.data as string;
@@ -68,7 +68,10 @@ export async function loginAsDeveloper(loginData: LoginData) : Promise<boolean> 
     if (developer === undefined) {
       alert("Не удалось получить уровень доступа пользователя. Уровень доступа для текущего сеанса будет установлен на Низкий.");
     }
-    const developerAccessLevel = developer !== undefined ? (developer.developerAccessLevel as DeveloperAccessLevel).name : "Low Access Developer";
+    const developerAccessLevel = developer !== undefined
+      ? (developer.developerAccessLevel as DeveloperAccessLevel).name
+      : "Low Access Developer";
+
     signIn(loginData.login, refreshToken, developerAccessLevel);
     return true;
   }
@@ -82,10 +85,10 @@ export async function logoutAsDeveloper(): Promise<boolean> {
   try {
     await axios.post("Developers/Logout", {}, {
       params: {
-        login: sessionStorage.getItem("login") ?? ""
+        login: getCurrentLogin()
       },
       headers: {
-        "Authorization": "Bearer ".concat(await getAccessToken())
+        Authorization: "Bearer ".concat(await getAccessToken())
       },
     });
     signOut();
@@ -117,7 +120,7 @@ async function getCount(controllerUrl: string): Promise<number> {
   try {
     const response = await axios.get(`${controllerUrl}/GetCount`, {
       headers: {
-        "Authorization": "Bearer ".concat(await getAccessToken())
+        Authorization: "Bearer ".concat(await getAccessToken())
       },
     });
     return response.data as number;
@@ -176,7 +179,7 @@ async function getAllWithRelations<TEntities>(controllerUrl: string, page: numbe
   try {
     const response = await axios.get(`${controllerUrl}/GetAllWithRelations`, {
       headers: {
-        "Authorization": "Bearer ".concat(await getAccessToken())
+        Authorization: "Bearer ".concat(await getAccessToken())
       },
       params: {
         page: page,
@@ -240,7 +243,7 @@ async function getAllWhereDisplayName<TEntities>(controllerUrl: string, displayN
     const json = `[{ "$type": "binary", "property": "display_name", "operator": "contains substring ignore case", "value": "${displayName}" }]`;
     const response = await axios.post(`${controllerUrl}/GetWhere`, json, {
       headers: {
-        "Authorization": "Bearer ".concat(await getAccessToken())
+        Authorization: "Bearer ".concat(await getAccessToken())
       },
       params: {
         page: page,
@@ -303,7 +306,7 @@ async function getWithRelations<TEntity>(controllerUrl: string, id: string | und
   try {
     const response = await axios.get(`${controllerUrl}/GetWithRelations`, {
       headers: {
-        "Authorization": "Bearer ".concat(await getAccessToken())
+        Authorization: "Bearer ".concat(await getAccessToken())
       },
       params: {
         id: id
@@ -365,7 +368,7 @@ async function create<TEntity>(controllerUrl: string, entity: TEntity): Promise<
   try {
     const response = await axios.post(`${controllerUrl}/Create`, entity, {
       headers: {
-        "Authorization": "Bearer ".concat(await getAccessToken())
+        Authorization: "Bearer ".concat(await getAccessToken())
       },
     });
     return response.data as TEntity;
@@ -423,7 +426,7 @@ async function edit<TEntity>(controllerUrl: string, id: string, entity: TEntity)
   try {
     const response = await axios.put(`${controllerUrl}/Edit`, entity, {
       headers: {
-        "Authorization": "Bearer ".concat(await getAccessToken())
+        Authorization: "Bearer ".concat(await getAccessToken())
       },
       params: {
         id: id,
@@ -484,7 +487,7 @@ async function delete_(controllerUrl: string, id: string): Promise<boolean> {
   try {
     await axios.delete(`${controllerUrl}/Delete`, {
       headers: {
-        "Authorization": "Bearer ".concat(await getAccessToken())
+        Authorization: "Bearer ".concat(await getAccessToken())
       },
       params: {
         id: id,

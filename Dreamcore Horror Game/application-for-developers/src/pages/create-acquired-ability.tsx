@@ -8,9 +8,9 @@ import { ThemeProvider } from "@mui/material/styles";
 import { defaultTheme } from "../themes";
 import { createAcquiredAbility, getAbilities, getPlayers } from "../requests";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
-import { displayName, AcquiredAbility, Player, Ability } from "../database";
+import { displayName, AcquiredAbility } from "../database";
 import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -24,15 +24,12 @@ export default function CreateAcquiredAbility() {
   const dispatch = useAppDispatch();
   const state = useAppSelector(state => state.acquiredAbilityForm);
 
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [abilities, setAbilities] = useState<Ability[]>([]);
-
   useEffect(() => {
     resetState(dispatch);
     getPlayers()
-      .then(players => setPlayers(players.items));
+      .then(players => dispatch(actions.setPlayers(players.items)));
     getAbilities()
-      .then(abilities => setAbilities(abilities.items));
+      .then(abilities => dispatch(actions.setAbilities(abilities.items)));
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -80,7 +77,7 @@ export default function CreateAcquiredAbility() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {players.map(player => (
+                {state.players.map(player => (
                   <MenuItem key={player.id} value={player.id}>{displayName(player)}</MenuItem>
                 ))}
               </Select>
@@ -98,7 +95,7 @@ export default function CreateAcquiredAbility() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {abilities.map(ability => (
+                {state.abilities.map(ability => (
                   <MenuItem key={ability.id} value={ability.id}>{displayName(ability)}</MenuItem>
                 ))}
               </Select>

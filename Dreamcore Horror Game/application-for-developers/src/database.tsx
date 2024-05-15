@@ -30,17 +30,17 @@ export function displayName(entity: DatabaseEntity | null | undefined): string |
     return (entity as GameMode).assetName;
   }
   else if ((entity as GameSession).gameMode !== undefined) {
-    return `На сервере ${displayName((entity as GameSession).server) ?? "NULL"} в ${toReadableUtcDateTime((entity as GameSession).startTimestamp)}`;
+    return `На сервере ${displayName((entity as GameSession).server) ?? "NULL"} ${toReadableUtcDateTime((entity as GameSession).startTimestamp)}`;
   }
   else if ((entity as Player).abilityPoints !== undefined) {
     return (entity as Player).username;
   }
   else if ((entity as PlayerSession).playedAsCreature !== undefined) {
     if ((entity as PlayerSession).gameSession?.gameMode !== undefined && ((entity as PlayerSession).gameSession as GameSession).gameMode !== undefined) {
-      return `У игрока ${displayName((entity as PlayerSession).player) ?? "NULL"} на сервере ${displayName(((entity as PlayerSession).gameSession as GameSession).server) ?? "NULL"} в ${toReadableUtcDateTime((entity as PlayerSession).startTimestamp)}`;
+      return `У игрока ${displayName((entity as PlayerSession).player) ?? "NULL"} на сервере ${displayName(((entity as PlayerSession).gameSession as GameSession).server) ?? "NULL"} ${toReadableUtcDateTime((entity as PlayerSession).startTimestamp)}`;
     }
     else {
-      return `У игрока ${displayName((entity as PlayerSession).player) ?? "NULL"} на сервере NULL в ${toReadableUtcDateTime((entity as PlayerSession).startTimestamp)}`;
+      return `У игрока ${displayName((entity as PlayerSession).player) ?? "NULL"} на сервере NULL ${toReadableUtcDateTime((entity as PlayerSession).startTimestamp)}`;
     }
   }
   else if ((entity as RarityLevel).probability !== undefined) {

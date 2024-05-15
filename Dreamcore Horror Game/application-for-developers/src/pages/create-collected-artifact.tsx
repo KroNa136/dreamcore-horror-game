@@ -8,9 +8,9 @@ import { ThemeProvider } from "@mui/material/styles";
 import { defaultTheme } from "../themes";
 import { createCollectedArtifact, getArtifacts, getPlayers } from "../requests";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
-import { displayName, CollectedArtifact, Player, Artifact } from "../database";
+import { displayName, CollectedArtifact } from "../database";
 import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -24,15 +24,12 @@ export default function CreateCollectedArtifact() {
   const dispatch = useAppDispatch();
   const state = useAppSelector(state => state.collectedArtifactForm);
 
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
-
   useEffect(() => {
     resetState(dispatch);
     getPlayers()
-      .then(players => setPlayers(players.items));
+      .then(players => dispatch(actions.setPlayers(players.items)));
     getArtifacts()
-      .then(artifacts => setArtifacts(artifacts.items));
+      .then(artifacts => dispatch(actions.setArtifacts(artifacts.items)));
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -80,7 +77,7 @@ export default function CreateCollectedArtifact() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {players.map(player => (
+                {state.players.map(player => (
                   <MenuItem key={player.id} value={player.id}>{displayName(player)}</MenuItem>
                 ))}
               </Select>
@@ -98,7 +95,7 @@ export default function CreateCollectedArtifact() {
                 <MenuItem value="">
                   <em>Не выбрано</em>
                 </MenuItem>
-                {artifacts.map(artifact => (
+                {state.artifacts.map(artifact => (
                   <MenuItem key={artifact.id} value={artifact.id}>{displayName(artifact)}</MenuItem>
                 ))}
               </Select>
