@@ -1,13 +1,13 @@
 import { createTheme } from "@mui/material/styles";
-import { brown } from "@mui/material/colors";
+import { brown as mainColor } from "@mui/material/colors";
 
 export const defaultTheme = createTheme({
   palette: {
     primary: {
-      main: brown[500],
+      main: mainColor[500],
     },
     secondary: {
-      main: brown[300]
+      main: mainColor[300]
     }
   },
 });

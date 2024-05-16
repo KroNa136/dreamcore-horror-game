@@ -192,7 +192,6 @@ export default function EditPlayerSession() {
             </FormControl>
             <TextField
               margin="normal"
-              required
               fullWidth
               id="selfReviveCount"
               name="selfReviveCount"
@@ -202,7 +201,6 @@ export default function EditPlayerSession() {
             />
             <TextField
               margin="normal"
-              required
               fullWidth
               id="allyReviveCount"
               name="allyReviveCount"

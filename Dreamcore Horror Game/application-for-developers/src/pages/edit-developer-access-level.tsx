@@ -66,9 +66,9 @@ export default function EditDeveloperAccessLevel() {
               margin="normal"
               required
               fullWidth
-              id="assetName"
-              name="assetName"
-              label="Название ассета"
+              id="name"
+              name="name"
+              label="Название"
               autoFocus
               value={state.name}
               onChange={e => dispatch(actions.setName(e.target.value))}

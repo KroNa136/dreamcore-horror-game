@@ -7,7 +7,7 @@ import Header from "../components/header";
 import TableCard from "../components/cards/table-card";
 import Footer from "../components/footer";
 import { defaultTheme } from "../themes";
-import { Typography } from "@mui/material";
+import { Backdrop, Box, Button, Fade, Modal, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import {
   getAbilityCount, getAcquiredAbilityCount, getArtifactCount, getCollectedArtifactCount, getCreatureCount, getDeveloperCount,
@@ -17,6 +17,8 @@ import {
 import { canViewDevelopmentTables } from "../auth-state";
 
 export default function MainPage() {
+  const [iconsModalOpen, setIconsModalOpen] = useState<boolean>(false);
+
   const [abilityCount, setAbilityCount] = useState<number>(0);
   const [acquiredAbilityCount, setAcquiredAbilityCount] = useState<number>(0);
   const [artifactCount, setArtifactCount] = useState<number>(0);
@@ -202,9 +204,82 @@ export default function MainPage() {
               </Grid>
             </div>
           }
+          <Grid container spacing={4} direction="row" justifyContent="center" alignItems="center" my={4} px={2}>
+            <Button size="medium" variant="contained" color="primary" sx={{ mx: 1 }} onClick={() => setIconsModalOpen(true)}>Использованные иконки</Button>
+          </Grid>
         </main>
         <Footer />
       </Container>
+      <Modal
+        open={iconsModalOpen}
+        onClose={() => setIconsModalOpen(false)}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+        closeAfterTransition
+        slots={{ backdrop: Backdrop }}
+        slotProps={{
+          backdrop: {
+            timeout: 200,
+          },
+        }}
+      >
+        <Fade in={iconsModalOpen}>
+          <Box sx={{
+            position: "absolute" as "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 480,
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            p: 4,
+          }}>
+            <Typography id="modal-modal-title" variant="h6" component="h2">
+              Использованные иконки
+            </Typography>
+            <Grid container direction="column">
+              <ul>
+                <Grid item component="li">
+                  <a target="_blank" href="https://icons8.com/icon/hbSnr96BuuQG/abilities">Abilities</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                </Grid>
+                <Grid item component="li">
+                  <a target="_blank" href="https://icons8.com/icon/upUDqxuJWw2B/archeology">Archeology</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                </Grid>
+                <Grid item component="li">
+                  <a target="_blank" href="https://icons8.com/icon/15784/tentacles">Tentacles</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                </Grid>
+                <Grid item component="li">
+                  <a target="_blank" href="https://icons8.com/icon/21636/adjust">Level</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                </Grid>
+                <Grid item component="li">
+                  <a target="_blank" href="https://icons8.com/icon/2NE7EIbky0uS/probability">Probability</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                </Grid>
+                <Grid item component="li">
+                  <a target="_blank" href="https://icons8.com/icon/MAuvVb8zy9c6/stars">Stars</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                </Grid>
+                <Grid item component="li">
+                  <a target="_blank" href="https://icons8.com/icon/E8p9kd1wRyug/player">player</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                </Grid>
+                <Grid item component="li">
+                  <a target="_blank" href="https://icons8.com/icon/y91Uh9uvUNf3/session-timeout">Session Timeout</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+                </Grid>
+                <Grid item component="li">
+                  <a target="_blank" href="https://icons8.com/icon/7314/game-controller">Game</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                </Grid>
+                <Grid item component="li">
+                  <a target="_blank" href="https://icons8.com/icon/1340/server">Server</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                </Grid>
+                <Grid item component="li">
+                  <a target="_blank" href="https://icons8.com/icon/30694/access">Access</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                </Grid>
+                <Grid item component="li">
+                  <a target="_blank" href="https://icons8.com/icon/rpWJYJBNjJbi/dev-community-where-programmers-share-ideas-and-help-each-other-grow">Dev community where programmers share ideas and help each other grow</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                </Grid>
+              </ul>
+            </Grid>
+          </Box>
+        </Fade>
+      </Modal>
     </ThemeProvider>
   );
 }
