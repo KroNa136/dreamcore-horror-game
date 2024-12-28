@@ -22,9 +22,24 @@ public class Program
 
         try
         {
-            ConfiguredWebApplicationBuilder(args)
-                .ConfiguredWebApplication()
-                .Run();
+            WebApplicationBuilder builder = ConfigureWebApplicationBuilder(args);
+
+            WebApplication app = builder.Build();
+
+            app.UseHttpsRedirection();
+            app.UseCors(CorsPolicyNames.Default);
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            if (app.Environment.IsEnvironment(Environments.Development))
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
+
+            app.MapControllers();
+
+            app.Run();
         }
         catch (SettingsPropertyNotFoundException)
         {
@@ -44,78 +59,27 @@ public class Program
         $"REFRESH TOKEN:\n{new TokenService().CreateRefreshToken("test_login", AuthenticationRoles.FullAccessDeveloper)}\n"
     );
 
-    private static WebApplicationBuilder ConfiguredWebApplicationBuilder(string[] args)
-        => WebApplication.CreateBuilder(args)
-            .WithControllersAndJsonOptions()
-            .WithSwaggerGenerator()
-            .WithEndpointsApiExplorer()
-            .WithProjectDependencies()
-            .WithCorsPolicies()
-            .WithAuthentication()
-            .WithDatabaseContext();
-}
-
-file static class WebApplicationBuilderExtensions
-{
-    public static WebApplication ConfiguredWebApplication(this WebApplicationBuilder builder)
+    private static WebApplicationBuilder ConfigureWebApplicationBuilder(string[] args)
     {
-        WebApplication app = builder.Build();
+        var builder = WebApplication.CreateBuilder(args);
 
-        app.UseHttpsRedirection()
-            .UseCors(CorsPolicyNames.Default)
-            .UseAuthentication()
-            .UseAuthorization();
-
-        if (app.Environment.IsEnvironment(Environments.Development))
-        {
-            app.UseSwagger()
-                .UseSwaggerUI();
-        }
-
-        app.MapControllers();
-
-        return app;
-    }
-
-    public static WebApplicationBuilder WithControllersAndJsonOptions(this WebApplicationBuilder builder)
-    {
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
             var defaultJsonSerializerOptions = new JsonSerializerOptionsProvider().Default;
             options.ConfigureFrom(defaultJsonSerializerOptions);
         });
 
-        return builder;
-    }
-
-    public static WebApplicationBuilder WithSwaggerGenerator(this WebApplicationBuilder builder)
-    {
         builder.Services.AddSwaggerGen();
-        return builder;
-    }
-
-    public static WebApplicationBuilder WithEndpointsApiExplorer(this WebApplicationBuilder builder)
-    {
         builder.Services.AddEndpointsApiExplorer();
-        return builder;
-    }
 
-    public static WebApplicationBuilder WithProjectDependencies(this WebApplicationBuilder builder)
-    {
-        builder.Services
-            .AddSingleton<IJsonSerializerOptionsProvider, JsonSerializerOptionsProvider>()
-            .AddSingleton<ITokenService, TokenService>()
-            .AddSingleton<IPropertyPredicateValidator, PropertyPredicateValidator>()
-            .AddScoped<IHttpFetcher, HttpFetcher>()
-            .AddScoped<IPasswordHasher<Developer>, PasswordHasher<Developer>>()
-            .AddScoped<IPasswordHasher<Player>, PasswordHasher<Player>>()
-            .AddScoped<IPasswordHasher<Server>, PasswordHasher<Server>>();
+        builder.Services.AddSingleton<IJsonSerializerOptionsProvider, JsonSerializerOptionsProvider>();
+        builder.Services.AddSingleton<ITokenService, TokenService>();
+        builder.Services.AddSingleton<IPropertyPredicateValidator, PropertyPredicateValidator>();
+        builder.Services.AddScoped<IHttpFetcher, HttpFetcher>();
+        builder.Services.AddScoped<IPasswordHasher<Developer>, PasswordHasher<Developer>>();
+        builder.Services.AddScoped<IPasswordHasher<Player>, PasswordHasher<Player>>();
+        builder.Services.AddScoped<IPasswordHasher<Server>, PasswordHasher<Server>>();
 
-        return builder;
-    }
-
-    public static WebApplicationBuilder WithCorsPolicies(this WebApplicationBuilder builder)
-    {
         builder.Services.AddCors(options =>
         {
             options.AddPolicy(CorsPolicyNames.Default, policy =>
@@ -138,11 +102,6 @@ file static class WebApplicationBuilderExtensions
             });
         });
 
-        return builder;
-    }
-
-    public static WebApplicationBuilder WithAuthentication(this WebApplicationBuilder builder)
-    {
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(AuthenticationSchemes.Access, options =>
             {
@@ -177,11 +136,6 @@ file static class WebApplicationBuilderExtensions
                 };
             });
 
-        return builder;
-    }
-
-    public static WebApplicationBuilder WithDatabaseContext(this WebApplicationBuilder builder)
-    {
         string? defaultConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
         if (string.IsNullOrEmpty(defaultConnectionString))

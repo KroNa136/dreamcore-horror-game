@@ -62,7 +62,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
     [NonAction]
     public override UserController<TUser> RequireHeaders(params string[] headers)
     {
-        SetRequiredHeaders(headers);
+        SetRequiredRequestHeaders(headers);
         return this;
     }
 

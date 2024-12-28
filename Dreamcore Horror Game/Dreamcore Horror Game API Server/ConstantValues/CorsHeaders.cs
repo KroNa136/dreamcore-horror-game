@@ -2,13 +2,13 @@
 
 public static class CorsHeaders
 {
-    public const string ApiServer = "Api-Server";
+    public const string ApiServer = "api-server";
 
-    public const string GameClient = "Game-Client";
+    public const string GameClient = "game-client";
 
-    public const string GameServer = "Game-Server";
+    public const string GameServer = "game-server";
 
-    public const string DeveloperWebApplication = "Developer-Web-Application";
+    public const string DeveloperWebApplication = "developer-web-application";
 
     public const string RequiredHeaderValue = "sWBlYN0yimNMCLXFofH7MBmdOIelMQEHlPJZ304Sdjsd47liU2M1Ilv2kjAQSKA2";
 }

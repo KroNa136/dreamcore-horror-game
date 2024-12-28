@@ -27,7 +27,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     protected readonly DreamcoreHorrorGameContext _context;
     protected readonly IPropertyPredicateValidator _propertyPredicateValidator;
 
-    protected readonly List<string> _requiredHeaders;
+    protected readonly List<string> _requiredRequestHeaders;
 
     protected readonly Expression<Func<TEntity, object?>> _orderBySelectorExpression;
     protected readonly IComparer<object?>? _orderByComparer;
@@ -53,7 +53,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
         _context = context;
         _propertyPredicateValidator = propertyPredicateValidator;
 
-        _requiredHeaders = new List<string>();
+        _requiredRequestHeaders = new List<string>();
 
         _orderBySelectorExpression = orderBySelectorExpression;
         _orderByComparer = orderByComparer;
@@ -80,8 +80,14 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     [NonAction]
     public virtual DatabaseEntityController<TEntity> RequireHeaders(params string[] headers)
     {
-        SetRequiredHeaders(headers);
+        SetRequiredRequestHeaders(headers);
         return this;
+    }
+
+    protected void SetRequiredRequestHeaders(IEnumerable<string> fromCollection)
+    {
+        _requiredRequestHeaders.Clear();
+        _requiredRequestHeaders.AddRange(fromCollection);
     }
 
     [ApiExplorerSettings(IgnoreApi = true)]
@@ -212,6 +218,84 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             return Ok(orderedEntities.PaginatedAndWithPageCount(page, showBy));
         });
 
+    protected ParallelQuery<TEntity> FilterEntities(ParallelQuery<TEntity> entities, PropertyPredicate predicate)
+    {
+        var property = GetProperty(typeof(TEntity), predicate.Property)!;
+        var _operator = _propertyPredicateValidator.GetOperator(predicate.Operator);
+
+        return _operator switch
+        {
+            UnaryOperator unaryOperator => FilterEntitiesWithUnaryOperator
+            (
+                entities,
+                property,
+                unaryOperator
+            ),
+            BinaryOperator binaryOperator => FilterEntitiesWithBinaryOperator
+            (
+                entities,
+                property,
+                binaryOperator,
+                (predicate as BinaryPropertyPredicate)!.Value!
+            ),
+            TernaryOperator ternaryOperator => FilterEntitiesWithTernaryOperator
+            (
+                entities,
+                property,
+                ternaryOperator,
+                (predicate as TernaryPropertyPredicate)!.FirstValue!,
+                (predicate as TernaryPropertyPredicate)!.SecondValue!
+            ),
+            _ => throw new InvalidOperationException()
+        };
+    }
+
+    protected static PropertyInfo? GetProperty(Type type, string name)
+        => type.GetProperties()
+            .FirstOrDefault(property => property.Name.ToLower().Equals(name.ToLower().Replace("_", string.Empty)));
+
+    protected static ParallelQuery<TEntity> FilterEntitiesWithUnaryOperator
+    (
+        ParallelQuery<TEntity> entities,
+        PropertyInfo property,
+        UnaryOperator unaryOperator
+    )
+    {
+        return entities.Where(entity => unaryOperator.Operation(property.GetValue(entity)));
+    }
+
+    protected ParallelQuery<TEntity> FilterEntitiesWithBinaryOperator
+    (
+        ParallelQuery<TEntity> entities,
+        PropertyInfo property,
+        BinaryOperator binaryOperator,
+        object value
+    )
+    {
+        object validValue = _propertyPredicateValidator
+            .GetValidValue(value, property.PropertyType, binaryOperator.IgnoreTypes);
+
+        return entities.Where(entity => binaryOperator.Operation(property.GetValue(entity), validValue));
+    }
+
+    protected ParallelQuery<TEntity> FilterEntitiesWithTernaryOperator
+    (
+        ParallelQuery<TEntity> entities,
+        PropertyInfo property,
+        TernaryOperator ternaryOperator,
+        object firstValue,
+        object secondValue
+    )
+    {
+        object validFirstValue = _propertyPredicateValidator
+            .GetValidValue(firstValue, property.PropertyType, ternaryOperator.IgnoreTypes);
+
+        object validSecondValue = _propertyPredicateValidator
+            .GetValidValue(secondValue, property.PropertyType, ternaryOperator.IgnoreTypes);
+
+        return entities.Where(entity => ternaryOperator.Operation(property.GetValue(entity), validFirstValue, validSecondValue));
+    }
+
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public virtual async Task<IActionResult> CreateEntityAsync(TEntity entity)
@@ -318,6 +402,9 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             return Ok();
         });
 
+    protected async Task<bool> EntityExistsAsync(Guid id)
+        => await _context.Set<TEntity>().AnyAsync(entity => entity.Id == id);
+
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> ExecuteAsync(Func<Task<IActionResult>> function)
@@ -333,12 +420,6 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     public async Task<IActionResult> ExecuteAsync<T1, T2>(T1 arg1, T2 arg2, Func<T1, T2, Task<IActionResult>> function)
         => await ValidateHeadersAndHandleErrorsAsync(arg1, arg2, async (arg1, arg2) => await function(arg1, arg2));
 
-    protected void SetRequiredHeaders(IEnumerable<string> fromCollection)
-    {
-        _requiredHeaders.Clear();
-        _requiredHeaders.AddRange(fromCollection);
-    }
-
     protected IActionResult ValidateHeadersAndHandleErrors<T>(T arg, Func<T, IActionResult> function)
         => ValidateHeadersAndHandleErrors(() => function(arg));
 
@@ -347,7 +428,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
 
     protected IActionResult ValidateHeadersAndHandleErrors(Func<IActionResult> function)
     {
-        if (NoValidHeader(_requiredHeaders))
+        if (NoValidRequestHeader())
             return this.Forbidden(ErrorMessages.CorsHeaderMissing);
 
         try
@@ -386,7 +467,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
 
     protected async Task<IActionResult> ValidateHeadersAndHandleErrorsAsync(Task<IActionResult> task)
     {
-        if (NoValidHeader(_requiredHeaders))
+        if (NoValidRequestHeader())
             return this.Forbidden(ErrorMessages.CorsHeaderMissing);
 
         try
@@ -414,100 +495,19 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
         }
     }
 
-    protected bool NoValidHeader(IEnumerable<string> headers)
+    protected bool NoValidRequestHeader()
     {
-        if (headers.IsEmpty())
+        if (_requiredRequestHeaders.IsEmpty())
             return false;
 
         if (HttpContext is null || HttpContext.Request is null || HttpContext.Request.Headers is null)
             return true;
 
-        var requestHeaders = HttpContext.Request.Headers;
+        var currentRequestHeaders = HttpContext.Request.Headers;
 
-        var validHeaders = headers.Where(header => requestHeaders.ContainsKey(header)
-                && requestHeaders[header].Equals(CorsHeaders.RequiredHeaderValue));
+        var validHeaders = currentRequestHeaders.Where(header => _requiredRequestHeaders.Contains(header.Key.ToLower())
+            && header.Value.Equals(CorsHeaders.RequiredHeaderValue));
 
         return validHeaders.IsEmpty();
     }
-
-    protected static PropertyInfo? GetProperty(Type type, string name)
-        => type.GetProperties()
-            .FirstOrDefault(property => property.Name.ToLower().Equals(name.ToLower().Replace("_", string.Empty)));
-
-    protected ParallelQuery<TEntity> FilterEntities(ParallelQuery<TEntity> entities, PropertyPredicate predicate)
-    {
-        var property = GetProperty(typeof(TEntity), predicate.Property)!;
-        var _operator = _propertyPredicateValidator.GetOperator(predicate.Operator);
-
-        return _operator switch
-        {
-            UnaryOperator unaryOperator => FilterEntitiesWithUnaryOperator
-            (
-                entities,
-                property,
-                unaryOperator
-            ),
-            BinaryOperator binaryOperator => FilterEntitiesWithBinaryOperator
-            (
-                entities,
-                property,
-                binaryOperator,
-                (predicate as BinaryPropertyPredicate)!.Value!
-            ),
-            TernaryOperator ternaryOperator => FilterEntitiesWithTernaryOperator
-            (
-                entities,
-                property,
-                ternaryOperator,
-                (predicate as TernaryPropertyPredicate)!.FirstValue!,
-                (predicate as TernaryPropertyPredicate)!.SecondValue!
-            ),
-            _ => throw new InvalidOperationException()
-        };
-    }
-
-    protected static ParallelQuery<TEntity> FilterEntitiesWithUnaryOperator
-    (
-        ParallelQuery<TEntity> entities,
-        PropertyInfo property,
-        UnaryOperator unaryOperator
-    )
-    {
-        return entities.Where(entity => unaryOperator.Operation(property.GetValue(entity)));
-    }
-
-    protected ParallelQuery<TEntity> FilterEntitiesWithBinaryOperator
-    (
-        ParallelQuery<TEntity> entities,
-        PropertyInfo property,
-        BinaryOperator binaryOperator,
-        object value
-    )
-    {
-        object validValue = _propertyPredicateValidator
-            .GetValidValue(value, property.PropertyType, binaryOperator.IgnoreTypes);
-
-        return entities.Where(entity => binaryOperator.Operation(property.GetValue(entity), validValue));
-    }
-
-    protected ParallelQuery<TEntity> FilterEntitiesWithTernaryOperator
-    (
-        ParallelQuery<TEntity> entities,
-        PropertyInfo property,
-        TernaryOperator ternaryOperator,
-        object firstValue,
-        object secondValue
-    )
-    {
-        object validFirstValue = _propertyPredicateValidator
-            .GetValidValue(firstValue, property.PropertyType, ternaryOperator.IgnoreTypes);
-
-        object validSecondValue = _propertyPredicateValidator
-            .GetValidValue(secondValue, property.PropertyType, ternaryOperator.IgnoreTypes);
-
-        return entities.Where(entity => ternaryOperator.Operation(property.GetValue(entity), validFirstValue, validSecondValue));
-    }
-
-    protected async Task<bool> EntityExistsAsync(Guid id)
-        => await _context.Set<TEntity>().AnyAsync(entity => entity.Id == id);
 }

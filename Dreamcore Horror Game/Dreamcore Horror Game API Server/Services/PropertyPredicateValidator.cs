@@ -9,22 +9,25 @@ namespace DreamcoreHorrorGameApiServer.Services;
 
 public class PropertyPredicateValidator : IPropertyPredicateValidator
 {
-    protected readonly ImmutableList<UnaryOperator> _unaryOperators = ImmutableList<UnaryOperator>.Empty
-        .Add(new UnaryOperator
+    protected readonly List<UnaryOperator> _unaryOperators = new()
+    {
+        new UnaryOperator
         (
             Name: "is null",
             IgnoreTypes: true,
             Operation: value => value is null
-        ))
-        .Add(new UnaryOperator
+        ),
+        new UnaryOperator
         (
             Name: "is not null",
             IgnoreTypes: true,
             Operation: value => value is not null
-        ));
+        )
+    };
 
-    protected readonly ImmutableList<BinaryOperator> _binaryOperators = ImmutableList<BinaryOperator>.Empty
-        .Add(new BinaryOperator
+    protected readonly List<BinaryOperator> _binaryOperators = new()
+    {
+        new BinaryOperator
         (
             Name: "equals",
             IgnoreTypes: false,
@@ -32,8 +35,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 => firstValue is not null
                 && secondValue is not null
                 && firstValue.Equals(secondValue)
-        ))
-        .Add(new BinaryOperator
+        ),
+        new BinaryOperator
         (
             Name: "in",
             IgnoreTypes: false,
@@ -44,8 +47,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                     && collection.Contains(value)
                     || value.Equals(range)
                 )
-        ))
-        .Add(new BinaryOperator
+        ),
+        new BinaryOperator
         (
             Name: "starts with",
             IgnoreTypes: true,
@@ -55,8 +58,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && value.ToString() is string _value
                 && start.ToString() is string _start
                 && _value.StartsWith(_start)
-        ))
-        .Add(new BinaryOperator
+        ),
+        new BinaryOperator
         (
             Name: "starts with ignore case",
             IgnoreTypes: true,
@@ -66,8 +69,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && value.ToString() is string _value
                 && start.ToString() is string _start
                 && _value.ToLower().StartsWith(_start.ToLower())
-        ))
-        .Add(new BinaryOperator
+        ),
+        new BinaryOperator
         (
             Name: "contains substring",
             IgnoreTypes: true,
@@ -77,8 +80,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && value.ToString() is string _value
                 && substring.ToString() is string _substring
                 && _value.Contains(_substring)
-        ))
-        .Add(new BinaryOperator
+        ),
+        new BinaryOperator
         (
             Name: "contains substring ignore case",
             IgnoreTypes: true,
@@ -88,8 +91,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && value.ToString() is string _value
                 && substring.ToString() is string _substring
                 && _value.ToLower().Contains(_substring.ToLower())
-        ))
-        .Add(new BinaryOperator
+        ),
+        new BinaryOperator
         (
             Name: "ends with",
             IgnoreTypes: true,
@@ -99,8 +102,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && value.ToString() is string _value
                 && end.ToString() is string _end
                 && _value.EndsWith(_end)
-        ))
-        .Add(new BinaryOperator
+        ),
+        new BinaryOperator
         (
             Name: "ends with ignore case",
             IgnoreTypes: true,
@@ -110,8 +113,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && value.ToString() is string _value
                 && end.ToString() is string _end
                 && _value.ToLower().EndsWith(_end.ToLower())
-        ))
-        .Add(new BinaryOperator
+        ),
+        new BinaryOperator
         (
             Name: "less than",
             IgnoreTypes: false,
@@ -119,8 +122,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 => firstValue is IComparable _firstValue
                 && secondValue is IComparable _secondValue
                 && _firstValue.CompareTo(_secondValue) is < 0
-        ))
-        .Add(new BinaryOperator
+        ),
+        new BinaryOperator
         (
             Name: "less than or equal to",
             IgnoreTypes: false,
@@ -128,8 +131,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 => firstValue is IComparable _firstValue
                 && secondValue is IComparable _secondValue
                 && _firstValue.CompareTo(_secondValue) is <= 0
-        ))
-        .Add(new BinaryOperator
+        ),
+        new BinaryOperator
         (
             Name: "equal to",
             IgnoreTypes: false,
@@ -137,8 +140,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 => firstValue is IComparable _firstValue
                 && secondValue is IComparable _secondValue
                 && _firstValue.CompareTo(_secondValue) is 0
-        ))
-        .Add(new BinaryOperator
+        ),
+        new BinaryOperator
         (
             Name: "greater than or equal to",
             IgnoreTypes: false,
@@ -146,8 +149,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 => firstValue is IComparable _firstValue
                 && secondValue is IComparable _secondValue
                 && _firstValue.CompareTo(_secondValue) is >= 0
-        ))
-        .Add(new BinaryOperator
+        ),
+        new BinaryOperator
         (
             Name: "greater than",
             IgnoreTypes: false,
@@ -155,10 +158,12 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 => firstValue is IComparable _firstValue
                 && secondValue is IComparable _secondValue
                 && _firstValue.CompareTo(_secondValue) is > 0
-        ));
+        )
+    };
 
-    protected readonly ImmutableList<TernaryOperator> _ternaryOperators = ImmutableList<TernaryOperator>.Empty
-        .Add(new TernaryOperator
+    protected readonly List<TernaryOperator> _ternaryOperators = new()
+    {
+        new TernaryOperator
         (
             Name: "between",
             IgnoreTypes: false,
@@ -169,8 +174,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && _start.CompareTo(_end) is <= 0
                 && _value.CompareTo(_start) is >= 0
                 && _value.CompareTo(_end) is <= 0
-        ))
-        .Add(new TernaryOperator
+        ),
+        new TernaryOperator
         (
             Name: "between exclusive",
             IgnoreTypes: false,
@@ -181,8 +186,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && _start.CompareTo(_end) is < 0
                 && _value.CompareTo(_start) is > 0
                 && _value.CompareTo(_end) is < 0
-        ))
-        .Add(new TernaryOperator
+        ),
+        new TernaryOperator
         (
             Name: "starts with and ends with",
             IgnoreTypes: true,
@@ -195,8 +200,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && end.ToString() is string _end
                 && _value.StartsWith(_start)
                 && _value.EndsWith(_end)
-        ))
-        .Add(new TernaryOperator
+        ),
+        new TernaryOperator
         (
             Name: "starts with and ends with ignore case",
             IgnoreTypes: true,
@@ -209,7 +214,8 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && end.ToString() is string _end
                 && _value.ToLower().StartsWith(_start.ToLower())
                 && _value.ToLower().EndsWith(_end.ToLower())
-        ));
+        )
+    };
 
     public PropertyPredicateOperator? GetOperator(string name)
         => _unaryOperators.Find(op => op.Name.Equals(name)) as PropertyPredicateOperator
