@@ -17,12 +17,14 @@ public class RarityLevelsController : DatabaseEntityController<RarityLevel>
     public RarityLevelsController
     (
         DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator
+        IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<RarityLevelsController> logger
     )
     : base
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
+        logger: logger,
         orderBySelectorExpression: rarityLevel => rarityLevel.Probability,
         orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>

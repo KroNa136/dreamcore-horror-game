@@ -30,6 +30,7 @@ public class ServersController : UserController<Server>
     (
         DreamcoreHorrorGameContext context,
         IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<ServersController> logger,
         ITokenService tokenService,
         IPasswordHasher<Server> passwordHasher,
         IHttpFetcher httpFetcher,
@@ -39,6 +40,7 @@ public class ServersController : UserController<Server>
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
+        logger: logger,
         tokenService: tokenService,
         passwordHasher: passwordHasher,
         alreadyExistsErrorMessage: ErrorMessages.ServerAlreadyExists,
@@ -210,9 +212,14 @@ public class ServersController : UserController<Server>
             if (hasWaitingSessions)
                 return true;
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
-            // TODO: log error
+            _logger.LogError
+            (
+                eventId: new EventId(GetType().GetMethod("HasWaitingSession")!.GetHashCode() + ex.GetType().GetHashCode()),
+                message: "An error occured while deserializing HTTP response on having any waiting sessions from server {IpAddress}", server.IpAddress.ToString()
+            );
+
             return false;
         }
 

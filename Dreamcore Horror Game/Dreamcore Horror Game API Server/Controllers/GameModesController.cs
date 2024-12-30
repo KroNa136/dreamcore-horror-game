@@ -17,12 +17,14 @@ public class GameModesController : DatabaseEntityController<GameMode>
     public GameModesController
     (
         DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator
+        IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<GameModesController> logger
     )
     : base
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
+        logger: logger,
         orderBySelectorExpression: gameMode => gameMode.AssetName,
         orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>

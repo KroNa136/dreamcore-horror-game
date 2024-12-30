@@ -21,6 +21,7 @@ public class PlayersController : UserController<Player>
     (
         DreamcoreHorrorGameContext context,
         IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<PlayersController> logger,
         ITokenService tokenService,
         IPasswordHasher<Player> passwordHasher
     )
@@ -28,6 +29,7 @@ public class PlayersController : UserController<Player>
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
+        logger: logger,
         tokenService: tokenService,
         passwordHasher: passwordHasher,
         alreadyExistsErrorMessage: ErrorMessages.PlayerAlreadyExists,
@@ -179,7 +181,12 @@ public class PlayersController : UserController<Player>
 
                 if (noFirstXpLevel)
                 {
-                    // TODO: log error
+                    _logger.LogError
+                    (
+                        eventId: new EventId(GetType().GetMethod("Register")!.GetHashCode() + 1),
+                        message: "Couldn't register a new player: the XP level with number 1 was not found in the database"
+                    );
+
                     return this.InternalServerError();
                 }
 
@@ -198,9 +205,14 @@ public class PlayersController : UserController<Player>
                 {
                     await _context.SaveChangesAsync();
                 }
-                catch (DbUpdateConcurrencyException)
+                catch (DbUpdateConcurrencyException ex)
                 {
-                    // TODO: log error
+                    _logger.LogError
+                    (
+                        eventId: new EventId(GetType().GetMethod("Register")!.GetHashCode() + ex.GetType().GetHashCode()),
+                        message: "Database conflict occured while registering player with id = {id}", player.Id
+                    );
+
                     return Conflict(ErrorMessages.PlayerRegisterConflict);
                 }
 

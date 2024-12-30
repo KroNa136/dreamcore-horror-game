@@ -1,6 +1,4 @@
 ﻿using DreamcoreHorrorGameApiServer.Models;
-using DreamcoreHorrorGameApiServer.Models.Database;
-using Elfie.Serialization;
 
 namespace DreamcoreHorrorGameApiServer.Extensions;
 

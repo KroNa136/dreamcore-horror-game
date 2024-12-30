@@ -18,12 +18,14 @@ public class CreaturesController : DatabaseEntityController<Creature>
     public CreaturesController
     (
         DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator
+        IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<CreaturesController> logger
     )
     : base
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
+        logger: logger,
         orderBySelectorExpression: creature => creature.AssetName,
         orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>

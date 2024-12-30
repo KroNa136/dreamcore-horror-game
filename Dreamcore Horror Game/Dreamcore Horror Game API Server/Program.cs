@@ -41,10 +41,24 @@ public class Program
 
             app.Run();
         }
-        catch (SettingsPropertyNotFoundException)
+        catch (SettingsPropertyNotFoundException ex)
         {
+            var defaultForegroundColor = Console.ForegroundColor;
+
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Database connection string not found in the configuration.");
+            Console.WriteLine($"Configuration property \"{ex.Message}\" was not found.");
+            Console.ForegroundColor = defaultForegroundColor;
+
+            Environment.Exit(-1);
+        }
+        catch (FormatException ex)
+        {
+            var defaultForegroundColor = Console.ForegroundColor;
+
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Configuration property \"{ex.Message}\" has a value of incorrect type.");
+            Console.ForegroundColor = defaultForegroundColor;
+
             Environment.Exit(-1);
         }
     }
@@ -62,6 +76,26 @@ public class Program
     private static WebApplicationBuilder ConfigureWebApplicationBuilder(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
+        string? defaultConnectionString = builder.Configuration.GetConnectionString(ConfigurationPropertyNames.DefaultConnectionString);
+        string? loggingDirectory = builder.Configuration[ConfigurationPropertyNames.LoggingDirectory];
+        string? loggingFileName = builder.Configuration[ConfigurationPropertyNames.LoggingFileName];
+        string? maxLoggingFileSizeStr = builder.Configuration[ConfigurationPropertyNames.MaxLoggingFileSize];
+
+        if (string.IsNullOrEmpty(defaultConnectionString))
+            throw new SettingsPropertyNotFoundException($"ConnectionStrings: {ConfigurationPropertyNames.DefaultConnectionString}");
+
+        if (string.IsNullOrEmpty(loggingDirectory))
+            throw new SettingsPropertyNotFoundException(ConfigurationPropertyNames.LoggingDirectory);
+
+        if (string.IsNullOrEmpty(loggingFileName))
+            throw new SettingsPropertyNotFoundException(ConfigurationPropertyNames.LoggingFileName);
+
+        if (string.IsNullOrEmpty(maxLoggingFileSizeStr))
+            throw new SettingsPropertyNotFoundException(ConfigurationPropertyNames.MaxLoggingFileSize);
+
+        if (!long.TryParse(maxLoggingFileSizeStr, out long maxLoggingFileSize))
+            throw new FormatException(ConfigurationPropertyNames.MaxLoggingFileSize);
 
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
@@ -136,17 +170,27 @@ public class Program
                 };
             });
 
-        string? defaultConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-        if (string.IsNullOrEmpty(defaultConnectionString))
-            throw new SettingsPropertyNotFoundException();
-
         builder.Services.AddDbContext<DreamcoreHorrorGameContext>
         (
             optionsAction: options => options.UseNpgsql(defaultConnectionString),
             contextLifetime: ServiceLifetime.Transient,
             optionsLifetime: ServiceLifetime.Transient
         );
+
+        string loggingDirectoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, loggingDirectory);
+
+        if (!Directory.Exists(loggingDirectoryPath))
+            Directory.CreateDirectory(loggingDirectoryPath);
+
+        string loggingFilePath = Path.Combine(loggingDirectoryPath, loggingFileName);
+
+        if (!File.Exists(loggingFilePath))
+            File.WriteAllText(loggingFilePath, string.Empty);
+
+        builder.Logging
+            .ClearProviders()
+            .AddConsole()
+            .AddFile(loggingFilePath, maxLoggingFileSize);
 
         return builder;
     }

@@ -1,6 +1,5 @@
 ﻿using DreamcoreHorrorGameApiServer.ConstantValues;
 using DreamcoreHorrorGameApiServer.Controllers.Base;
-using DreamcoreHorrorGameApiServer.Extensions;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
 using DreamcoreHorrorGameApiServer.PropertyPredicates;
@@ -21,6 +20,7 @@ public class DevelopersController : UserController<Developer>
     (
         DreamcoreHorrorGameContext context,
         IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<DevelopersController> logger,
         ITokenService tokenService,
         IPasswordHasher<Developer> passwordHasher
     )
@@ -28,6 +28,7 @@ public class DevelopersController : UserController<Developer>
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
+        logger: logger,
         tokenService: tokenService,
         passwordHasher: passwordHasher,
         alreadyExistsErrorMessage: ErrorMessages.DeveloperAlreadyExists,

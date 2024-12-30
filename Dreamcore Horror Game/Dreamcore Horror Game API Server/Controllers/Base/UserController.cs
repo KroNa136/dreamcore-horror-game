@@ -24,6 +24,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
     (
         DreamcoreHorrorGameContext context,
         IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<UserController<TUser>> logger,
         ITokenService tokenService,
         IPasswordHasher<TUser> passwordHasher,
         string alreadyExistsErrorMessage,
@@ -37,6 +38,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
     (
         context,
         propertyPredicateValidator,
+        logger,
         orderBySelectorExpression,
         orderByComparer,
         getAllWithFirstLevelRelationsFunction,
@@ -91,9 +93,14 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
-                // TODO: log error
+                _logger.LogError
+                (
+                    eventId: new EventId(GetType().GetMethod("CreateEntityAsync")!.GetHashCode() + ex.GetType().GetHashCode()),
+                    message: "Database conflict occured while creating {EntityType} with id = {id}", EntityType, user.Id
+                );
+
                 return Conflict(ErrorMessages.CreateConflict);
             }
 
@@ -133,9 +140,14 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
                     || await SetIsOnlineAsync(user, true) is false)
                     return NotFound();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
-                // TODO: log error
+                _logger.LogError
+                (
+                    eventId: new EventId(GetType().GetMethod("LoginAsUserAsync")!.GetHashCode() + ex.GetType().GetHashCode()),
+                    message: "Database conflict occured while logging in as {EntityType} with id = {id}", EntityType, user.Id
+                );
+
                 return Conflict(ErrorMessages.UserLoginConflict);
             }
 
@@ -164,9 +176,14 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
                     || await SetRefreshTokenAsync(user, null) is false)
                     return NotFound();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
-                // TODO: log error
+                _logger.LogError
+                (
+                    eventId: new EventId(GetType().GetMethod("LogoutAsUserAsync")!.GetHashCode() + ex.GetType().GetHashCode()),
+                    message: "Database conflict occured while logging out as {EntityType} with id = {id}", EntityType, user.Id
+                );
+
                 return Conflict(ErrorMessages.UserLogoutConflict);
             }
 
@@ -196,9 +213,14 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
                 if (await SetPasswordAndRefreshTokenAsync(user, newPassword, token) is false)
                     return NotFound();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
-                // TODO: log error
+                _logger.LogError
+                (
+                    eventId: new EventId(GetType().GetMethod("ChangeUserPasswordAsync")!.GetHashCode() + ex.GetType().GetHashCode()),
+                    message: "Database conflict occured while changing password of {EntityType} with id = {id}", EntityType, user.Id
+                );
+
                 return Conflict(ErrorMessages.ChangeUserPasswordConflict);
             }
 

@@ -18,12 +18,14 @@ public class ArtifactsController : DatabaseEntityController<Artifact>
     public ArtifactsController
     (
         DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator
+        IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<ArtifactsController> logger
     )
     : base
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
+        logger: logger,
         orderBySelectorExpression: artifact => artifact.AssetName,
         orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>

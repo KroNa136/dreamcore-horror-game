@@ -17,12 +17,14 @@ public class DeveloperAccessLevelsController : DatabaseEntityController<Develope
     public DeveloperAccessLevelsController
     (
         DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator
+        IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<DeveloperAccessLevelsController> logger
     )
     : base
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
+        logger: logger,
         orderBySelectorExpression: developerAccessLevel => developerAccessLevel.Name,
         orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>

@@ -6,11 +6,15 @@ namespace DreamcoreHorrorGameApiServer.Services;
 
 public class HttpFetcher : IHttpFetcher
 {
+    private readonly ILogger<HttpFetcher> _logger;
+
     private readonly UriBuilder _uriBuilder;
     private readonly HttpClient _httpClient;
 
-    public HttpFetcher()
+    public HttpFetcher(ILogger<HttpFetcher> logger)
     {
+        _logger = logger;
+
         _uriBuilder = new();
 
         _httpClient = new()
@@ -33,9 +37,14 @@ public class HttpFetcher : IHttpFetcher
             HttpResponseMessage response = await _httpClient.GetAsync(_uriBuilder.Uri);
             return response;
         }
-        catch (TaskCanceledException)
+        catch (TaskCanceledException ex)
         {
-            // TODO: log error
+            _logger.LogInformation
+            (
+                eventId: new EventId(GetType().GetMethod("GetAsync")!.GetHashCode() + ex.GetType().GetHashCode()),
+                message: "Received a task cancellation request while executing a GET request to {Uri}", _uriBuilder.Uri
+            );
+
             return null;
         }
     }
@@ -51,9 +60,14 @@ public class HttpFetcher : IHttpFetcher
             HttpResponseMessage response = await _httpClient.PostAsync(_uriBuilder.Uri, content);
             return response;
         }
-        catch (TaskCanceledException)
+        catch (TaskCanceledException ex)
         {
-            // TODO: log error
+            _logger.LogInformation
+            (
+                eventId: new EventId(GetType().GetMethod("GetAsync")!.GetHashCode() + ex.GetType().GetHashCode()),
+                message: "Received a task cancellation request while executing a POST request to {Uri}", _uriBuilder.Uri
+            );
+
             return null;
         }
     }

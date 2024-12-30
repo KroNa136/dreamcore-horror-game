@@ -17,12 +17,14 @@ public class XpLevelsController : DatabaseEntityController<XpLevel>
     public XpLevelsController
     (
         DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator
+        IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<XpLevelsController> logger
     )
     : base
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
+        logger: logger,
         orderBySelectorExpression: xpLevel => xpLevel.Number,
         orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>

@@ -17,12 +17,14 @@ public class AbilitiesController : DatabaseEntityController<Ability>
     public AbilitiesController
     (
         DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator
+        IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<AbilitiesController> logger
     )
     : base
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
+        logger: logger,
         orderBySelectorExpression: ability => ability.AssetName,
         orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>

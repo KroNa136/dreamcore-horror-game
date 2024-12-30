@@ -18,12 +18,14 @@ public class CollectedArtifactsController : DatabaseEntityController<CollectedAr
     public CollectedArtifactsController
     (
         DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator
+        IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<CollectedArtifactsController> logger
     )
     : base
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
+        logger: logger,
         orderBySelectorExpression: collectedArtifact => collectedArtifact.CollectionTimestamp,
         orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>

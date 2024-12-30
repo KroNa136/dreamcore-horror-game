@@ -18,12 +18,14 @@ public class GameSessionsController : DatabaseEntityController<GameSession>
     public GameSessionsController
     (
         DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator
+        IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<GameSessionsController> logger
     )
     : base
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
+        logger: logger,
         orderBySelectorExpression: gameSession => gameSession.StartTimestamp,
         orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>

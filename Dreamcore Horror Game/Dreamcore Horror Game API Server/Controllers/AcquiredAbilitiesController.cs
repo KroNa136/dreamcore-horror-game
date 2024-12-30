@@ -18,12 +18,14 @@ public class AcquiredAbilitiesController : DatabaseEntityController<AcquiredAbil
     public AcquiredAbilitiesController
     (
         DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator
+        IPropertyPredicateValidator propertyPredicateValidator,
+        ILogger<AcquiredAbilitiesController> logger
     )
     : base
     (
         context: context,
         propertyPredicateValidator: propertyPredicateValidator,
+        logger: logger,
         orderBySelectorExpression: acquiredAbility => acquiredAbility.AcquirementTimestamp,
         orderByComparer: null,
         getAllWithFirstLevelRelationsFunction: async (context) =>
