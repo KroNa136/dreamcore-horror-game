@@ -5,17 +5,21 @@ namespace DreamcoreHorrorGameApiServer.Logging;
 
 public class FileLogger : ILogger, IDisposable
 {
-    private readonly string _filePath;
+    private readonly string _filePathTemplate;
     private readonly long _maxFileSize;
     private readonly string _categoryName;
 
     protected static readonly object s_lock = new();
 
-    public FileLogger(string filePath, long maxFileSize, string categoryName)
+    private string _filePath = string.Empty;
+
+    public FileLogger(string filePathTemplate, long maxFileSize, string categoryName)
     {
-        _filePath = filePath;
+        _filePathTemplate = filePathTemplate;
         _maxFileSize = maxFileSize;
         _categoryName = categoryName;
+
+        SetFilePath();
     }
 
     public IDisposable BeginScope<TState>(TState state) where TState : notnull
@@ -43,8 +47,13 @@ public class FileLogger : ILogger, IDisposable
             sb.Append($"{logLevel.ToString().ToUpper()} from {_categoryName} [{eventId}]{Environment.NewLine}");
             sb.Append($"{formatter(state, exception)}{Environment.NewLine}{Environment.NewLine}");
 
+            SetFilePath();
+
             try
             {
+                if (!File.Exists(_filePath))
+                    File.WriteAllText(_filePath, string.Empty);
+
                 File.AppendAllText(_filePath, sb.ToString());
                 LimitFileSize();
             }
@@ -59,6 +68,9 @@ public class FileLogger : ILogger, IDisposable
             }
         }
     }
+
+    private void SetFilePath()
+        => _filePath = string.Format(_filePathTemplate, DateTime.Now.ToString("yyyyMMdd"));
 
     private void LimitFileSize()
     {

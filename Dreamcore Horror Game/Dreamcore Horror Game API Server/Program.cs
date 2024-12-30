@@ -79,7 +79,7 @@ public class Program
 
         string? defaultConnectionString = builder.Configuration.GetConnectionString(ConfigurationPropertyNames.DefaultConnectionString);
         string? loggingDirectory = builder.Configuration[ConfigurationPropertyNames.LoggingDirectory];
-        string? loggingFileName = builder.Configuration[ConfigurationPropertyNames.LoggingFileName];
+        string? loggingFileNameTemplate = builder.Configuration[ConfigurationPropertyNames.LoggingFileNameTemplate];
         string? maxLoggingFileSizeStr = builder.Configuration[ConfigurationPropertyNames.MaxLoggingFileSize];
 
         if (string.IsNullOrEmpty(defaultConnectionString))
@@ -88,8 +88,8 @@ public class Program
         if (string.IsNullOrEmpty(loggingDirectory))
             throw new SettingsPropertyNotFoundException(ConfigurationPropertyNames.LoggingDirectory);
 
-        if (string.IsNullOrEmpty(loggingFileName))
-            throw new SettingsPropertyNotFoundException(ConfigurationPropertyNames.LoggingFileName);
+        if (string.IsNullOrEmpty(loggingFileNameTemplate))
+            throw new SettingsPropertyNotFoundException(ConfigurationPropertyNames.LoggingFileNameTemplate);
 
         if (string.IsNullOrEmpty(maxLoggingFileSizeStr))
             throw new SettingsPropertyNotFoundException(ConfigurationPropertyNames.MaxLoggingFileSize);
@@ -182,15 +182,12 @@ public class Program
         if (!Directory.Exists(loggingDirectoryPath))
             Directory.CreateDirectory(loggingDirectoryPath);
 
-        string loggingFilePath = Path.Combine(loggingDirectoryPath, loggingFileName);
-
-        if (!File.Exists(loggingFilePath))
-            File.WriteAllText(loggingFilePath, string.Empty);
+        string loggingFilePathTemplate = Path.Combine(loggingDirectoryPath, loggingFileNameTemplate);
 
         builder.Logging
             .ClearProviders()
             .AddConsole()
-            .AddFile(loggingFilePath, maxLoggingFileSize);
+            .AddFile(loggingFilePathTemplate, maxLoggingFileSize);
 
         return builder;
     }

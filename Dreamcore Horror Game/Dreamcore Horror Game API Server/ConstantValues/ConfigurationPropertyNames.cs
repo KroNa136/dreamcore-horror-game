@@ -6,7 +6,7 @@ public static class ConfigurationPropertyNames
 
     public const string LoggingDirectory = "LoggingDirectory";
 
-    public const string LoggingFileName = "LoggingFileName";
+    public const string LoggingFileNameTemplate = "LoggingFileNameTemplate";
 
     public const string MaxLoggingFileSize = "MaxLoggingFileSize";
 }
