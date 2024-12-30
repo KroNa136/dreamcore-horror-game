@@ -139,7 +139,7 @@ public class Program
                     HeaderNames.XXSSProtection,
                     CorsHeaders.GameClient,
                     CorsHeaders.GameServer,
-                    CorsHeaders.DeveloperWebApplication
+                    CorsHeaders.ApplicationForDevelopers
                 );
             });
         });

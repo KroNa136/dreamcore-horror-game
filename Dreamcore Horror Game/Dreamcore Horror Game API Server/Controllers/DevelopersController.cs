@@ -70,43 +70,43 @@ public class DevelopersController : UserController<Developer>
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .GetCountAsync();
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public override async Task<IActionResult> GetAll(int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .GetAllEntitiesAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public override async Task<IActionResult> GetAllWithRelations(int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .GetAllEntitiesWithRelationsAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public override async Task<IActionResult> Get(Guid? id)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .GetEntityAsync(id);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public override async Task<IActionResult> GetWithRelations(Guid? id)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .GetEntityWithRelationsAsync(id);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetWhere(PropertyPredicate[] predicateCollection, int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .GetEntitiesWhereAsync(predicateCollection, page, showBy);
 
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetByLogin(string login)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .GetEntityWithRelationsAsync(developer => developer.Login.Equals(login));
 
     [HttpPost]
@@ -118,7 +118,7 @@ public class DevelopersController : UserController<Developer>
         nameof(Developer.RefreshToken),
         nameof(Developer.DeveloperAccessLevelId)
     )] Developer developer)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .CreateEntityAsync(developer);
 
     [HttpPut]
@@ -130,42 +130,42 @@ public class DevelopersController : UserController<Developer>
         nameof(Developer.RefreshToken),
         nameof(Developer.DeveloperAccessLevelId)
     )] Developer developer)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .EditEntityAsync(id, developer);
 
     [HttpDelete]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public override async Task<IActionResult> Delete(Guid? id)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .DeleteEntityAsync(id);
 
     [HttpPost]
     [AllowAnonymous]
     public override async Task<IActionResult> Login(LoginData loginData)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .LoginAsUserAsync(loginData);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> Logout(string login)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .LogoutAsUserAsync(login);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> ChangePassword(LoginData loginData, string newPassword)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .ChangeUserPasswordAsync(loginData, newPassword);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Refresh, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAccessToken(string login)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .GetAccessTokenForUserAsync(login);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> VerifyAccessToken()
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .VerifyAccessTokenAsync();
 }

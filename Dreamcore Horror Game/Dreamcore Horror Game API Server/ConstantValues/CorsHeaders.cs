@@ -8,7 +8,7 @@ public static class CorsHeaders
 
     public const string GameServer = "game-server";
 
-    public const string DeveloperWebApplication = "developer-web-application";
+    public const string ApplicationForDevelopers = "application-for-developers";
 
     public const string RequiredHeaderValue = "sWBlYN0yimNMCLXFofH7MBmdOIelMQEHlPJZ304Sdjsd47liU2M1Ilv2kjAQSKA2";
 }

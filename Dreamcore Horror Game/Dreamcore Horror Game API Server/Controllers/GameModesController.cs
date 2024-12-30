@@ -40,37 +40,37 @@ public class GameModesController : DatabaseEntityController<GameMode>
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .GetCountAsync();
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public override async Task<IActionResult> GetAll(int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.ApplicationForDevelopers)
             .GetAllEntitiesAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public override async Task<IActionResult> GetAllWithRelations(int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.ApplicationForDevelopers)
             .GetAllEntitiesWithRelationsAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
     public override async Task<IActionResult> Get(Guid? id)
-        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.ApplicationForDevelopers)
             .GetEntityAsync(id);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
     public override async Task<IActionResult> GetWithRelations(Guid? id)
-        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.ApplicationForDevelopers)
             .GetEntityWithRelationsAsync(id);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetWhere(PropertyPredicate[] predicateCollection, int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .GetEntitiesWhereAsync(predicateCollection, page, showBy);
 
     [HttpPost]
@@ -82,7 +82,7 @@ public class GameModesController : DatabaseEntityController<GameMode>
         nameof(GameMode.TimeLimit),
         nameof(GameMode.IsActive)
     )] GameMode gameMode)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .CreateEntityAsync(gameMode);
 
     [HttpPut]
@@ -94,12 +94,12 @@ public class GameModesController : DatabaseEntityController<GameMode>
         nameof(GameMode.TimeLimit),
         nameof(GameMode.IsActive)
     )] GameMode gameMode)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .EditEntityAsync(id, gameMode);
 
     [HttpDelete]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public override async Task<IActionResult> Delete(Guid? id)
-        => await RequireHeaders(CorsHeaders.DeveloperWebApplication)
+        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
             .DeleteEntityAsync(id);
 }
