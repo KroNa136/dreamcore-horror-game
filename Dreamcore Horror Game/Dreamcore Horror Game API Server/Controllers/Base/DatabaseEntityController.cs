@@ -363,7 +363,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             {
                 _logger.LogError
                 (
-                    eventId: new EventId(GetType().GetMethod("CreateEntityAsync")!.GetHashCode() + ex.GetType().GetHashCode()),
+                    eventId: new EventId("CreateEntityAsync".GetHashCode() + ex.GetType().GetHashCode()),
                     message: "Database conflict occured while creating {EntityType} with id = {id}", EntityType, entity.Id
                 );
 
@@ -408,7 +408,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
                 {
                     _logger.LogError
                     (
-                        eventId: new EventId(GetType().GetMethod("EditEntityAsync")!.GetHashCode() + ex.GetType().GetHashCode()),
+                        eventId: new EventId("EditEntityAsync".GetHashCode() + ex.GetType().GetHashCode()),
                         message: "Database conflict occured while editing {EntityType} with id = {id}", EntityType, entity.Id
                     );
 
@@ -502,7 +502,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             _logger.Log
             (
                 logLevel: LogLevel.Error,
-                eventId: new EventId(GetType().GetMethod("ValidateHeadersAndHandleErrors")!.GetHashCode() + ex.GetType().GetHashCode()),
+                eventId: new EventId("ValidateHeadersAndHandleErrors".GetHashCode() + ex.GetType().GetHashCode()),
                 exception: ex,
                 state: "Database update exception was caught while handling general errors",
                 formatter: _customLoggingFormatter
@@ -515,7 +515,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             _logger.Log
             (
                 logLevel: LogLevel.Error,
-                eventId: new EventId(GetType().GetMethod("ValidateHeadersAndHandleErrors")!.GetHashCode() + ex.GetType().GetHashCode()),
+                eventId: new EventId("ValidateHeadersAndHandleErrors".GetHashCode() + ex.GetType().GetHashCode()),
                 exception: ex,
                 state: "Invalid operation exception was caught while handling general errors",
                 formatter: _customLoggingFormatter
@@ -528,7 +528,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             _logger.Log
             (
                 logLevel: LogLevel.Error,
-                eventId: new EventId(GetType().GetMethod("ValidateHeadersAndHandleErrors")!.GetHashCode() + ex.GetType().GetHashCode()),
+                eventId: new EventId("ValidateHeadersAndHandleErrors".GetHashCode() + ex.GetType().GetHashCode()),
                 exception: ex,
                 state: "General exception was caught while handling general errors",
                 formatter: _customLoggingFormatter
@@ -565,7 +565,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             _logger.Log
             (
                 logLevel: LogLevel.Error,
-                eventId: new EventId(GetType().GetMethod("ValidateHeadersAndHandleErrorsAsync")!.GetHashCode() + ex.GetType().GetHashCode()),
+                eventId: new EventId("ValidateHeadersAndHandleErrorsAsync".GetHashCode() + ex.GetType().GetHashCode()),
                 exception: ex,
                 state: "Database update exception was caught while handling general errors",
                 formatter: _customLoggingFormatter
@@ -578,7 +578,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             _logger.Log
             (
                 logLevel: LogLevel.Error,
-                eventId: new EventId(GetType().GetMethod("ValidateHeadersAndHandleErrorsAsync")!.GetHashCode() + ex.GetType().GetHashCode()),
+                eventId: new EventId("ValidateHeadersAndHandleErrorsAsync".GetHashCode() + ex.GetType().GetHashCode()),
                 exception: ex,
                 state: "Invalid operation exception was caught while handling general errors",
                 formatter: _customLoggingFormatter
@@ -591,7 +591,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             _logger.Log
             (
                 logLevel: LogLevel.Error,
-                eventId: new EventId(GetType().GetMethod("ValidateHeadersAndHandleErrorsAsync")!.GetHashCode() + ex.GetType().GetHashCode()),
+                eventId: new EventId("ValidateHeadersAndHandleErrorsAsync".GetHashCode() + ex.GetType().GetHashCode()),
                 exception: ex,
                 state: "General exception was caught while handling general errors",
                 formatter: _customLoggingFormatter

@@ -77,13 +77,9 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        string? defaultConnectionString = builder.Configuration.GetConnectionString(ConfigurationPropertyNames.DefaultConnectionString);
         string? loggingDirectory = builder.Configuration[ConfigurationPropertyNames.LoggingDirectory];
         string? loggingFileNameTemplate = builder.Configuration[ConfigurationPropertyNames.LoggingFileNameTemplate];
         string? maxLoggingFileSizeStr = builder.Configuration[ConfigurationPropertyNames.MaxLoggingFileSize];
-
-        if (string.IsNullOrEmpty(defaultConnectionString))
-            throw new SettingsPropertyNotFoundException($"ConnectionStrings: {ConfigurationPropertyNames.DefaultConnectionString}");
 
         if (string.IsNullOrEmpty(loggingDirectory))
             throw new SettingsPropertyNotFoundException(ConfigurationPropertyNames.LoggingDirectory);
@@ -96,6 +92,18 @@ public class Program
 
         if (!long.TryParse(maxLoggingFileSizeStr, out long maxLoggingFileSize))
             throw new FormatException(ConfigurationPropertyNames.MaxLoggingFileSize);
+
+        string loggingDirectoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, loggingDirectory);
+
+        if (!Directory.Exists(loggingDirectoryPath))
+            Directory.CreateDirectory(loggingDirectoryPath);
+
+        string loggingFilePathTemplate = Path.Combine(loggingDirectoryPath, loggingFileNameTemplate);
+
+        builder.Logging
+            .ClearProviders()
+            .AddConsole()
+            .AddFile(loggingFilePathTemplate, maxLoggingFileSize);
 
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
@@ -170,24 +178,17 @@ public class Program
                 };
             });
 
+        string? defaultConnectionString = builder.Configuration.GetConnectionString(ConfigurationPropertyNames.DefaultConnectionString);
+
+        if (string.IsNullOrEmpty(defaultConnectionString))
+            throw new SettingsPropertyNotFoundException($"ConnectionStrings: {ConfigurationPropertyNames.DefaultConnectionString}");
+
         builder.Services.AddDbContext<DreamcoreHorrorGameContext>
         (
             optionsAction: options => options.UseNpgsql(defaultConnectionString),
             contextLifetime: ServiceLifetime.Transient,
             optionsLifetime: ServiceLifetime.Transient
         );
-
-        string loggingDirectoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, loggingDirectory);
-
-        if (!Directory.Exists(loggingDirectoryPath))
-            Directory.CreateDirectory(loggingDirectoryPath);
-
-        string loggingFilePathTemplate = Path.Combine(loggingDirectoryPath, loggingFileNameTemplate);
-
-        builder.Logging
-            .ClearProviders()
-            .AddConsole()
-            .AddFile(loggingFilePathTemplate, maxLoggingFileSize);
 
         return builder;
     }

@@ -41,7 +41,7 @@ public class HttpFetcher : IHttpFetcher
         {
             _logger.LogInformation
             (
-                eventId: new EventId(GetType().GetMethod("GetAsync")!.GetHashCode() + ex.GetType().GetHashCode()),
+                eventId: new EventId("GetAsync".GetHashCode() + ex.GetType().GetHashCode()),
                 message: "Received a task cancellation request while executing a GET request to {Uri}", _uriBuilder.Uri
             );
 
@@ -64,7 +64,7 @@ public class HttpFetcher : IHttpFetcher
         {
             _logger.LogInformation
             (
-                eventId: new EventId(GetType().GetMethod("GetAsync")!.GetHashCode() + ex.GetType().GetHashCode()),
+                eventId: new EventId("PostAsync".GetHashCode() + ex.GetType().GetHashCode()),
                 message: "Received a task cancellation request while executing a POST request to {Uri}", _uriBuilder.Uri
             );
 

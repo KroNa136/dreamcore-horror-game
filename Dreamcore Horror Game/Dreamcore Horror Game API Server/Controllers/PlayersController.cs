@@ -169,6 +169,8 @@ public class PlayersController : UserController<Player>
         => await RequireHeaders(CorsHeaders.GameClient)
             .ExecuteAsync(player, async player =>
             {
+                _logger.LogInformation("Register called for {EntityType}", EntityType);
+
                 bool playerExists = await _getByLogin(_context, player.Login) is not null;
 
                 if (playerExists)
@@ -183,7 +185,7 @@ public class PlayersController : UserController<Player>
                 {
                     _logger.LogError
                     (
-                        eventId: new EventId(GetType().GetMethod("Register")!.GetHashCode() + 1),
+                        eventId: new EventId("Register".GetHashCode() + 1),
                         message: "Couldn't register a new player: the XP level with number 1 was not found in the database"
                     );
 
@@ -209,7 +211,7 @@ public class PlayersController : UserController<Player>
                 {
                     _logger.LogError
                     (
-                        eventId: new EventId(GetType().GetMethod("Register")!.GetHashCode() + ex.GetType().GetHashCode()),
+                        eventId: new EventId("Register".GetHashCode() + ex.GetType().GetHashCode()),
                         message: "Database conflict occured while registering player with id = {id}", player.Id
                     );
 
