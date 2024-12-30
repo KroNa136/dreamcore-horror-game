@@ -10,7 +10,7 @@ import {
 axios.defaults.baseURL = "https://localhost:8008/api/";
 axios.defaults.headers.common = {
   "Content-Type": "application/json",
-  "Developer-Web-Application": "sWBlYN0yimNMCLXFofH7MBmdOIelMQEHlPJZ304Sdjsd47liU2M1Ilv2kjAQSKA2",
+  "Application-For-Developers": "sWBlYN0yimNMCLXFofH7MBmdOIelMQEHlPJZ304Sdjsd47liU2M1Ilv2kjAQSKA2",
 };
 
 export interface LoginData {
