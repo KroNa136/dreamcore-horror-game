@@ -7,7 +7,7 @@ interface GameModeFormState {
   assetName: string,
   maxPlayers: number | null,
   timeLimit: string | null,
-  isActive: boolean | null,
+  isActive: boolean,
 }
 
 const initialState: GameModeFormState = {
@@ -15,7 +15,7 @@ const initialState: GameModeFormState = {
   assetName: "",
   maxPlayers: null,
   timeLimit: null,
-  isActive: null
+  isActive: false
 };
 
 const gameModeFormSlice = createSlice({
@@ -26,7 +26,7 @@ const gameModeFormSlice = createSlice({
     setAssetName: (state, action: PayloadAction<string>) => { state.assetName = action.payload },
     setMaxPlayers: (state, action: PayloadAction<number | null>) => { state.maxPlayers = action.payload },
     setTimeLimit: (state, action: PayloadAction<string | null>) => { state.timeLimit = action.payload },
-    setIsActive: (state, action: PayloadAction<boolean | null>) => { state.isActive = action.payload },
+    setIsActive: (state, action: PayloadAction<boolean>) => { state.isActive = action.payload },
   },
 });
 

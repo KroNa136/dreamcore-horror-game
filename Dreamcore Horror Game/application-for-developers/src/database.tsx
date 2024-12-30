@@ -124,7 +124,7 @@ export class GameMode implements DatabaseEntity {
   assetName: string = "";
   maxPlayers: number | null = null;
   timeLimit: string | null = null;
-  isActive: boolean | null = null;
+  isActive: boolean = false;
   gameSessions: GameSession[] = [];
 }
 
