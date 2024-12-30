@@ -13,7 +13,7 @@ public partial class GameMode
 
     public TimeOnly? TimeLimit { get; set; }
 
-    public bool? IsActive { get; set; }
+    public bool IsActive { get; set; }
 
     public virtual ICollection<GameSession> GameSessions { get; set; } = new List<GameSession>();
 }

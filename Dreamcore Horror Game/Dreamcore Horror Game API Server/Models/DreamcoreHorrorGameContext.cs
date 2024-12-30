@@ -223,7 +223,6 @@ public partial class DreamcoreHorrorGameContext : DbContext
                 .HasColumnName("asset_name");
             entity.Property(e => e.IsActive)
                 .IsRequired()
-                .HasDefaultValueSql("true")
                 .HasColumnName("is_active");
             entity.Property(e => e.MaxPlayers).HasColumnName("max_players");
             entity.Property(e => e.TimeLimit).HasColumnName("time_limit");
