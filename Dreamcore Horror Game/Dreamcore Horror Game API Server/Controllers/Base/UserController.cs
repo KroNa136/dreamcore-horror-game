@@ -73,7 +73,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
     public override async Task<IActionResult> CreateEntityAsync(TUser user)
         => await ValidateHeadersAndHandleErrorsAsync(user, async user =>
         {
-            _logger.LogInformation("Create called for {EntityType}", EntityType);
+            _logger.LogInformation("Create was called for {EntityType}.", EntityType);
 
             bool userExists = await _getByLogin(_context, user.Login) is not null;
 
@@ -100,7 +100,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
                 _logger.LogError
                 (
                     eventId: new EventId("CreateEntityAsync".GetHashCode() + ex.GetType().GetHashCode()),
-                    message: "Database conflict occured while creating {EntityType} with id = {id}", EntityType, user.Id
+                    message: "Database conflict occured while creating {EntityType} with id = {id}.", EntityType, user.Id
                 );
 
                 return Conflict(ErrorMessages.CreateConflict);
@@ -114,7 +114,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
     public async Task<IActionResult> LoginAsUserAsync(LoginData loginData)
         => await ValidateHeadersAndHandleErrorsAsync(loginData, async loginData =>
         {
-            _logger.LogInformation("Login called for {EntityType}", EntityType);
+            _logger.LogInformation("Login was called for {EntityType}.", EntityType);
 
             if (loginData.IsEmptyLogin() || loginData.IsEmptyPassword())
                 return BadRequest(ErrorMessages.EmptyLoginOrPassword);
@@ -149,7 +149,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
                 _logger.LogError
                 (
                     eventId: new EventId("LoginAsUserAsync".GetHashCode() + ex.GetType().GetHashCode()),
-                    message: "Database conflict occured while logging in as {EntityType} with id = {id}", EntityType, user.Id
+                    message: "Database conflict occured while logging in as {EntityType} with id = {id}.", EntityType, user.Id
                 );
 
                 return Conflict(ErrorMessages.UserLoginConflict);
@@ -163,7 +163,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
     public async Task<IActionResult> LogoutAsUserAsync(string login)
         => await ValidateHeadersAndHandleErrorsAsync(login, async login =>
         {
-            _logger.LogInformation("Logout called for {EntityType}", EntityType);
+            _logger.LogInformation("Logout was called for {EntityType}.", EntityType);
 
             if (login.IsEmpty())
                 return NotFound();
@@ -187,7 +187,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
                 _logger.LogError
                 (
                     eventId: new EventId("LogoutAsUserAsync".GetHashCode() + ex.GetType().GetHashCode()),
-                    message: "Database conflict occured while logging out as {EntityType} with id = {id}", EntityType, user.Id
+                    message: "Database conflict occured while logging out as {EntityType} with id = {id}.", EntityType, user.Id
                 );
 
                 return Conflict(ErrorMessages.UserLogoutConflict);
@@ -201,7 +201,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
     public async Task<IActionResult> ChangeUserPasswordAsync(LoginData loginData, string newPassword)
         => await ValidateHeadersAndHandleErrorsAsync(loginData, newPassword, async (loginData, newPassword) =>
         {
-            _logger.LogInformation("ChangePassword called for {EntityType}", EntityType);
+            _logger.LogInformation("ChangePassword was called for {EntityType}.", EntityType);
 
             if (loginData.IsEmptyLogin() || loginData.IsEmptyPassword() || newPassword.IsEmpty())
                 return BadRequest(ErrorMessages.EmptyLoginOrPassword);
@@ -226,7 +226,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
                 _logger.LogError
                 (
                     eventId: new EventId("ChangeUserPasswordAsync".GetHashCode() + ex.GetType().GetHashCode()),
-                    message: "Database conflict occured while changing password of {EntityType} with id = {id}", EntityType, user.Id
+                    message: "Database conflict occured while changing password of {EntityType} with id = {id}.", EntityType, user.Id
                 );
 
                 return Conflict(ErrorMessages.ChangeUserPasswordConflict);
@@ -242,7 +242,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
     public async Task<IActionResult> GetAccessTokenForUserAsync(string login)
         => await ValidateHeadersAndHandleErrorsAsync(login, async login =>
         {
-            _logger.LogInformation("GetAccessToken called for {EntityType}", EntityType);
+            _logger.LogInformation("GetAccessToken was called for {EntityType}.", EntityType);
 
             if (login.IsEmpty())
                 return NotFound();
@@ -263,7 +263,7 @@ public abstract class UserController<TUser> : DatabaseEntityController<TUser>
     public async Task<IActionResult> VerifyAccessTokenAsync()
         => await ValidateHeadersAndHandleErrorsAsync(async () =>
         {
-            _logger.LogInformation("VerifyAccessToken called for {EntityType}", EntityType);
+            _logger.LogInformation("VerifyAccessToken was called for {EntityType}.", EntityType);
 
             return Ok();
         });

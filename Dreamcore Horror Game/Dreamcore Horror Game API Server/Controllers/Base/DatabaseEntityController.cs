@@ -118,7 +118,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     public async Task<IActionResult> GetCountAsync()
         => await ValidateHeadersAndHandleErrorsAsync(async () =>
         {
-            _logger.LogInformation("GetCount called for {EntityType}", EntityType);
+            _logger.LogInformation("GetCount was called for {EntityType}.", EntityType);
 
             return Ok(_context.Set<TEntity>().Count());
         });
@@ -128,7 +128,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     public async Task<IActionResult> GetAllEntitiesAsync(int page, int showBy)
         => await ValidateHeadersAndHandleErrorsAsync(async () =>
         {
-            _logger.LogInformation("GetAll called for {EntityType}", EntityType);
+            _logger.LogInformation("GetAll was called for {EntityType}.", EntityType);
 
             var entities = await _context.Set<TEntity>()
                 .OrderBy(_orderBySelectorExpression)
@@ -142,7 +142,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     public async Task<IActionResult> GetAllEntitiesWithRelationsAsync(int page, int showBy)
         => await ValidateHeadersAndHandleErrorsAsync(async () =>
         {
-            _logger.LogInformation("GetAllWithRelations called for {EntityType}", EntityType);
+            _logger.LogInformation("GetAllWithRelations was called for {EntityType}.", EntityType);
 
             var entities = await (await _getAllWithFirstLevelRelations(_context))
                 .OrderBy(_orderBySelectorExpression)
@@ -156,7 +156,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     public async Task<IActionResult> GetEntityAsync(Guid? id)
         => await ValidateHeadersAndHandleErrorsAsync(id, async id =>
         {
-            _logger.LogInformation("Get called for {EntityType}", EntityType);
+            _logger.LogInformation("Get was called for {EntityType}.", EntityType);
 
             if (id is null)
                 return NotFound();
@@ -175,7 +175,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     public IActionResult GetEntity(Func<TEntity, bool> predicate)
         => ValidateHeadersAndHandleErrors(predicate, predicate =>
         {
-            _logger.LogInformation("Get (with predicate) called for {EntityType}", EntityType);
+            _logger.LogInformation("Get (with predicate) was called for {EntityType}.", EntityType);
 
             var entity = _context.Set<TEntity>()
                 .AsQueryable()
@@ -193,7 +193,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     public async Task<IActionResult> GetEntityWithRelationsAsync(Guid? id)
         => await ValidateHeadersAndHandleErrorsAsync(id, async id =>
         {
-            _logger.LogInformation("GetWithRelations called for {EntityType}", EntityType);
+            _logger.LogInformation("GetWithRelations was called for {EntityType}.", EntityType);
 
             if (id is null)
                 return NotFound();
@@ -212,7 +212,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     public async Task<IActionResult> GetEntityWithRelationsAsync(Func<TEntity, bool> predicate)
         => await ValidateHeadersAndHandleErrorsAsync(predicate, async predicate =>
         {
-            _logger.LogInformation("GetWithRelations (with predicate) called for {EntityType}", EntityType);
+            _logger.LogInformation("GetWithRelations (with predicate) was called for {EntityType}.", EntityType);
 
             var entity = (await _getAllWithFirstLevelRelations(_context))
                 .AsForceParallel()
@@ -234,7 +234,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     )
         => await ValidateHeadersAndHandleErrorsAsync(propertyPredicateCollection, async propertyPredicateCollection =>
         {
-            _logger.LogInformation("GetWhere called for {EntityType}", EntityType);
+            _logger.LogInformation("GetWhere was called for {EntityType}.", EntityType);
 
             var entities = (await _getAllWithFirstLevelRelations(_context))
                 .AsForceParallel();
@@ -249,7 +249,14 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
             if (validationResult is false)
                 return BadRequest(errorMessage);
 
-            propertyPredicateCollection.ForEach(predicate => entities = FilterEntities(entities, predicate));
+            try
+            {
+                propertyPredicateCollection.ForEach(predicate => entities = FilterEntities(entities, predicate));
+            }
+            catch (InvalidOperationException)
+            {
+                return BadRequest(new UnknownOperatorResult().Message);
+            }
 
             var entitiesEnumerable = entities.AsEnumerable();
 
@@ -343,7 +350,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     public virtual async Task<IActionResult> CreateEntityAsync(TEntity entity)
         => await ValidateHeadersAndHandleErrorsAsync(entity, async entity =>
         {
-            _logger.LogInformation("Create called for {EntityType}", EntityType);
+            _logger.LogInformation("Create was called for {EntityType}.", EntityType);
 
             if (InvalidModelState)
                 return ValidationProblem();
@@ -364,7 +371,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
                 _logger.LogError
                 (
                     eventId: new EventId("CreateEntityAsync".GetHashCode() + ex.GetType().GetHashCode()),
-                    message: "Database conflict occured while creating {EntityType} with id = {id}", EntityType, entity.Id
+                    message: "Database conflict occured while creating {EntityType} with id = {id}.", EntityType, entity.Id
                 );
 
                 return Conflict(ErrorMessages.CreateConflict);
@@ -378,7 +385,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     public async Task<IActionResult> EditEntityAsync(Guid? id, TEntity entity)
         => await ValidateHeadersAndHandleErrorsAsync(id, entity, async (id, entity) =>
         {
-            _logger.LogInformation("Edit called for {EntityType}", EntityType);
+            _logger.LogInformation("Edit was called for {EntityType}.", EntityType);
 
             if (id is null)
                 return NotFound();
@@ -409,7 +416,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
                     _logger.LogError
                     (
                         eventId: new EventId("EditEntityAsync".GetHashCode() + ex.GetType().GetHashCode()),
-                        message: "Database conflict occured while editing {EntityType} with id = {id}", EntityType, entity.Id
+                        message: "Database conflict occured while editing {EntityType} with id = {id}.", EntityType, entity.Id
                     );
 
                     return Conflict(ErrorMessages.EditConflict);
@@ -424,7 +431,7 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     public async Task<IActionResult> DeleteEntityAsync(Guid? id)
         => await ValidateHeadersAndHandleErrorsAsync(id, async id =>
         {
-            _logger.LogInformation("Delete called for {EntityType}", EntityType);
+            _logger.LogInformation("Delete was called for {EntityType}.", EntityType);
 
             if (id is null)
                 return NotFound();
@@ -493,8 +500,17 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
         {
             return function();
         }
-        catch (InvalidConstraintException)
+        catch (InvalidConstraintException ex)
         {
+            _logger.Log
+            (
+                logLevel: LogLevel.Error,
+                eventId: new EventId("ValidateHeadersAndHandleErrors".GetHashCode() + ex.GetType().GetHashCode()),
+                exception: ex,
+                state: "Invalid constraint exception was caught while handling general errors.",
+                formatter: _customLoggingFormatter
+            );
+
             return UnprocessableEntity(ErrorMessages.RelatedEntityDoesNotExist);
         }
         catch (DbUpdateException ex)
@@ -504,24 +520,11 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
                 logLevel: LogLevel.Error,
                 eventId: new EventId("ValidateHeadersAndHandleErrors".GetHashCode() + ex.GetType().GetHashCode()),
                 exception: ex,
-                state: "Database update exception was caught while handling general errors",
+                state: "Database update exception was caught while handling general errors.",
                 formatter: _customLoggingFormatter
             );
 
-            return this.InternalServerError();
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.Log
-            (
-                logLevel: LogLevel.Error,
-                eventId: new EventId("ValidateHeadersAndHandleErrors".GetHashCode() + ex.GetType().GetHashCode()),
-                exception: ex,
-                state: "Invalid operation exception was caught while handling general errors",
-                formatter: _customLoggingFormatter
-            );
-
-            return this.InternalServerError();
+            return UnprocessableEntity(ErrorMessages.UnknownDatabaseError);
         }
         catch (Exception ex)
         {
@@ -530,11 +533,11 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
                 logLevel: LogLevel.Error,
                 eventId: new EventId("ValidateHeadersAndHandleErrors".GetHashCode() + ex.GetType().GetHashCode()),
                 exception: ex,
-                state: "General exception was caught while handling general errors",
+                state: "General exception was caught while handling general errors.",
                 formatter: _customLoggingFormatter
             );
 
-            return this.InternalServerError();
+            return this.InternalServerError(ErrorMessages.UnknownServerError);
         }
     }
 
@@ -556,8 +559,17 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
         {
             return await task;
         }
-        catch (InvalidConstraintException)
+        catch (InvalidConstraintException ex)
         {
+            _logger.Log
+            (
+                logLevel: LogLevel.Error,
+                eventId: new EventId("ValidateHeadersAndHandleErrorsAsync".GetHashCode() + ex.GetType().GetHashCode()),
+                exception: ex,
+                state: "Invalid constraint exception was caught while handling general errors.",
+                formatter: _customLoggingFormatter
+            );
+
             return UnprocessableEntity(ErrorMessages.RelatedEntityDoesNotExist);
         }
         catch (DbUpdateException ex)
@@ -567,24 +579,11 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
                 logLevel: LogLevel.Error,
                 eventId: new EventId("ValidateHeadersAndHandleErrorsAsync".GetHashCode() + ex.GetType().GetHashCode()),
                 exception: ex,
-                state: "Database update exception was caught while handling general errors",
+                state: "Database update exception was caught while handling general errors.",
                 formatter: _customLoggingFormatter
             );
 
-            return this.InternalServerError();
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.Log
-            (
-                logLevel: LogLevel.Error,
-                eventId: new EventId("ValidateHeadersAndHandleErrorsAsync".GetHashCode() + ex.GetType().GetHashCode()),
-                exception: ex,
-                state: "Invalid operation exception was caught while handling general errors",
-                formatter: _customLoggingFormatter
-            );
-
-            return this.InternalServerError();
+            return UnprocessableEntity(ErrorMessages.UnknownDatabaseError);
         }
         catch (Exception ex)
         {
@@ -593,11 +592,11 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
                 logLevel: LogLevel.Error,
                 eventId: new EventId("ValidateHeadersAndHandleErrorsAsync".GetHashCode() + ex.GetType().GetHashCode()),
                 exception: ex,
-                state: "General exception was caught while handling general errors",
+                state: "General exception was caught while handling general errors.",
                 formatter: _customLoggingFormatter
             );
 
-            return this.InternalServerError();
+            return this.InternalServerError(ErrorMessages.UnknownServerError);
         }
     }
 

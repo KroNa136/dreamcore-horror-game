@@ -30,6 +30,10 @@ public static class ErrorMessages
 
     public const string DeleteConstraintViolation = "Couldn't delete the requested entity due to the database constraints.";
 
+    public const string UnknownDatabaseError = "Couldn't process the request due to some unknown error in the database. Please try again later.";
+
+    public const string NoFirstXpLevel = "Couldn't complete the registration process because the XP level with number 1 was not found in the database. Please try again later.";
+
     public const string PlayerAlreadyExists = "A player with the same email address already exists.";
 
     public const string DeveloperAlreadyExists = "A developer with the same login already exists.";
@@ -49,4 +53,6 @@ public static class ErrorMessages
     public const string EmptyOperatorInPropertyPredicate = "One of the predicates contained an empty operator.";
 
     public const string UnknownPropertyInPropertyPredicate = "One of the predicates contained an unknown property.";
+
+    public const string UnknownServerError = "Couldn't process the request due to some unknown server error. Please try again later.";
 }

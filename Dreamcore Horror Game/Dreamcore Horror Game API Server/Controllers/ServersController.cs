@@ -169,7 +169,7 @@ public class ServersController : UserController<Server>
         => await RequireHeaders(CorsHeaders.GameClient)
             .ExecuteAsync(slots, async slots =>
             {
-                _logger.LogInformation("GetServerWithFreeSlots called for {EntityType}", EntityType);
+                _logger.LogInformation("GetServerWithFreeSlots was called for {EntityType}.", EntityType);
 
                 if (slots is < 1)
                     return UnprocessableEntity(ErrorMessages.UnacceptableParameterValue);
@@ -219,7 +219,7 @@ public class ServersController : UserController<Server>
             _logger.LogError
             (
                 eventId: new EventId("HasWaitingSession".GetHashCode() + ex.GetType().GetHashCode()),
-                message: "An error occured while deserializing HTTP response on having any waiting sessions from server {IpAddress}", server.IpAddress.ToString()
+                message: "An error occured while deserializing HTTP response on having any waiting sessions from server {IpAddress}.", server.IpAddress.ToString()
             );
 
             return false;
