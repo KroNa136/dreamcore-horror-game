@@ -13,49 +13,46 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class CreaturesController : DatabaseEntityController<Creature>
+public class CreaturesController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<CreaturesController> logger
+)
+: DatabaseEntityController<Creature>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    orderBySelectorExpression: creature => creature.AssetName,
+    orderByComparer: null,
+    getAllWithFirstLevelRelationsFunction: async (context) =>
+    {
+        var xpLevels = await context.XpLevels.ToListAsync();
+        var playerSessions = await context.PlayerSessions.ToListAsync();
+
+        var creatures = context.Creatures.AsQueryable();
+
+        await creatures.ForEachAsync(creature =>
+        {
+            creature.RequiredXpLevel?.Creatures.Clear();
+        });
+
+        return creatures;
+    },
+    setRelationsFromForeignKeysFunction: async (context, creature) =>
+    {
+        var requiredXpLevel = await context.XpLevels
+            .FindAsync(creature.RequiredXpLevelId);
+
+        if (requiredXpLevel is null)
+            throw new InvalidConstraintException();
+
+        creature.RequiredXpLevel = requiredXpLevel;
+        creature.RequiredXpLevelId = Guid.Empty;
+    }
+)
 {
-    public CreaturesController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<CreaturesController> logger
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        orderBySelectorExpression: creature => creature.AssetName,
-        orderByComparer: null,
-        getAllWithFirstLevelRelationsFunction: async (context) =>
-        {
-            var xpLevels = await context.XpLevels.ToListAsync();
-            var playerSessions = await context.PlayerSessions.ToListAsync();
-
-            var creatures = context.Creatures.AsQueryable();
-
-            await creatures.ForEachAsync(creature =>
-            {
-                creature.RequiredXpLevel?.Creatures.Clear();
-            });
-
-            return creatures;
-        },
-        setRelationsFromForeignKeysFunction: async (context, creature) =>
-        {
-            var requiredXpLevel = await context.XpLevels
-                .FindAsync(creature.RequiredXpLevelId);
-
-            if (requiredXpLevel is null)
-                throw new InvalidConstraintException();
-
-            creature.RequiredXpLevel = requiredXpLevel;
-            creature.RequiredXpLevelId = Guid.Empty;
-        }
-    )
-    { }
-
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()

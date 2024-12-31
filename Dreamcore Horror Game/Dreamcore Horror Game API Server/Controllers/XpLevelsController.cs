@@ -12,32 +12,29 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class XpLevelsController : DatabaseEntityController<XpLevel>
+public class XpLevelsController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<XpLevelsController> logger
+)
+: DatabaseEntityController<XpLevel>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    orderBySelectorExpression: xpLevel => xpLevel.Number,
+    orderByComparer: null,
+    getAllWithFirstLevelRelationsFunction: async (context) =>
+    {
+        var creatures = await context.Creatures.ToListAsync();
+        var players = await context.Players.ToListAsync();
+
+        return context.XpLevels.AsQueryable();
+    },
+    setRelationsFromForeignKeysFunction: null
+)
 {
-    public XpLevelsController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<XpLevelsController> logger
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        orderBySelectorExpression: xpLevel => xpLevel.Number,
-        orderByComparer: null,
-        getAllWithFirstLevelRelationsFunction: async (context) =>
-        {
-            var creatures = await context.Creatures.ToListAsync();
-            var players = await context.Players.ToListAsync();
-
-            return context.XpLevels.AsQueryable();
-        },
-        setRelationsFromForeignKeysFunction: null
-    )
-    { }
-
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()

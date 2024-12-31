@@ -31,11 +31,10 @@ public class TokenService : ITokenService
 
     private static string CreateToken(string login, string role, string issuer, string audience, double lifetime, SecurityKey securityKey)
     {
-        List<Claim> claims = new()
-        {
+        List<Claim> claims = [
             new Claim(ClaimTypes.Name, login),
             new Claim(ClaimTypes.Role, role),
-        };
+        ];
 
         JwtSecurityToken jwt = new
         (

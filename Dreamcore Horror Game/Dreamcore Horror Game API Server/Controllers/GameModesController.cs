@@ -12,31 +12,28 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class GameModesController : DatabaseEntityController<GameMode>
+public class GameModesController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<GameModesController> logger
+)
+: DatabaseEntityController<GameMode>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    orderBySelectorExpression: gameMode => gameMode.AssetName,
+    orderByComparer: null,
+    getAllWithFirstLevelRelationsFunction: async (context) =>
+    {
+        var gameSessions = await context.GameSessions.ToListAsync();
+
+        return context.GameModes.AsQueryable();
+    },
+    setRelationsFromForeignKeysFunction: null
+)
 {
-    public GameModesController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<GameModesController> logger
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        orderBySelectorExpression: gameMode => gameMode.AssetName,
-        orderByComparer: null,
-        getAllWithFirstLevelRelationsFunction: async (context) =>
-        {
-            var gameSessions = await context.GameSessions.ToListAsync();
-
-            return context.GameModes.AsQueryable();
-        },
-        setRelationsFromForeignKeysFunction: null
-    )
-    { }
-
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()

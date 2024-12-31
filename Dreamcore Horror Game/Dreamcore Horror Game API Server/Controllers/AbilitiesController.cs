@@ -12,31 +12,28 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class AbilitiesController : DatabaseEntityController<Ability>
+public class AbilitiesController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<AbilitiesController> logger
+)
+: DatabaseEntityController<Ability>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    orderBySelectorExpression: ability => ability.AssetName,
+    orderByComparer: null,
+    getAllWithFirstLevelRelationsFunction: async (context) =>
+    {
+        var acquiredAbilities = await context.AcquiredAbilities.ToListAsync();
+
+        return context.Abilities.AsQueryable();
+    },
+    setRelationsFromForeignKeysFunction: null
+)
 {
-    public AbilitiesController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<AbilitiesController> logger
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        orderBySelectorExpression: ability => ability.AssetName,
-        orderByComparer: null,
-        getAllWithFirstLevelRelationsFunction: async (context) =>
-        {
-            var acquiredAbilities = await context.AcquiredAbilities.ToListAsync();
-
-            return context.Abilities.AsQueryable();
-        },
-        setRelationsFromForeignKeysFunction: null
-    )
-    { }
-
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()

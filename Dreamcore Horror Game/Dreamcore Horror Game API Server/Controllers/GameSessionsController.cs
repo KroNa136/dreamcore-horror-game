@@ -13,57 +13,54 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class GameSessionsController : DatabaseEntityController<GameSession>
+public class GameSessionsController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<GameSessionsController> logger
+)
+: DatabaseEntityController<GameSession>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    orderBySelectorExpression: gameSession => gameSession.StartTimestamp,
+    orderByComparer: null,
+    getAllWithFirstLevelRelationsFunction: async (context) =>
+    {
+        var servers = await context.Servers.ToListAsync();
+        var gameModes = await context.GameModes.ToListAsync();
+        var playerSessions = await context.PlayerSessions.ToListAsync();
+
+        var gameSessions = context.GameSessions.AsQueryable();
+
+        await gameSessions.ForEachAsync(gameSession =>
+        {
+            gameSession.GameMode?.GameSessions.Clear();
+            gameSession.Server?.GameSessions.Clear();
+        });
+
+        return gameSessions;
+    },
+    setRelationsFromForeignKeysFunction: async (context, gameSession) =>
+    {
+        var server = await context.Servers
+            .FindAsync(gameSession.ServerId);
+
+        var gameMode = await context.GameModes
+            .FindAsync(gameSession.GameModeId);
+
+        if (server is null || gameMode is null)
+            throw new InvalidConstraintException();
+
+        gameSession.Server = server;
+        gameSession.ServerId = Guid.Empty;
+
+        gameSession.GameMode = gameMode;
+        gameSession.GameModeId = Guid.Empty;
+    }
+)
 {
-    public GameSessionsController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<GameSessionsController> logger
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        orderBySelectorExpression: gameSession => gameSession.StartTimestamp,
-        orderByComparer: null,
-        getAllWithFirstLevelRelationsFunction: async (context) =>
-        {
-            var servers = await context.Servers.ToListAsync();
-            var gameModes = await context.GameModes.ToListAsync();
-            var playerSessions = await context.PlayerSessions.ToListAsync();
-
-            var gameSessions = context.GameSessions.AsQueryable();
-
-            await gameSessions.ForEachAsync(gameSession =>
-            {
-                gameSession.GameMode?.GameSessions.Clear();
-                gameSession.Server?.GameSessions.Clear();
-            });
-
-            return gameSessions;
-        },
-        setRelationsFromForeignKeysFunction: async (context, gameSession) =>
-        {
-            var server = await context.Servers
-                .FindAsync(gameSession.ServerId);
-
-            var gameMode = await context.GameModes
-                .FindAsync(gameSession.GameModeId);
-
-            if (server is null || gameMode is null)
-                throw new InvalidConstraintException();
-
-            gameSession.Server = server;
-            gameSession.ServerId = Guid.Empty;
-
-            gameSession.GameMode = gameMode;
-            gameSession.GameModeId = Guid.Empty;
-        }
-    )
-    { }
-
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()

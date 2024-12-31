@@ -3,32 +3,20 @@ using System.Text;
 
 namespace DreamcoreHorrorGameApiServer.Logging;
 
-public class FileLogger : ILogger, IDisposable
+public class FileLogger(string filePathTemplate, long maxFileSize, string categoryName) : ILogger, IDisposable
 {
-    private readonly string _filePathTemplate;
-    private readonly long _maxFileSize;
-    private readonly string _categoryName;
+    private readonly string _filePathTemplate = filePathTemplate;
+    private readonly long _maxFileSize = maxFileSize;
+    private readonly string _categoryName = categoryName;
 
     protected static readonly object s_lock = new();
 
     private string _filePath = string.Empty;
 
-    public FileLogger(string filePathTemplate, long maxFileSize, string categoryName)
-    {
-        _filePathTemplate = filePathTemplate;
-        _maxFileSize = maxFileSize;
-        _categoryName = categoryName;
-
-        SetFilePath();
-    }
-
-    public IDisposable BeginScope<TState>(TState state) where TState : notnull
-        => this;
-
+    public IDisposable BeginScope<TState>(TState state) where TState : notnull => this;
     public void Dispose() => GC.SuppressFinalize(this);
 
-    public bool IsEnabled(LogLevel logLevel)
-        => true;
+    public bool IsEnabled(LogLevel logLevel) => true;
 
     public void Log<TState>
     (
@@ -47,7 +35,7 @@ public class FileLogger : ILogger, IDisposable
             sb.Append($"{logLevel.ToString().ToUpper()} from {_categoryName} [{eventId}]{Environment.NewLine}");
             sb.Append($"{formatter(state, exception)}{Environment.NewLine}{Environment.NewLine}");
 
-            SetFilePath();
+            _filePath = GetTodaysFilePath();
 
             try
             {
@@ -69,8 +57,7 @@ public class FileLogger : ILogger, IDisposable
         }
     }
 
-    private void SetFilePath()
-        => _filePath = string.Format(_filePathTemplate, DateTime.Now.ToString("yyyyMMdd"));
+    private string GetTodaysFilePath() => string.Format(_filePathTemplate, DateTime.Now.ToString("yyyyMMdd"));
 
     private void LimitFileSize()
     {

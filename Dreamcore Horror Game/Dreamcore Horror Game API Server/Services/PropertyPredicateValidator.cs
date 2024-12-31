@@ -9,8 +9,7 @@ namespace DreamcoreHorrorGameApiServer.Services;
 
 public class PropertyPredicateValidator : IPropertyPredicateValidator
 {
-    protected readonly List<UnaryOperator> _unaryOperators = new()
-    {
+    protected readonly List<UnaryOperator> _unaryOperators = [
         new UnaryOperator
         (
             Name: "is null",
@@ -23,10 +22,9 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
             IgnoreTypes: true,
             Operation: value => value is not null
         )
-    };
+    ];
 
-    protected readonly List<BinaryOperator> _binaryOperators = new()
-    {
+    protected readonly List<BinaryOperator> _binaryOperators = [
         new BinaryOperator
         (
             Name: "equals",
@@ -159,10 +157,9 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && secondValue is IComparable _secondValue
                 && _firstValue.CompareTo(_secondValue) is > 0
         )
-    };
+    ];
 
-    protected readonly List<TernaryOperator> _ternaryOperators = new()
-    {
+    protected readonly List<TernaryOperator> _ternaryOperators = [
         new TernaryOperator
         (
             Name: "between",
@@ -215,7 +212,7 @@ public class PropertyPredicateValidator : IPropertyPredicateValidator
                 && _value.ToLower().StartsWith(_start.ToLower())
                 && _value.ToLower().EndsWith(_end.ToLower())
         )
-    };
+    ];
 
     public PropertyPredicateOperator? GetOperator(string name)
         => _unaryOperators.Find(op => op.Name.Equals(name)) as PropertyPredicateOperator

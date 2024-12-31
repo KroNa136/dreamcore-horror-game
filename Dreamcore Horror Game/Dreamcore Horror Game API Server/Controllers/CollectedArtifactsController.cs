@@ -13,56 +13,53 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class CollectedArtifactsController : DatabaseEntityController<CollectedArtifact>
+public class CollectedArtifactsController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<CollectedArtifactsController> logger
+)
+: DatabaseEntityController<CollectedArtifact>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    orderBySelectorExpression: collectedArtifact => collectedArtifact.CollectionTimestamp,
+    orderByComparer: null,
+    getAllWithFirstLevelRelationsFunction: async (context) =>
+    {
+        var players = await context.Players.ToListAsync();
+        var artifacts = await context.Artifacts.ToListAsync();
+
+        var collectedArtifacts = context.CollectedArtifacts.AsQueryable();
+
+        await collectedArtifacts.ForEachAsync(collectedArtifact =>
+        {
+            collectedArtifact.Player?.CollectedArtifacts.Clear();
+            collectedArtifact.Artifact?.CollectedArtifacts.Clear();
+        });
+
+        return collectedArtifacts;
+    },
+    setRelationsFromForeignKeysFunction: async (context, collectedArtifact) =>
+    {
+        var player = await context.Players
+            .FindAsync(collectedArtifact.PlayerId);
+
+        var artifact = await context.Artifacts
+            .FindAsync(collectedArtifact.ArtifactId);
+
+        if (player is null || artifact is null)
+            throw new InvalidConstraintException();
+
+        collectedArtifact.Player = player;
+        collectedArtifact.PlayerId = Guid.Empty;
+
+        collectedArtifact.Artifact = artifact;
+        collectedArtifact.ArtifactId = Guid.Empty;
+    }
+)
 {
-    public CollectedArtifactsController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<CollectedArtifactsController> logger
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        orderBySelectorExpression: collectedArtifact => collectedArtifact.CollectionTimestamp,
-        orderByComparer: null,
-        getAllWithFirstLevelRelationsFunction: async (context) =>
-        {
-            var players = await context.Players.ToListAsync();
-            var artifacts = await context.Artifacts.ToListAsync();
-
-            var collectedArtifacts = context.CollectedArtifacts.AsQueryable();
-
-            await collectedArtifacts.ForEachAsync(collectedArtifact =>
-            {
-                collectedArtifact.Player?.CollectedArtifacts.Clear();
-                collectedArtifact.Artifact?.CollectedArtifacts.Clear();
-            });
-
-            return collectedArtifacts;
-        },
-        setRelationsFromForeignKeysFunction: async (context, collectedArtifact) =>
-        {
-            var player = await context.Players
-                .FindAsync(collectedArtifact.PlayerId);
-
-            var artifact = await context.Artifacts
-                .FindAsync(collectedArtifact.ArtifactId);
-
-            if (player is null || artifact is null)
-                throw new InvalidConstraintException();
-
-            collectedArtifact.Player = player;
-            collectedArtifact.PlayerId = Guid.Empty;
-
-            collectedArtifact.Artifact = artifact;
-            collectedArtifact.ArtifactId = Guid.Empty;
-        }
-    )
-    { }
-
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()

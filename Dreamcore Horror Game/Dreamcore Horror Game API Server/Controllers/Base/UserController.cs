@@ -10,48 +10,38 @@ using System.Linq.Expressions;
 
 namespace DreamcoreHorrorGameApiServer.Controllers.Base;
 
-public abstract class UserController<TUser> : DatabaseEntityController<TUser>
-    where TUser : class, IDatabaseEntity, IUser
+public abstract class UserController<TUser>
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<UserController<TUser>> logger,
+    ITokenService tokenService,
+    IPasswordHasher<TUser> passwordHasher,
+    string alreadyExistsErrorMessage,
+    Expression<Func<TUser, object?>> orderBySelectorExpression,
+    IComparer<object?>? orderByComparer,
+    Func<DreamcoreHorrorGameContext, Task<IQueryable<TUser>>> getAllWithFirstLevelRelationsFunction,
+    Func<DreamcoreHorrorGameContext, TUser, Task>? setRelationsFromForeignKeysFunction,
+    Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> getByLoginFunction
+)
+: DatabaseEntityController<TUser>
+(
+    context,
+    propertyPredicateValidator,
+    logger,
+    orderBySelectorExpression,
+    orderByComparer,
+    getAllWithFirstLevelRelationsFunction,
+    setRelationsFromForeignKeysFunction
+)
+where TUser : class, IDatabaseEntity, IUser
 {
-    protected readonly ITokenService _tokenService;
-    protected readonly IPasswordHasher<TUser> _passwordHasher;
+    protected readonly ITokenService _tokenService = tokenService;
+    protected readonly IPasswordHasher<TUser> _passwordHasher = passwordHasher;
 
-    protected readonly string _alreadyExistsErrorMessage;
+    protected readonly string _alreadyExistsErrorMessage = alreadyExistsErrorMessage;
 
-    protected readonly Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> _getByLogin;
-
-    public UserController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<UserController<TUser>> logger,
-        ITokenService tokenService,
-        IPasswordHasher<TUser> passwordHasher,
-        string alreadyExistsErrorMessage,
-        Expression<Func<TUser, object?>> orderBySelectorExpression,
-        IComparer<object?>? orderByComparer,
-        Func<DreamcoreHorrorGameContext, Task<IQueryable<TUser>>> getAllWithFirstLevelRelationsFunction,
-        Func<DreamcoreHorrorGameContext, TUser, Task>? setRelationsFromForeignKeysFunction,
-        Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> getByLoginFunction
-    )
-    : base
-    (
-        context,
-        propertyPredicateValidator,
-        logger,
-        orderBySelectorExpression,
-        orderByComparer,
-        getAllWithFirstLevelRelationsFunction,
-        setRelationsFromForeignKeysFunction
-    )
-    {
-        _tokenService = tokenService;
-        _passwordHasher = passwordHasher;
-
-        _alreadyExistsErrorMessage = alreadyExistsErrorMessage;
-
-        _getByLogin = getByLoginFunction;
-    }
+    protected readonly Func<DreamcoreHorrorGameContext, string?, Task<TUser?>> _getByLogin = getByLoginFunction;
 
     public override abstract Task<IActionResult> Create(TUser entity);
     public abstract Task<IActionResult> Login(LoginData loginData);

@@ -13,55 +13,53 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class AcquiredAbilitiesController : DatabaseEntityController<AcquiredAbility>
+public class AcquiredAbilitiesController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<AcquiredAbilitiesController> logger
+)
+: DatabaseEntityController<AcquiredAbility>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    orderBySelectorExpression: acquiredAbility => acquiredAbility.AcquirementTimestamp,
+    orderByComparer: null,
+    getAllWithFirstLevelRelationsFunction: async (context) =>
+    {
+        var players = await context.Players.ToListAsync();
+        var abilities = await context.Abilities.ToListAsync();
+
+        var acquiredAbilities = context.AcquiredAbilities.AsQueryable();
+
+        await acquiredAbilities.ForEachAsync(acquiredAbility =>
+        {
+            acquiredAbility.Player?.AcquiredAbilities.Clear();
+            acquiredAbility.Ability?.AcquiredAbilities.Clear();
+        });
+
+        return acquiredAbilities;
+    },
+    setRelationsFromForeignKeysFunction: async (context, acquiredAbility) =>
+    {
+        var player = await context.Players
+            .FindAsync(acquiredAbility.PlayerId);
+
+        var ability = await context.Abilities
+            .FindAsync(acquiredAbility.AbilityId);
+
+        if (player is null || ability is null)
+            throw new InvalidConstraintException();
+
+        acquiredAbility.Player = player;
+        acquiredAbility.PlayerId = Guid.Empty;
+
+        acquiredAbility.Ability = ability;
+        acquiredAbility.AbilityId = Guid.Empty;
+    }
+)
 {
-    public AcquiredAbilitiesController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<AcquiredAbilitiesController> logger
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        orderBySelectorExpression: acquiredAbility => acquiredAbility.AcquirementTimestamp,
-        orderByComparer: null,
-        getAllWithFirstLevelRelationsFunction: async (context) =>
-        {
-            var players = await context.Players.ToListAsync();
-            var abilities = await context.Abilities.ToListAsync();
-
-            var acquiredAbilities = context.AcquiredAbilities.AsQueryable();
-
-            await acquiredAbilities.ForEachAsync(acquiredAbility =>
-            {
-                acquiredAbility.Player?.AcquiredAbilities.Clear();
-                acquiredAbility.Ability?.AcquiredAbilities.Clear();
-            });
-
-            return acquiredAbilities;
-        },
-        setRelationsFromForeignKeysFunction: async (context, acquiredAbility) =>
-        {
-            var player = await context.Players
-                .FindAsync(acquiredAbility.PlayerId);
-
-            var ability = await context.Abilities
-                .FindAsync(acquiredAbility.AbilityId);
-
-            if (player is null || ability is null)
-                throw new InvalidConstraintException();
-
-            acquiredAbility.Player = player;
-            acquiredAbility.PlayerId = Guid.Empty;
-
-            acquiredAbility.Ability = ability;
-            acquiredAbility.AbilityId = Guid.Empty;
-        }
-    )
-    { }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]

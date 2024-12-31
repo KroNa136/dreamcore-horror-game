@@ -14,59 +14,56 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class DevelopersController : UserController<Developer>
+public class DevelopersController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<DevelopersController> logger,
+    ITokenService tokenService,
+    IPasswordHasher<Developer> passwordHasher
+)
+: UserController<Developer>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    tokenService: tokenService,
+    passwordHasher: passwordHasher,
+    alreadyExistsErrorMessage: ErrorMessages.DeveloperAlreadyExists,
+    orderBySelectorExpression: developer => developer.Login,
+    orderByComparer: null,
+    getAllWithFirstLevelRelationsFunction: async (context) =>
+    {
+        var developerAccessLevels = await context.DeveloperAccessLevels.ToListAsync();
+
+        var developers = context.Developers.AsQueryable();
+
+        await developers.ForEachAsync(developer =>
+        {
+            developer.DeveloperAccessLevel?.Developers.Clear();
+        });
+
+        return developers;
+    },
+    setRelationsFromForeignKeysFunction: async (context, developer) =>
+    {
+        var developerAccessLevel = await context.DeveloperAccessLevels
+            .FindAsync(developer.DeveloperAccessLevelId);
+
+        if (developerAccessLevel is null)
+            throw new InvalidConstraintException();
+
+        developer.DeveloperAccessLevel = developerAccessLevel;
+        developer.DeveloperAccessLevelId = Guid.Empty;
+    },
+    getByLoginFunction: async (context, login) =>
+    {
+        return await context.Developers
+            .Include(developer => developer.DeveloperAccessLevel)
+            .FirstOrDefaultAsync(developer => developer.Login.Equals(login));
+    }
+)
 {
-    public DevelopersController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<DevelopersController> logger,
-        ITokenService tokenService,
-        IPasswordHasher<Developer> passwordHasher
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        tokenService: tokenService,
-        passwordHasher: passwordHasher,
-        alreadyExistsErrorMessage: ErrorMessages.DeveloperAlreadyExists,
-        orderBySelectorExpression: developer => developer.Login,
-        orderByComparer: null,
-        getAllWithFirstLevelRelationsFunction: async (context) =>
-        {
-            var developerAccessLevels = await context.DeveloperAccessLevels.ToListAsync();
-
-            var developers = context.Developers.AsQueryable();
-
-            await developers.ForEachAsync(developer =>
-            {
-                developer.DeveloperAccessLevel?.Developers.Clear();
-            });
-
-            return developers;
-        },
-        setRelationsFromForeignKeysFunction: async (context, developer) =>
-        {
-            var developerAccessLevel = await context.DeveloperAccessLevels
-                .FindAsync(developer.DeveloperAccessLevelId);
-
-            if (developerAccessLevel is null)
-                throw new InvalidConstraintException();
-
-            developer.DeveloperAccessLevel = developerAccessLevel;
-            developer.DeveloperAccessLevelId = Guid.Empty;
-        },
-        getByLoginFunction: async (context, login) =>
-        {
-            return await context.Developers
-                .Include(developer => developer.DeveloperAccessLevel)
-                .FirstOrDefaultAsync(developer => developer.Login.Equals(login));
-        }
-    )
-    { }
-
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()

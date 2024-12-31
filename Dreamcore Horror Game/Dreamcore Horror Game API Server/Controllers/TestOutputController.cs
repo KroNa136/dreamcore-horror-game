@@ -12,20 +12,19 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class TestOutputController : ControllerBase
+public class TestOutputController
+(
+    DreamcoreHorrorGameContext context,
+    ITokenService tokenService,
+    IJsonSerializerOptionsProvider jsonSerializerOptionsProvider,
+    IPasswordHasher<Developer> passwordHasher
+)
+: ControllerBase()
 {
-    private readonly DreamcoreHorrorGameContext _context;
-    private readonly ITokenService _tokenService;
-    private readonly IJsonSerializerOptionsProvider _jsonSerializerOptionsProvider;
-    private readonly IPasswordHasher<Developer> _developerPasswordHasher;
-
-    public TestOutputController(DreamcoreHorrorGameContext context, ITokenService tokenService, IJsonSerializerOptionsProvider jsonSerializerOptionsProvider, IPasswordHasher<Developer> passwordHasher)
-    {
-        _context = context;
-        _tokenService = tokenService;
-        _jsonSerializerOptionsProvider = jsonSerializerOptionsProvider;
-        _developerPasswordHasher = passwordHasher;
-    }
+    private readonly DreamcoreHorrorGameContext _context = context;
+    private readonly ITokenService _tokenService = tokenService;
+    private readonly IJsonSerializerOptionsProvider _jsonSerializerOptionsProvider = jsonSerializerOptionsProvider;
+    private readonly IPasswordHasher<Developer> _developerPasswordHasher = passwordHasher;
 
     [HttpGet]
     public async Task<IActionResult> CreateAdmin()
@@ -115,7 +114,7 @@ public class TestOutputController : ControllerBase
             RefreshToken = _tokenService.CreateRefreshToken("test@gmail.com", AuthenticationRoles.Player)
         };
 
-        Microsoft.AspNetCore.Identity.PasswordHasher<Player> passwordHasher = new();
+        PasswordHasher<Player> passwordHasher = new();
 
         string plainTextPassword = "123456";
         string hashedPassword = passwordHasher.HashPassword(player, plainTextPassword);
@@ -123,7 +122,7 @@ public class TestOutputController : ControllerBase
 
         var start = DateTime.UtcNow;
 
-        var c = player.Email.Equals("test@gmail.com") && passwordHasher.VerifyHashedPassword(player, player.Password, "123456") is not Microsoft.AspNetCore.Identity.PasswordVerificationResult.Failed;
+        var c = player.Email.Equals("test@gmail.com") && passwordHasher.VerifyHashedPassword(player, player.Password, "123456") is not PasswordVerificationResult.Failed;
 
         var end = DateTime.UtcNow;
 

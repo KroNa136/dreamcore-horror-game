@@ -1,6 +1,5 @@
 ﻿using DreamcoreHorrorGameApiServer.ConstantValues;
 using DreamcoreHorrorGameApiServer.Controllers.Base;
-using DreamcoreHorrorGameApiServer.Extensions;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
 using DreamcoreHorrorGameApiServer.PropertyPredicates;
@@ -15,61 +14,58 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class PlayersController : UserController<Player>
+public class PlayersController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<PlayersController> logger,
+    ITokenService tokenService,
+    IPasswordHasher<Player> passwordHasher
+)
+: UserController<Player>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    tokenService: tokenService,
+    passwordHasher: passwordHasher,
+    alreadyExistsErrorMessage: ErrorMessages.PlayerAlreadyExists,
+    orderBySelectorExpression: player => player.Username,
+    orderByComparer: null,
+    getAllWithFirstLevelRelationsFunction: async (context) =>
+    {
+        var xpLevels = await context.XpLevels.ToListAsync();
+        var acquiredAbilities = await context.AcquiredAbilities.ToListAsync();
+        var collectedArtifacts = await context.CollectedArtifacts.ToListAsync();
+        var playerSessions = await context.PlayerSessions.ToListAsync();
+
+        var players = context.Players.AsQueryable();
+
+        await players.ForEachAsync(player =>
+        {
+            player.XpLevel?.Players.Clear();
+        });
+
+        return players;
+    },
+    setRelationsFromForeignKeysFunction: async (context, player) =>
+    {
+        var xpLevel = await context.XpLevels
+            .FindAsync(player.XpLevelId);
+
+        if (xpLevel is null)
+            throw new InvalidConstraintException();
+
+        player.XpLevel = xpLevel;
+        player.XpLevelId = Guid.Empty;
+    },
+    getByLoginFunction: async (context, login) =>
+    {
+        return await context.Players
+            .FirstOrDefaultAsync(player => player.Email.Equals(login));
+    }
+)
 {
-    public PlayersController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<PlayersController> logger,
-        ITokenService tokenService,
-        IPasswordHasher<Player> passwordHasher
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        tokenService: tokenService,
-        passwordHasher: passwordHasher,
-        alreadyExistsErrorMessage: ErrorMessages.PlayerAlreadyExists,
-        orderBySelectorExpression: player => player.Username,
-        orderByComparer: null,
-        getAllWithFirstLevelRelationsFunction: async (context) =>
-        {
-            var xpLevels = await context.XpLevels.ToListAsync();
-            var acquiredAbilities = await context.AcquiredAbilities.ToListAsync();
-            var collectedArtifacts = await context.CollectedArtifacts.ToListAsync();
-            var playerSessions = await context.PlayerSessions.ToListAsync();
-
-            var players = context.Players.AsQueryable();
-
-            await players.ForEachAsync(player =>
-            {
-                player.XpLevel?.Players.Clear();
-            });
-
-            return players;
-        },
-        setRelationsFromForeignKeysFunction: async (context, player) =>
-        {
-            var xpLevel = await context.XpLevels
-                .FindAsync(player.XpLevelId);
-
-            if (xpLevel is null)
-                throw new InvalidConstraintException();
-
-            player.XpLevel = xpLevel;
-            player.XpLevelId = Guid.Empty;
-        },
-        getByLoginFunction: async (context, login) =>
-        {
-            return await context.Players
-                .FirstOrDefaultAsync(player => player.Email.Equals(login));
-        }
-    )
-    { }
-
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()

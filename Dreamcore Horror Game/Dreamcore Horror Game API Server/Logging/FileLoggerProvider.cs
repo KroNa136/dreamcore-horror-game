@@ -1,15 +1,9 @@
 ﻿namespace DreamcoreHorrorGameApiServer.Logging;
 
-public class FileLoggerProvider : ILoggerProvider
+public class FileLoggerProvider(string filePathTemplate, long maxFileSize) : ILoggerProvider
 {
-    private readonly string _filePathTemplate;
-    private readonly long _maxFileSize;
-
-    public FileLoggerProvider(string filePathTemplate, long maxFileSize)
-    {
-        _filePathTemplate = filePathTemplate;
-        _maxFileSize = maxFileSize;
-    }
+    private readonly string _filePathTemplate = filePathTemplate;
+    private readonly long _maxFileSize = maxFileSize;
 
     public ILogger CreateLogger(string categoryName)
         => new FileLogger(_filePathTemplate, _maxFileSize, categoryName);

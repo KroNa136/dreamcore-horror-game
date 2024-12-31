@@ -13,49 +13,46 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class ArtifactsController : DatabaseEntityController<Artifact>
+public class ArtifactsController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<ArtifactsController> logger
+)
+: DatabaseEntityController<Artifact>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    orderBySelectorExpression: artifact => artifact.AssetName,
+    orderByComparer: null,
+    getAllWithFirstLevelRelationsFunction: async (context) =>
+    {
+        var rarityLevels = await context.RarityLevels.ToListAsync();
+        var collectedArtifacts = await context.CollectedArtifacts.ToListAsync();
+
+        var artifacts = context.Artifacts.AsQueryable();
+
+        await artifacts.ForEachAsync(artifact =>
+        {
+            artifact.RarityLevel?.Artifacts.Clear();
+        });
+
+        return artifacts;
+    },
+    setRelationsFromForeignKeysFunction: async (context, artifact) =>
+    {
+        var rarityLevel = await context.RarityLevels
+            .FindAsync(artifact.RarityLevelId);
+
+        if (rarityLevel is null)
+            throw new InvalidConstraintException();
+
+        artifact.RarityLevel = rarityLevel;
+        artifact.RarityLevelId = Guid.Empty;
+    }
+)
 {
-    public ArtifactsController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<ArtifactsController> logger
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        orderBySelectorExpression: artifact => artifact.AssetName,
-        orderByComparer: null,
-        getAllWithFirstLevelRelationsFunction: async (context) =>
-        {
-            var rarityLevels = await context.RarityLevels.ToListAsync();
-            var collectedArtifacts = await context.CollectedArtifacts.ToListAsync();
-
-            var artifacts = context.Artifacts.AsQueryable();
-
-            await artifacts.ForEachAsync(artifact =>
-            {
-                artifact.RarityLevel?.Artifacts.Clear();
-            });
-
-            return artifacts;
-        },
-        setRelationsFromForeignKeysFunction: async (context, artifact) =>
-        {
-            var rarityLevel = await context.RarityLevels
-                .FindAsync(artifact.RarityLevelId);
-
-            if (rarityLevel is null)
-                throw new InvalidConstraintException();
-
-            artifact.RarityLevel = rarityLevel;
-            artifact.RarityLevelId = Guid.Empty;
-        }
-    )
-    { }
-
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()

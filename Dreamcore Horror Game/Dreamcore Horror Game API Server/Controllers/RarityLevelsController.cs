@@ -12,31 +12,28 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class RarityLevelsController : DatabaseEntityController<RarityLevel>
+public class RarityLevelsController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<RarityLevelsController> logger
+)
+: DatabaseEntityController<RarityLevel>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    orderBySelectorExpression: rarityLevel => rarityLevel.Probability,
+    orderByComparer: null,
+    getAllWithFirstLevelRelationsFunction: async (context) =>
+    {
+        var artifacts = await context.Artifacts.ToListAsync();
+
+        return context.RarityLevels.AsQueryable();
+    },
+    setRelationsFromForeignKeysFunction: null
+)
 {
-    public RarityLevelsController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<RarityLevelsController> logger
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        orderBySelectorExpression: rarityLevel => rarityLevel.Probability,
-        orderByComparer: null,
-        getAllWithFirstLevelRelationsFunction: async (context) =>
-        {
-            var artifacts = await context.Artifacts.ToListAsync();
-
-            return context.RarityLevels.AsQueryable();
-        },
-        setRelationsFromForeignKeysFunction: null
-    )
-    { }
-
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()

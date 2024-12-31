@@ -21,49 +21,43 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class ServersController : UserController<Server>
-{
-    private readonly IHttpFetcher _httpFetcher;
-    private readonly IJsonSerializerOptionsProvider _jsonSerializerOptionsProvider;
-
-    public ServersController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<ServersController> logger,
-        ITokenService tokenService,
-        IPasswordHasher<Server> passwordHasher,
-        IHttpFetcher httpFetcher,
-        IJsonSerializerOptionsProvider jsonSerializerOptionsProvider
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        tokenService: tokenService,
-        passwordHasher: passwordHasher,
-        alreadyExistsErrorMessage: ErrorMessages.ServerAlreadyExists,
-        orderBySelectorExpression: server => server.IpAddress,
-        orderByComparer: new IPAddressComparer(),
-        getAllWithFirstLevelRelationsFunction: async (context) =>
-        {
-            var gameSessions = await context.GameSessions.ToListAsync();
-
-            return context.Servers.AsQueryable();
-        },
-        setRelationsFromForeignKeysFunction: null,
-        getByLoginFunction: async (context, login) =>
-        {
-            return IPAddress.TryParse(login, out var ipAddress)
-                ? await context.Servers.FirstOrDefaultAsync(server => server.IpAddress.Equals(ipAddress))
-                : null;
-        }
-    )
+public class ServersController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<ServersController> logger,
+    ITokenService tokenService,
+    IPasswordHasher<Server> passwordHasher,
+    IHttpFetcher httpFetcher,
+    IJsonSerializerOptionsProvider jsonSerializerOptionsProvider
+)
+: UserController<Server>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    tokenService: tokenService,
+    passwordHasher: passwordHasher,
+    alreadyExistsErrorMessage: ErrorMessages.ServerAlreadyExists,
+    orderBySelectorExpression: server => server.IpAddress,
+    orderByComparer: new IPAddressComparer(),
+    getAllWithFirstLevelRelationsFunction: async (context) =>
     {
-        _httpFetcher = httpFetcher;
-        _jsonSerializerOptionsProvider = jsonSerializerOptionsProvider;
+        var gameSessions = await context.GameSessions.ToListAsync();
+
+        return context.Servers.AsQueryable();
+    },
+    setRelationsFromForeignKeysFunction: null,
+    getByLoginFunction: async (context, login) =>
+    {
+        return IPAddress.TryParse(login, out var ipAddress)
+            ? await context.Servers.FirstOrDefaultAsync(server => server.IpAddress.Equals(ipAddress))
+            : null;
     }
+)
+{
+    private readonly IHttpFetcher _httpFetcher = httpFetcher;
+    private readonly IJsonSerializerOptionsProvider _jsonSerializerOptionsProvider = jsonSerializerOptionsProvider;
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]

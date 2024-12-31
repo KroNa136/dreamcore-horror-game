@@ -13,71 +13,68 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class PlayerSessionsController : DatabaseEntityController<PlayerSession>
-{
-    public PlayerSessionsController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<PlayerSessionsController> logger
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        orderBySelectorExpression: playerSession => playerSession.StartTimestamp,
-        orderByComparer: null,
-        getAllWithFirstLevelRelationsFunction: async (context) =>
+public class PlayerSessionsController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<PlayerSessionsController> logger
+)
+: DatabaseEntityController<PlayerSession>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    orderBySelectorExpression: playerSession => playerSession.StartTimestamp,
+    orderByComparer: null,
+    getAllWithFirstLevelRelationsFunction: async (context) =>
+    {
+        // Although the server of the game session is not a first-level relation,
+        // it is required to create a display name for a player session
+        var servers = await context.Servers.ToListAsync();
+
+        var gameSessions = await context.GameSessions.ToListAsync();
+        var players = await context.Players.ToListAsync();
+        var creatures = await context.Creatures.ToListAsync();
+
+        var playerSessions = context.PlayerSessions.AsQueryable();
+
+        await playerSessions.ForEachAsync(playerSession =>
         {
-            // Although the server of the game session is not a first-level relation,
-            // it is required to create a display name for a player session
-            var servers = await context.Servers.ToListAsync();
+            playerSession.GameSession?.PlayerSessions.Clear();
+            playerSession.Player?.PlayerSessions.Clear();
+            playerSession.UsedCreature?.PlayerSessions.Clear();
+        });
 
-            var gameSessions = await context.GameSessions.ToListAsync();
-            var players = await context.Players.ToListAsync();
-            var creatures = await context.Creatures.ToListAsync();
+        return playerSessions;
+    },
+    setRelationsFromForeignKeysFunction: async (context, playerSession) =>
+    {
+        var gameSession = await context.GameSessions
+            .FindAsync(playerSession.GameSessionId);
 
-            var playerSessions = context.PlayerSessions.AsQueryable();
+        var player = await context.Players
+            .FindAsync(playerSession.PlayerId);
 
-            await playerSessions.ForEachAsync(playerSession =>
-            {
-                playerSession.GameSession?.PlayerSessions.Clear();
-                playerSession.Player?.PlayerSessions.Clear();
-                playerSession.UsedCreature?.PlayerSessions.Clear();
-            });
+        var usedCreature = await context.Creatures
+            .FindAsync(playerSession.UsedCreatureId);
 
-            return playerSessions;
-        },
-        setRelationsFromForeignKeysFunction: async (context, playerSession) =>
+        if (gameSession is null || player is null || (usedCreature is null && playerSession.UsedCreatureId is not null))
+            throw new InvalidConstraintException();
+
+        playerSession.GameSession = gameSession;
+        playerSession.GameSessionId = Guid.Empty;
+
+        playerSession.Player = player;
+        playerSession.PlayerId = Guid.Empty;
+
+        if (usedCreature is not null)
         {
-            var gameSession = await context.GameSessions
-                .FindAsync(playerSession.GameSessionId);
-
-            var player = await context.Players
-                .FindAsync(playerSession.PlayerId);
-
-            var usedCreature = await context.Creatures
-                .FindAsync(playerSession.UsedCreatureId);
-
-            if (gameSession is null || player is null || (usedCreature is null && playerSession.UsedCreatureId is not null))
-                throw new InvalidConstraintException();
-
-            playerSession.GameSession = gameSession;
-            playerSession.GameSessionId = Guid.Empty;
-
-            playerSession.Player = player;
-            playerSession.PlayerId = Guid.Empty;
-
-            if (usedCreature is not null)
-            {
-                playerSession.UsedCreature = usedCreature;
-                playerSession.UsedCreatureId = Guid.Empty;
-            }
+            playerSession.UsedCreature = usedCreature;
+            playerSession.UsedCreatureId = Guid.Empty;
         }
-    )
-    { }
-
+    }
+)
+{
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()

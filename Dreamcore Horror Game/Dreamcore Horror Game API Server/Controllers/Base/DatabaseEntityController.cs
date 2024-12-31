@@ -15,9 +15,51 @@ using System.Text;
 namespace DreamcoreHorrorGameApiServer.Controllers.Base;
 
 [ApiController]
-public abstract class DatabaseEntityController<TEntity> : ControllerBase
-    where TEntity : class, IDatabaseEntity
+public abstract class DatabaseEntityController<TEntity>
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<DatabaseEntityController<TEntity>> logger,
+    Expression<Func<TEntity, object?>> orderBySelectorExpression,
+    IComparer<object?>? orderByComparer,
+    Func<DreamcoreHorrorGameContext, Task<IQueryable<TEntity>>> getAllWithFirstLevelRelationsFunction,
+    Func<DreamcoreHorrorGameContext, TEntity, Task>? setRelationsFromForeignKeysFunction
+)
+: ControllerBase
+where TEntity : class, IDatabaseEntity
 {
+    protected readonly DreamcoreHorrorGameContext _context = context;
+    protected readonly IPropertyPredicateValidator _propertyPredicateValidator = propertyPredicateValidator;
+    protected readonly ILogger<DatabaseEntityController<TEntity>> _logger = logger;
+
+    protected readonly Func<string, Exception?, string> _customLoggingFormatter = (message, exception) =>
+    {
+        StringBuilder sb = new(message);
+
+        if (exception is not null)
+        {
+            sb.Append($"{Environment.NewLine}{exception.GetType()}: {exception.Message}");
+
+            if (!string.IsNullOrEmpty(exception.StackTrace))
+                sb.Append($"{Environment.NewLine}{exception.StackTrace}");
+        }
+
+        return sb.ToString();
+    };
+
+    protected readonly List<string> _requiredRequestHeaders = [];
+
+    protected readonly Expression<Func<TEntity, object?>> _orderBySelectorExpression = orderBySelectorExpression;
+    protected readonly IComparer<object?>? _orderByComparer = orderByComparer;
+
+    // This function may contain logic that manually clears unnecessary references in IQueryables to save traffic
+    // and data loading times. DO NOT SAVE any data returned by this function to the database!
+    protected readonly Func<DreamcoreHorrorGameContext, Task<IQueryable<TEntity>>> _getAllWithFirstLevelRelations = getAllWithFirstLevelRelationsFunction;
+
+    protected readonly Func<DreamcoreHorrorGameContext, TEntity, Task>? _setRelationsFromForeignKeys = setRelationsFromForeignKeysFunction;
+
+    //private readonly Func<DreamcoreHorrorGameContext, DatabaseController<TEntity>> _derivedClassConstructor;
+
     protected string AuthorizationToken
         => HttpContext.Request.Headers[HeaderNames.Authorization]
             .ToString()
@@ -26,64 +68,6 @@ public abstract class DatabaseEntityController<TEntity> : ControllerBase
     protected bool InvalidModelState => ModelState.IsValid is false;
 
     protected string EntityType => typeof(TEntity).Name;
-
-    protected readonly DreamcoreHorrorGameContext _context;
-    protected readonly IPropertyPredicateValidator _propertyPredicateValidator;
-    protected readonly ILogger<DatabaseEntityController<TEntity>> _logger;
-
-    protected readonly Func<string, Exception?, string> _customLoggingFormatter;
-
-    protected readonly List<string> _requiredRequestHeaders;
-
-    protected readonly Expression<Func<TEntity, object?>> _orderBySelectorExpression;
-    protected readonly IComparer<object?>? _orderByComparer;
-
-    // This function may contain logic that manually clears unnecessary references in IQueryables to save traffic
-    // and data loading times. DO NOT SAVE any data returned by this function to the database!
-    protected readonly Func<DreamcoreHorrorGameContext, Task<IQueryable<TEntity>>> _getAllWithFirstLevelRelations;
-
-    protected readonly Func<DreamcoreHorrorGameContext, TEntity, Task>? _setRelationsFromForeignKeys;
-
-    //private readonly Func<DreamcoreHorrorGameContext, DatabaseController<TEntity>> _derivedClassConstructor;
-
-    public DatabaseEntityController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<DatabaseEntityController<TEntity>> logger,
-        Expression<Func<TEntity, object?>> orderBySelectorExpression,
-        IComparer<object?>? orderByComparer,
-        Func<DreamcoreHorrorGameContext, Task<IQueryable<TEntity>>> getAllWithFirstLevelRelationsFunction,
-        Func<DreamcoreHorrorGameContext, TEntity, Task>? setRelationsFromForeignKeysFunction
-    )
-    {
-        _context = context;
-        _propertyPredicateValidator = propertyPredicateValidator;
-        _logger = logger;
-
-        _customLoggingFormatter = (message, exception) =>
-        {
-            StringBuilder sb = new(message);
-
-            if (exception is not null)
-            {
-                sb.Append($"{Environment.NewLine}{exception.GetType()}: {exception.Message}");
-
-                if (!string.IsNullOrEmpty(exception.StackTrace))
-                    sb.Append($"{Environment.NewLine}{exception.StackTrace}");
-            }
-
-            return sb.ToString();
-        };
-
-        _requiredRequestHeaders = new List<string>();
-
-        _orderBySelectorExpression = orderBySelectorExpression;
-        _orderByComparer = orderByComparer;
-
-        _getAllWithFirstLevelRelations = getAllWithFirstLevelRelationsFunction;
-        _setRelationsFromForeignKeys = setRelationsFromForeignKeysFunction;
-    }
 
     // POST note:
     // To protect from overposting attacks, enable the specific properties you want to bind to.

@@ -12,31 +12,28 @@ namespace DreamcoreHorrorGameApiServer.Controllers;
 
 [ApiController]
 [Route(RouteNames.ApiControllerAction)]
-public class DeveloperAccessLevelsController : DatabaseEntityController<DeveloperAccessLevel>
+public class DeveloperAccessLevelsController
+(
+    DreamcoreHorrorGameContext context,
+    IPropertyPredicateValidator propertyPredicateValidator,
+    ILogger<DeveloperAccessLevelsController> logger
+)
+: DatabaseEntityController<DeveloperAccessLevel>
+(
+    context: context,
+    propertyPredicateValidator: propertyPredicateValidator,
+    logger: logger,
+    orderBySelectorExpression: developerAccessLevel => developerAccessLevel.Name,
+    orderByComparer: null,
+    getAllWithFirstLevelRelationsFunction: async (context) =>
+    {
+        var developers = await context.Developers.ToListAsync();
+
+        return context.DeveloperAccessLevels.AsQueryable();
+    },
+    setRelationsFromForeignKeysFunction: null
+)
 {
-    public DeveloperAccessLevelsController
-    (
-        DreamcoreHorrorGameContext context,
-        IPropertyPredicateValidator propertyPredicateValidator,
-        ILogger<DeveloperAccessLevelsController> logger
-    )
-    : base
-    (
-        context: context,
-        propertyPredicateValidator: propertyPredicateValidator,
-        logger: logger,
-        orderBySelectorExpression: developerAccessLevel => developerAccessLevel.Name,
-        orderByComparer: null,
-        getAllWithFirstLevelRelationsFunction: async (context) =>
-        {
-            var developers = await context.Developers.ToListAsync();
-
-            return context.DeveloperAccessLevels.AsQueryable();
-        },
-        setRelationsFromForeignKeysFunction: null
-    )
-    { }
-
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()
