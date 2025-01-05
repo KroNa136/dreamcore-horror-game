@@ -1,5 +1,5 @@
 import React from "react";
-import "./app.css";
+import "./App.css";
 import AllAbilities from "./pages/all-abilities";
 import AllAcquiredAbilities from "./pages/all-acquired-abilities";
 import AllArtifacts from "./pages/all-artifacts";
