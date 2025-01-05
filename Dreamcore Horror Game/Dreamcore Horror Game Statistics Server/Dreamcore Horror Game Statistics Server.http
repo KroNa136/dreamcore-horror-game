@@ -1,0 +1,6 @@
+@Dreamcore_Horror_Game_Statistics_Server_HostAddress = http://localhost:5038
+
+GET {{Dreamcore_Horror_Game_Statistics_Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
