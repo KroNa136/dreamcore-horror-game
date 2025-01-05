@@ -4,5 +4,5 @@ public static class RabbitMqExchangeNames
 {
     public const string Statistics = "statistics";
 
-    public const string VerificationEmails = "verification_emails";
+    public const string VerificationEmails = "verification-emails";
 }
