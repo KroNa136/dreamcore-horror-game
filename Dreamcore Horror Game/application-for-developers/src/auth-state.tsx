@@ -6,6 +6,10 @@ export function getCurrentLogin(): string {
   return sessionStorage.getItem("login") ?? "";
 }
 
+export function getCurrentAccessToken(): string {
+  return sessionStorage.getItem("accessToken") ?? "";
+}
+
 export function getCurrentRefreshToken(): string {
   return sessionStorage.getItem("refreshToken") ?? "";
 }
@@ -44,8 +48,13 @@ export function signIn(login: string, refreshToken: string, developerAccessLevel
   sessionStorage.setItem("developerAccessLevel", developerAccessLevel);
 }
 
+export function setAccessToken(accessToken: string) {
+  sessionStorage.setItem("accessToken", accessToken);
+}
+
 export function signOut() {
   sessionStorage.removeItem("login");
+  sessionStorage.removeItem("accessToken");
   sessionStorage.removeItem("refreshToken");
   sessionStorage.removeItem("developerAccessLevel");
 }

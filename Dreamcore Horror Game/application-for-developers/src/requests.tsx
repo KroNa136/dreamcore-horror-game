@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getCurrentLogin, getCurrentRefreshToken, signIn, signOut } from "./auth-state";
+import { getCurrentLogin, getCurrentAccessToken, getCurrentRefreshToken, signIn, setAccessToken, signOut } from "./auth-state";
 import {
   Ability, AcquiredAbility, Artifact, CollectedArtifact, Creature, Developer, DeveloperAccessLevel, GameMode,
   GameSession, Player, PlayerSession, RarityLevel, Server, XpLevel, Abilities, AcquiredAbilities, Artifacts,
@@ -33,30 +33,46 @@ function handleError(error: any) {
 //==================================================================================================
 
 async function getAccessToken() {
+  const currentAccessToken = getCurrentAccessToken();
+
   try {
-    const response = await axios.get("Developers/GetAccessToken", {
+    await axios.get("Developers/VerifyAccessToken", {
       headers: {
-        Authorization: "Bearer ".concat(getCurrentRefreshToken())
-      },
-      params: {
-        login: getCurrentLogin()
+        Authorization: "Bearer ".concat(currentAccessToken)
       }
     });
-    return response.data as string;
+    return currentAccessToken;
   }
   catch (error) {
-    if (axios.isAxiosError(error)) {
-      if (error.response?.status === 401) {
-        alert("Закончился срок действия refresh-токена авторизации. Пожалуйста, выйдите из системы и войдите заново.");
-        signOut();
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      try {
+        const response = await axios.get("Developers/GetAccessToken", {
+          headers: {
+            Authorization: "Bearer ".concat(getCurrentRefreshToken())
+          },
+          params: {
+            login: getCurrentLogin()
+          }
+        });
+        const accessToken = response.data as string;
+        setAccessToken(accessToken);
+        return accessToken;
       }
-      console.log(error.response?.data);
-      alert("Возникла ошибка HTTP. Подробности смотрите в консоли.");
+      catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          alert("Закончился срок действия refresh-токена авторизации. Пожалуйста, выйдите из системы и войдите заново.");
+          signOut();
+        }
+        else {
+          handleError(error);
+        }
+        return "";
+      }
     }
-    else if (error instanceof Error) {
-      alert("Возникла ошибка при подключении к серверу: ".concat(error.message));
+    else {
+        handleError(error);
+        return "";
     }
-    return "";
   }
 }
 
@@ -64,6 +80,7 @@ export async function loginAsDeveloper(loginData: LoginData) : Promise<boolean> 
   try {
     const response = await axios.post("Developers/Login", loginData);
     const refreshToken = response.data as string;
+
     const developer = await getDeveloperByLogin(loginData.login);
     if (developer === undefined) {
       alert("Не удалось получить уровень доступа пользователя. Уровень доступа для текущего сеанса будет установлен на Низкий.");
@@ -73,6 +90,7 @@ export async function loginAsDeveloper(loginData: LoginData) : Promise<boolean> 
       : "Low Access Developer";
 
     signIn(loginData.login, refreshToken, developerAccessLevel);
+    await getAccessToken();
     return true;
   }
   catch (error) {

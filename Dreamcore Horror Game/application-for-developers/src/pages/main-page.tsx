@@ -49,7 +49,7 @@ export default function MainPage() {
     getRarityLevelCount().then(count => setRarityLevelCount(count));
     getServerCount().then(count => setServerCount(count));
     getXpLevelCount().then(count => setXpLevelCount(count));
-  });
+  }, []);
 
   const gameContentTables = [
     {
@@ -240,40 +240,40 @@ export default function MainPage() {
             <Grid container direction="column">
               <ul>
                 <Grid item component="li">
-                  <a target="_blank" href="https://icons8.com/icon/hbSnr96BuuQG/abilities">Abilities</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                  <a target="_blank" rel="noreferrer" href="https://icons8.com/icon/hbSnr96BuuQG/abilities">Abilities</a> с сайта <a target="_blank" rel="noreferrer" href="https://icons8.com">Icons8</a>
                 </Grid>
                 <Grid item component="li">
-                  <a target="_blank" href="https://icons8.com/icon/upUDqxuJWw2B/archeology">Archeology</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                  <a target="_blank" rel="noreferrer" href="https://icons8.com/icon/upUDqxuJWw2B/archeology">Archeology</a> с сайта <a target="_blank" rel="noreferrer" href="https://icons8.com">Icons8</a>
                 </Grid>
                 <Grid item component="li">
-                  <a target="_blank" href="https://icons8.com/icon/15784/tentacles">Tentacles</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                  <a target="_blank" rel="noreferrer" href="https://icons8.com/icon/15784/tentacles">Tentacles</a> с сайта <a target="_blank" rel="noreferrer" href="https://icons8.com">Icons8</a>
                 </Grid>
                 <Grid item component="li">
-                  <a target="_blank" href="https://icons8.com/icon/21636/adjust">Level</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                  <a target="_blank" rel="noreferrer" href="https://icons8.com/icon/21636/adjust">Level</a> с сайта <a target="_blank" rel="noreferrer" href="https://icons8.com">Icons8</a>
                 </Grid>
                 <Grid item component="li">
-                  <a target="_blank" href="https://icons8.com/icon/2NE7EIbky0uS/probability">Probability</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                  <a target="_blank" rel="noreferrer" href="https://icons8.com/icon/2NE7EIbky0uS/probability">Probability</a> с сайта <a target="_blank" rel="noreferrer" href="https://icons8.com">Icons8</a>
                 </Grid>
                 <Grid item component="li">
-                  <a target="_blank" href="https://icons8.com/icon/MAuvVb8zy9c6/stars">Stars</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                  <a target="_blank" rel="noreferrer" href="https://icons8.com/icon/MAuvVb8zy9c6/stars">Stars</a> с сайта <a target="_blank" rel="noreferrer" href="https://icons8.com">Icons8</a>
                 </Grid>
                 <Grid item component="li">
-                  <a target="_blank" href="https://icons8.com/icon/E8p9kd1wRyug/player">player</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                  <a target="_blank" rel="noreferrer" href="https://icons8.com/icon/E8p9kd1wRyug/player">player</a> с сайта <a target="_blank" rel="noreferrer" href="https://icons8.com">Icons8</a>
                 </Grid>
                 <Grid item component="li">
-                  <a target="_blank" href="https://icons8.com/icon/y91Uh9uvUNf3/session-timeout">Session Timeout</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+                  <a target="_blank" rel="noreferrer" href="https://icons8.com/icon/y91Uh9uvUNf3/session-timeout">Session Timeout</a> icon by <a target="_blank" rel="noreferrer" href="https://icons8.com">Icons8</a>
                 </Grid>
                 <Grid item component="li">
-                  <a target="_blank" href="https://icons8.com/icon/7314/game-controller">Game</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                  <a target="_blank" rel="noreferrer" href="https://icons8.com/icon/7314/game-controller">Game</a> с сайта <a target="_blank" rel="noreferrer" href="https://icons8.com">Icons8</a>
                 </Grid>
                 <Grid item component="li">
-                  <a target="_blank" href="https://icons8.com/icon/1340/server">Server</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                  <a target="_blank" rel="noreferrer" href="https://icons8.com/icon/1340/server">Server</a> с сайта <a target="_blank" rel="noreferrer" href="https://icons8.com">Icons8</a>
                 </Grid>
                 <Grid item component="li">
-                  <a target="_blank" href="https://icons8.com/icon/30694/access">Access</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                  <a target="_blank" rel="noreferrer" href="https://icons8.com/icon/30694/access">Access</a> с сайта <a target="_blank" rel="noreferrer" href="https://icons8.com">Icons8</a>
                 </Grid>
                 <Grid item component="li">
-                  <a target="_blank" href="https://icons8.com/icon/rpWJYJBNjJbi/dev-community-where-programmers-share-ideas-and-help-each-other-grow">Dev community where programmers share ideas and help each other grow</a> с сайта <a target="_blank" href="https://icons8.com">Icons8</a>
+                  <a target="_blank" rel="noreferrer" href="https://icons8.com/icon/rpWJYJBNjJbi/dev-community-where-programmers-share-ideas-and-help-each-other-grow">Dev community where programmers share ideas and help each other grow</a> с сайта <a target="_blank" rel="noreferrer" href="https://icons8.com">Icons8</a>
                 </Grid>
               </ul>
             </Grid>
