@@ -1,7 +1,9 @@
 ﻿using DreamcoreHorrorGameApiServer.ConstantValues;
 using DreamcoreHorrorGameApiServer.Controllers.Base;
+using DreamcoreHorrorGameApiServer.Extensions;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
+using DreamcoreHorrorGameApiServer.Models.DTO;
 using DreamcoreHorrorGameApiServer.PropertyPredicates;
 using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -9,6 +11,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using System.Text;
+using System.Text.Json;
 
 namespace DreamcoreHorrorGameApiServer.Controllers;
 
@@ -120,7 +124,9 @@ public class PlayersController
         nameof(Player.XpLevelId),
         nameof(Player.Xp),
         nameof(Player.AbilityPoints),
-        nameof(Player.SpiritEnergyPoints)
+        nameof(Player.SpiritEnergyPoints),
+        nameof(Player.EmailVerified),
+        nameof(Player.EmailVerificationTokenId)
     )] Player player)
         => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .CreateEntityAsync(player);
@@ -139,7 +145,9 @@ public class PlayersController
         nameof(Player.XpLevelId),
         nameof(Player.Xp),
         nameof(Player.AbilityPoints),
-        nameof(Player.SpiritEnergyPoints)
+        nameof(Player.SpiritEnergyPoints),
+        nameof(Player.EmailVerified),
+        nameof(Player.EmailVerificationTokenId)
     )] Player player)
         => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .EditEntityAsync(id, player);
@@ -164,9 +172,11 @@ public class PlayersController
         nameof(Player.XpLevelId),
         nameof(Player.Xp),
         nameof(Player.AbilityPoints),
-        nameof(Player.SpiritEnergyPoints)
+        nameof(Player.SpiritEnergyPoints),
+        nameof(Player.EmailVerified),
+        nameof(Player.EmailVerificationTokenId)
     )] Player player)
-        => await AllowRequestSenders(RequestSenders.GameClient)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.PublicWebsite)
             .ExecuteAsync(player, async player =>
             {
                 _logger.LogInformation("Register was called for {EntityType}.", EntityType);
@@ -195,9 +205,9 @@ public class PlayersController
 
                 player.Id = Guid.NewGuid();
                 player.Password = _passwordHasher.HashPassword(player, player.Password);
-                player.RefreshToken = _tokenService.CreateRefreshToken(player.Login, player.Role);
-                player.IsOnline = true;
                 player.XpLevelId = _context.XpLevels.First(xpLevel => xpLevel.Number == 1).Id;
+                player.EmailVerificationToken = _tokenService.CreateEmailVerificationToken();
+                player.EmailVerificationTokenId = Guid.Empty;
 
                 if (_setRelationsFromForeignKeys is not null)
                     await _setRelationsFromForeignKeys(_context, player);
@@ -219,7 +229,107 @@ public class PlayersController
                     return Conflict(ErrorMessages.PlayerRegisterConflict);
                 }
 
+                PublishVerificationEmailRequest(player.Email, player.EmailVerificationToken.Token);
+
                 return Ok(player.RefreshToken);
+            });
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
+    public async Task<IActionResult> SendVerificationEmail(string login)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.PublicWebsite)
+            .ExecuteAsync(login, async login =>
+            {
+                _logger.LogInformation("SendVerificationEmail was called for {EntityType}.", EntityType);
+                PublishStatistics("SendVerificationEmail");
+
+                if (login.IsEmpty())
+                    return NotFound();
+
+                var player = await _getByLogin(_context, login);
+
+                if (player is null)
+                    return NotFound();
+
+                if (player.EmailVerified)
+                    return Unauthorized();
+
+                if (player.EmailVerificationTokenId is null)
+                {
+                    var newVerificationToken = _tokenService.CreateEmailVerificationToken();
+
+                    if (await SetEmailVerificationTokenAsync(player, newVerificationToken) is false)
+                        return NotFound();
+
+                    PublishVerificationEmailRequest(player.Email, newVerificationToken.Token);
+                    return Ok();
+                }
+
+                var verificationToken = _context.EmailVerificationTokens
+                    .FirstOrDefault(emailVerificationToken => emailVerificationToken.Id == player.EmailVerificationTokenId);
+
+                if (verificationToken is null)
+                {
+                    var newVerificationToken = _tokenService.CreateEmailVerificationToken();
+
+                    if (await SetEmailVerificationTokenAsync(player, newVerificationToken) is false)
+                        return NotFound();
+
+                    PublishVerificationEmailRequest(player.Email, newVerificationToken.Token);
+                    return Ok();
+                }
+
+                if (verificationToken.ExpirationTimestamp <= DateTime.Now)
+                {
+                    if (await DeleteEmailVerificationTokenAsync(player, verificationToken) is false)
+                        return NotFound();
+
+                    var newVerificationToken = _tokenService.CreateEmailVerificationToken();
+
+                    if (await SetEmailVerificationTokenAsync(player, newVerificationToken) is false)
+                        return NotFound();
+
+                    PublishVerificationEmailRequest(player.Email, newVerificationToken.Token);
+                    return Ok();
+                }
+
+                PublishVerificationEmailRequest(player.Email, verificationToken.Token);
+                return Ok();
+            });
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
+    public async Task<IActionResult> VerifyEmail(string login, string emailVerificationToken)
+        => await AllowRequestSenders(RequestSenders.PublicWebsite)
+            .ExecuteAsync(login, emailVerificationToken, async (login, emailVerificationToken) =>
+            {
+                _logger.LogInformation("VerifyEmail was called for {EntityType}.", EntityType);
+                PublishStatistics("VerifyEmail");
+
+                if (login.IsEmpty())
+                    return NotFound();
+
+                var player = await _getByLogin(_context, login);
+
+                if (player is null)
+                    return NotFound();
+
+                if (VerifyEmailVerificationToken(player, emailVerificationToken) is false)
+                    return Unauthorized();
+
+                var verificationToken = _context.EmailVerificationTokens
+                    .FirstOrDefault(emailVerificationToken => emailVerificationToken.Id == player.EmailVerificationTokenId);
+
+                if (verificationToken is null)
+                    return Unauthorized();
+
+                if (await DeleteEmailVerificationTokenAsync(player, verificationToken) is false)
+                    return NotFound();
+
+                if (await SetEmailVerifiedAsync(player) is false)
+                    return NotFound();
+
+                return Ok();
             });
 
     [HttpPost]
@@ -251,4 +361,115 @@ public class PlayersController
     public override async Task<IActionResult> VerifyAccessToken()
         => await AllowRequestSenders(RequestSenders.GameClient)
             .VerifyAccessTokenAsync();
+
+    private async Task<bool> SetEmailVerificationTokenAsync(Player player, EmailVerificationToken token)
+    {
+        player.EmailVerificationToken = token;
+        player.EmailVerificationTokenId = Guid.Empty;
+
+        _context.Update(player);
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (await EntityExistsAsync(player.Id) is false)
+                return false;
+            else
+                throw;
+        }
+
+        return true;
+    }
+
+    private async Task<bool> DeleteEmailVerificationTokenAsync(Player player, EmailVerificationToken token)
+    {
+        player.EmailVerificationToken = null;
+        player.EmailVerificationTokenId = null;
+
+        _context.Update(player);
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (await EntityExistsAsync(player.Id) is false)
+                return false;
+            else
+                throw;
+        }
+
+        _context.Remove(token);
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (await _context.EmailVerificationTokens.AnyAsync(emailVerificationToken => emailVerificationToken.Id == token.Id) is false)
+                return true;
+            else
+                throw;
+        }
+
+        return true;
+    }
+
+    private bool VerifyEmailVerificationToken(Player player, string? emailVerificationToken)
+    {
+        if (player.EmailVerificationTokenId is null)
+            return false;
+
+        var verificationToken = _context.EmailVerificationTokens
+            .FirstOrDefault(emailVerificationToken => emailVerificationToken.Id == player.EmailVerificationTokenId);
+
+        return verificationToken is not null && verificationToken.Token.Equals(emailVerificationToken);
+    }
+
+    private async Task<bool> SetEmailVerifiedAsync(Player player)
+    {
+        player.EmailVerified = true;
+
+        _context.Update(player);
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (await EntityExistsAsync(player.Id) is false)
+                return false;
+            else
+                throw;
+        }
+
+        return true;
+    }
+
+    private void PublishVerificationEmailRequest(string email, string verificationToken)
+        => Task.Run(async () => await PublishVerificationEmailRequestAsync(email, verificationToken));
+
+    private async Task PublishVerificationEmailRequestAsync(string email, string verificationToken)
+    {
+        VerificationEmailDTO verificationEmailDTO = new()
+        {
+            To = email,
+            VerificationToken = verificationToken
+        };
+
+        string json = JsonSerializer.Serialize(verificationEmailDTO, _jsonSerializerOptionsProvider.Default);
+        byte[] data = Encoding.UTF8.GetBytes(json);
+
+        bool success = await _rabbitMqProducer.PublishMessageAsync(exchange: RabbitMqExchangeNames.VerificationEmails, message: data);
+
+        _logger.LogInformation("Completed publishing verification email.{newline}Email intended for {email}.{newline}Status: {status}.",
+            Environment.NewLine, verificationEmailDTO.To,
+            Environment.NewLine, success ? "success" : "fail");
+    }
 }

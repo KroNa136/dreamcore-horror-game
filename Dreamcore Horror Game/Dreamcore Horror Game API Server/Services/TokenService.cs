@@ -1,14 +1,28 @@
 ﻿using DreamcoreHorrorGameApiServer.ConstantValues.TokenOptions;
+using DreamcoreHorrorGameApiServer.Models.Database;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 
 namespace DreamcoreHorrorGameApiServer.Services;
 
 public class TokenService : ITokenService
 {
+    public EmailVerificationToken CreateEmailVerificationToken()
+    {
+        byte[] randomBytes = RandomNumberGenerator.GetBytes(EmailVerificationTokenOptions.Length);
+
+        return new EmailVerificationToken()
+        {
+            Id = Guid.NewGuid(),
+            Token = Convert.ToBase64String(randomBytes),
+            ExpirationTimestamp = DateTime.UtcNow.Add(TimeSpan.FromDays(EmailVerificationTokenOptions.LifetimeDays))
+        };
+    }
+
     public string CreateAccessToken(string login, string role)
-        => CreateToken
+        => CreateJwtToken
         (
             login: login,
             role: role,
@@ -19,7 +33,7 @@ public class TokenService : ITokenService
         );
 
     public string CreateRefreshToken(string login, string role)
-        => CreateToken
+        => CreateJwtToken
         (
             login: login,
             role: role,
@@ -29,7 +43,7 @@ public class TokenService : ITokenService
             securityKey: RefreshTokenOptions.SecurityKey
         );
 
-    private static string CreateToken(string login, string role, string issuer, string audience, double lifetime, SecurityKey securityKey)
+    private static string CreateJwtToken(string login, string role, string issuer, string audience, double lifetime, SecurityKey securityKey)
     {
         List<Claim> claims = [
             new Claim(ClaimTypes.Name, login),

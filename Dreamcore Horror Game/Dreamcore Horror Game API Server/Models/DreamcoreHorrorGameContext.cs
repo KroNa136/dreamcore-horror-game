@@ -30,6 +30,8 @@ public partial class DreamcoreHorrorGameContext : DbContext
 
     public virtual DbSet<DeveloperAccessLevel> DeveloperAccessLevels { get; set; }
 
+    public virtual DbSet<EmailVerificationToken> EmailVerificationTokens { get; set; }
+
     public virtual DbSet<GameMode> GameModes { get; set; }
 
     public virtual DbSet<GameSession> GameSessions { get; set; }
@@ -178,7 +180,9 @@ public partial class DreamcoreHorrorGameContext : DbContext
                 .ValueGeneratedNever()
                 .HasColumnName("id");
             entity.Property(e => e.DeveloperAccessLevelId).HasColumnName("developer_access_level_id");
-            entity.Property(e => e.IsOnline).HasColumnName("is_online");
+            entity.Property(e => e.IsOnline)
+                .HasDefaultValue(false)
+                .HasColumnName("is_online");
             entity.Property(e => e.Login)
                 .HasMaxLength(255)
                 .HasColumnName("login");
@@ -209,6 +213,21 @@ public partial class DreamcoreHorrorGameContext : DbContext
                 .HasColumnName("name");
         });
 
+        modelBuilder.Entity<EmailVerificationToken>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("email_verification_tokens_pkey");
+
+            entity.ToTable("email_verification_tokens");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.ExpirationTimestamp).HasColumnName("expiration_timestamp");
+            entity.Property(e => e.Token)
+                .HasColumnType("character varying")
+                .HasColumnName("token");
+        });
+
         modelBuilder.Entity<GameMode>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("game_modes_pkey");
@@ -221,9 +240,7 @@ public partial class DreamcoreHorrorGameContext : DbContext
             entity.Property(e => e.AssetName)
                 .HasMaxLength(255)
                 .HasColumnName("asset_name");
-            entity.Property(e => e.IsActive)
-                .IsRequired()
-                .HasColumnName("is_active");
+            entity.Property(e => e.IsActive).HasColumnName("is_active");
             entity.Property(e => e.MaxPlayers).HasColumnName("max_players");
             entity.Property(e => e.TimeLimit).HasColumnName("time_limit");
         });
@@ -270,12 +287,22 @@ public partial class DreamcoreHorrorGameContext : DbContext
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
                 .HasColumnName("id");
-            entity.Property(e => e.AbilityPoints).HasColumnName("ability_points");
-            entity.Property(e => e.CollectOptionalData).HasColumnName("collect_optional_data");
+            entity.Property(e => e.AbilityPoints)
+                .HasDefaultValue((short)0)
+                .HasColumnName("ability_points");
+            entity.Property(e => e.CollectOptionalData)
+                .HasDefaultValue(false)
+                .HasColumnName("collect_optional_data");
             entity.Property(e => e.Email)
                 .HasMaxLength(255)
                 .HasColumnName("email");
-            entity.Property(e => e.IsOnline).HasColumnName("is_online");
+            entity.Property(e => e.EmailVerificationTokenId).HasColumnName("email_verification_token_id");
+            entity.Property(e => e.EmailVerified)
+                .HasDefaultValue(false)
+                .HasColumnName("email_verified");
+            entity.Property(e => e.IsOnline)
+                .HasDefaultValue(false)
+                .HasColumnName("is_online");
             entity.Property(e => e.Password)
                 .HasMaxLength(255)
                 .HasColumnName("password");
@@ -285,12 +312,21 @@ public partial class DreamcoreHorrorGameContext : DbContext
             entity.Property(e => e.RegistrationTimestamp)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("registration_timestamp");
-            entity.Property(e => e.SpiritEnergyPoints).HasColumnName("spirit_energy_points");
+            entity.Property(e => e.SpiritEnergyPoints)
+                .HasDefaultValue((short)0)
+                .HasColumnName("spirit_energy_points");
             entity.Property(e => e.Username)
                 .HasMaxLength(255)
                 .HasColumnName("username");
-            entity.Property(e => e.Xp).HasColumnName("xp");
+            entity.Property(e => e.Xp)
+                .HasDefaultValue((short)0)
+                .HasColumnName("xp");
             entity.Property(e => e.XpLevelId).HasColumnName("xp_level_id");
+
+            entity.HasOne(d => d.EmailVerificationToken).WithMany(p => p.Players)
+                .HasForeignKey(d => d.EmailVerificationTokenId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("players_fkey_email_verification_token_id");
 
             entity.HasOne(d => d.XpLevel).WithMany(p => p.Players)
                 .HasForeignKey(d => d.XpLevelId)
@@ -367,7 +403,9 @@ public partial class DreamcoreHorrorGameContext : DbContext
                 .ValueGeneratedNever()
                 .HasColumnName("id");
             entity.Property(e => e.IpAddress).HasColumnName("ip_address");
-            entity.Property(e => e.IsOnline).HasColumnName("is_online");
+            entity.Property(e => e.IsOnline)
+                .HasDefaultValue(false)
+                .HasColumnName("is_online");
             entity.Property(e => e.Password)
                 .HasColumnType("character varying")
                 .HasColumnName("password");

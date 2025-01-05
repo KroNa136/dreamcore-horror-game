@@ -29,9 +29,15 @@ public partial class Player
 
     public short SpiritEnergyPoints { get; set; }
 
+    public bool EmailVerified { get; set; }
+
+    public Guid? EmailVerificationTokenId { get; set; }
+
     public virtual ICollection<AcquiredAbility> AcquiredAbilities { get; set; } = new List<AcquiredAbility>();
 
     public virtual ICollection<CollectedArtifact> CollectedArtifacts { get; set; } = new List<CollectedArtifact>();
+
+    public virtual EmailVerificationToken? EmailVerificationToken { get; set; }
 
     public virtual ICollection<PlayerSession> PlayerSessions { get; set; } = new List<PlayerSession>();
 

@@ -10,5 +10,7 @@ public static class RequestSenders
 
     public const string ApplicationForDevelopers = "application-for-developers";
 
+    public const string PublicWebsite = "public-website";
+
     public const string RequiredHeaderValue = "sWBlYN0yimNMCLXFofH7MBmdOIelMQEHlPJZ304Sdjsd47liU2M1Ilv2kjAQSKA2";
 }
