@@ -93,6 +93,11 @@ export default function SinglePlayer() {
                 <b>Очки духовной энергии</b>: {player.spiritEnergyPoints}
               </Typography>
             </Grid>
+            <Grid item xs={12}>
+              <Typography component="p" variant="body1" align="left">
+                <b>Почта подтверждена</b>: {toYesNo(player.emailVerified)}
+              </Typography>
+            </Grid>
           </Grid>
           <Grid container spacing={4} direction="row" justifyContent="start" alignItems="center" my={4} px={2}>
             {canEdit() &&

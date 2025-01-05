@@ -45,6 +45,7 @@ export default function CreatePlayer() {
     newPlayer.xp = state.xp;
     newPlayer.abilityPoints = state.abilityPoints;
     newPlayer.spiritEnergyPoints = state.spiritEnergyPoints;
+    newPlayer.emailVerified = state.emailVerified;
 
     const createdPlayer: Player | undefined = await createPlayer(newPlayer);
 
@@ -157,6 +158,12 @@ export default function CreatePlayer() {
               name="spiritEnergyPoints"
               label="Очки духовной энергии"
               onChange={e => dispatch(actions.setSpiritEnergyPoints(Number(e.target.value)))}
+            />
+            <FormControlLabel
+                control={<Checkbox id="emailVerified" name="emailVerified" />}
+                label="Почта подтверждена"
+                sx={{ mb: 2 }}
+                onChange={(_, checked) => dispatch(actions.setEmailVerified(checked))}
             />
             <Button
               type="submit"

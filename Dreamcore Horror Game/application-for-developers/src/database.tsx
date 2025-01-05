@@ -26,6 +26,9 @@ export function displayName(entity: DatabaseEntity | null | undefined): string |
   else if ((entity as DeveloperAccessLevel).developers !== undefined) {
     return (entity as DeveloperAccessLevel).name;
   }
+  else if ((entity as EmailVerificationToken).expirationTimestamp !== undefined) {
+    return (entity as EmailVerificationToken).token;
+  }
   else if ((entity as GameMode).timeLimit !== undefined) {
     return (entity as GameMode).assetName;
   }
@@ -119,6 +122,12 @@ export class DeveloperAccessLevel implements DatabaseEntity {
   developers: Developer[] = [];
 }
 
+export class EmailVerificationToken implements DatabaseEntity {
+  id: string = defaultId;
+  token: string = "";
+  expirationTimestamp: string = defaultTimestamp;
+}
+
 export class GameMode implements DatabaseEntity {
   id: string = defaultId;
   assetName: string = "";
@@ -152,8 +161,11 @@ export class Player implements DatabaseEntity {
   xp: number = 0;
   abilityPoints: number = 0;
   spiritEnergyPoints: number = 0;
+  emailVerified: boolean = false;
+  emailVerificationTokenId: string | null = null;
   acquiredAbilities: AcquiredAbility[] = [];
   collectedArtifacts: CollectedArtifact[] = [];
+  emailVerificationToken: EmailVerificationToken | null = null;
   playerSessions: PlayerSession[] = [];
   xpLevel: XpLevel | undefined;
 }
@@ -215,6 +227,7 @@ export interface CollectedArtifacts extends Entities<CollectedArtifact> { }
 export interface Creatures extends Entities<Creature> { }
 export interface Developers extends Entities<Developer> { }
 export interface DeveloperAccessLevels extends Entities<DeveloperAccessLevel> { }
+export interface EmailVerificationTokens extends Entities<EmailVerificationToken> { }
 export interface GameModes extends Entities<GameMode> { }
 export interface GameSessions extends Entities<GameSession> { }
 export interface Players extends Entities<Player> { }

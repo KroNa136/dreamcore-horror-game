@@ -15,6 +15,7 @@ interface PlayerFormState {
   xp: number,
   abilityPoints: number,
   spiritEnergyPoints: number,
+  emailVerified: boolean,
   xpLevels: XpLevel[],
 }
 
@@ -30,6 +31,7 @@ const initialState: PlayerFormState = {
   xp: 0,
   abilityPoints: 0,
   spiritEnergyPoints: 0,
+  emailVerified: false,
   xpLevels: [],
 };
 
@@ -48,6 +50,7 @@ const playerFormSlice = createSlice({
     setXp: (state, action: PayloadAction<number>) => { state.xp = action.payload },
     setAbilityPoints: (state, action: PayloadAction<number>) => { state.abilityPoints = action.payload },
     setSpiritEnergyPoints: (state, action: PayloadAction<number>) => { state.spiritEnergyPoints = action.payload },
+    setEmailVerified: (state, action: PayloadAction<boolean>) => { state.emailVerified = action.payload },
     setXpLevels: (state, action: PayloadAction<XpLevel[]>) => { state.xpLevels = action.payload },
   },
 });
@@ -67,6 +70,7 @@ export const resetState = (dispatch: ThunkDispatch<any, any, any>) => {
   dispatch(actions.setXp(initialState.xp));
   dispatch(actions.setAbilityPoints(initialState.abilityPoints));
   dispatch(actions.setSpiritEnergyPoints(initialState.spiritEnergyPoints));
+  dispatch(actions.setEmailVerified(initialState.emailVerified));
   dispatch(actions.setXpLevels(initialState.xpLevels));
 }
 

@@ -41,6 +41,7 @@ export default function EditPlayer() {
         dispatch(actions.setXp(player.xp));
         dispatch(actions.setAbilityPoints(player.abilityPoints));
         dispatch(actions.setSpiritEnergyPoints(player.spiritEnergyPoints));
+        dispatch(actions.setEmailVerified(player.emailVerified));
       });
     getXpLevels()
       .then(xpLevels => dispatch(actions.setXpLevels(xpLevels.items)));
@@ -62,6 +63,9 @@ export default function EditPlayer() {
     newPlayer.xp = state.xp;
     newPlayer.abilityPoints = state.abilityPoints;
     newPlayer.spiritEnergyPoints = state.spiritEnergyPoints;
+    newPlayer.emailVerified = state.emailVerified;
+
+    console.log(newPlayer);
 
     const editedPlayer: Player | undefined = await editPlayer(newPlayer);
 
@@ -169,6 +173,12 @@ export default function EditPlayer() {
               label="Очки духовной энергии"
               value={state.spiritEnergyPoints}
               onChange={e => dispatch(actions.setSpiritEnergyPoints(Number(e.target.value)))}
+            />
+            <FormControlLabel
+                control={<Checkbox id="emailVerified" name="emailVerified" checked={state.emailVerified} />}
+                label="Почта подтверждена"
+                sx={{ mb: 2 }}
+                onChange={(_, checked) => dispatch(actions.setEmailVerified(checked))}
             />
             <Button
               type="submit"
