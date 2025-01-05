@@ -66,7 +66,7 @@ public class TestOutputController
     public IResult Test()
     {
         var devs = _context.Developers.Include(developer => developer.DeveloperAccessLevel)
-            .Select(dev => new { dev.Login, dev.DeveloperAccessLevel.Name }).ToList();
+            .Select(dev => new { dev.Login, dev.DeveloperAccessLevel!.Name }).ToList();
 
         return Results.Json
         (

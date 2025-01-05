@@ -17,13 +17,17 @@ public class PlayerSessionsController
 (
     DreamcoreHorrorGameContext context,
     IPropertyPredicateValidator propertyPredicateValidator,
-    ILogger<PlayerSessionsController> logger
+    ILogger<PlayerSessionsController> logger,
+    IJsonSerializerOptionsProvider jsonSerializerOptionsProvider,
+    IRabbitMqProducer rabbitMqProducer
 )
 : DatabaseEntityController<PlayerSession>
 (
     context: context,
     propertyPredicateValidator: propertyPredicateValidator,
     logger: logger,
+    jsonSerializerOptionsProvider: jsonSerializerOptionsProvider,
+    rabbitMqProducer: rabbitMqProducer,
     orderBySelectorExpression: playerSession => playerSession.StartTimestamp,
     orderByComparer: null,
     getAllWithFirstLevelRelationsFunction: async (context) =>
@@ -78,37 +82,37 @@ public class PlayerSessionsController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetCountAsync();
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAll(int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetAllEntitiesAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAllWithRelations(int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetAllEntitiesWithRelationsAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
     public override async Task<IActionResult> Get(Guid? id)
-        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.GameServer, RequestSenders.ApplicationForDevelopers)
             .GetEntityAsync(id);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
     public override async Task<IActionResult> GetWithRelations(Guid? id)
-        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.GameServer, RequestSenders.ApplicationForDevelopers)
             .GetEntityWithRelationsAsync(id);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetWhere(PropertyPredicate[] predicateCollection, int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetEntitiesWhereAsync(predicateCollection, page, showBy);
 
     [HttpPost]
@@ -127,7 +131,7 @@ public class PlayerSessionsController
         nameof(PlayerSession.SelfReviveCount),
         nameof(PlayerSession.AllyReviveCount)
     )] PlayerSession playerSession)
-        => await RequireHeaders(CorsHeaders.GameServer, CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.GameServer, RequestSenders.ApplicationForDevelopers)
             .CreateEntityAsync(playerSession);
 
     [HttpPut]
@@ -146,12 +150,12 @@ public class PlayerSessionsController
         nameof(PlayerSession.SelfReviveCount),
         nameof(PlayerSession.AllyReviveCount)
     )] PlayerSession playerSession)
-        => await RequireHeaders(CorsHeaders.GameServer, CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.GameServer, RequestSenders.ApplicationForDevelopers)
             .EditEntityAsync(id, playerSession);
 
     [HttpDelete]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public override async Task<IActionResult> Delete(Guid? id)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .DeleteEntityAsync(id);
 }

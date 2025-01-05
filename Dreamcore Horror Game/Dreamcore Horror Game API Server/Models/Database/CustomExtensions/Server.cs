@@ -8,6 +8,8 @@ public partial class Server : IDatabaseEntity, IUser, IEquatable<Server>
     [NotMapped]
     public string DisplayName => IpAddress.ToString();
     [NotMapped]
+    public static string DatabaseTableName => "servers";
+    [NotMapped]
     public string Login => IpAddress.ToString();
     [NotMapped]
     public string Role => AuthenticationRoles.Server;

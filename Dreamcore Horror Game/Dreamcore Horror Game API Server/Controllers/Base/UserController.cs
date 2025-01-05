@@ -15,6 +15,8 @@ public abstract class UserController<TUser>
     DreamcoreHorrorGameContext context,
     IPropertyPredicateValidator propertyPredicateValidator,
     ILogger<UserController<TUser>> logger,
+    IJsonSerializerOptionsProvider jsonSerializerOptionsProvider,
+    IRabbitMqProducer rabbitMqProducer,
     ITokenService tokenService,
     IPasswordHasher<TUser> passwordHasher,
     string alreadyExistsErrorMessage,
@@ -29,6 +31,8 @@ public abstract class UserController<TUser>
     context,
     propertyPredicateValidator,
     logger,
+    jsonSerializerOptionsProvider,
+    rabbitMqProducer,
     orderBySelectorExpression,
     orderByComparer,
     getAllWithFirstLevelRelationsFunction,
@@ -52,18 +56,19 @@ where TUser : class, IDatabaseEntity, IUser
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
-    public override UserController<TUser> RequireHeaders(params string[] headers)
+    public override UserController<TUser> AllowRequestSenders(params string[] headers)
     {
-        SetRequiredRequestHeaders(headers);
+        SetAllowedRequestSenders(headers);
         return this;
     }
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public override async Task<IActionResult> CreateEntityAsync(TUser user)
-        => await ValidateHeadersAndHandleErrorsAsync(user, async user =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(user, async user =>
         {
             _logger.LogInformation("Create was called for {EntityType}.", EntityType);
+            PublishStatistics("Create");
 
             bool userExists = await _getByLogin(_context, user.Login) is not null;
 
@@ -102,9 +107,10 @@ where TUser : class, IDatabaseEntity, IUser
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> LoginAsUserAsync(LoginData loginData)
-        => await ValidateHeadersAndHandleErrorsAsync(loginData, async loginData =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(loginData, async loginData =>
         {
             _logger.LogInformation("Login was called for {EntityType}.", EntityType);
+            PublishStatistics("Login");
 
             if (loginData.IsEmptyLogin() || loginData.IsEmptyPassword())
                 return BadRequest(ErrorMessages.EmptyLoginOrPassword);
@@ -151,9 +157,10 @@ where TUser : class, IDatabaseEntity, IUser
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> LogoutAsUserAsync(string login)
-        => await ValidateHeadersAndHandleErrorsAsync(login, async login =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(login, async login =>
         {
             _logger.LogInformation("Logout was called for {EntityType}.", EntityType);
+            PublishStatistics("Logout");
 
             if (login.IsEmpty())
                 return NotFound();
@@ -189,9 +196,10 @@ where TUser : class, IDatabaseEntity, IUser
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> ChangeUserPasswordAsync(LoginData loginData, string newPassword)
-        => await ValidateHeadersAndHandleErrorsAsync(loginData, newPassword, async (loginData, newPassword) =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(loginData, newPassword, async (loginData, newPassword) =>
         {
             _logger.LogInformation("ChangePassword was called for {EntityType}.", EntityType);
+            PublishStatistics("ChangePassword");
 
             if (loginData.IsEmptyLogin() || loginData.IsEmptyPassword() || newPassword.IsEmpty())
                 return BadRequest(ErrorMessages.EmptyLoginOrPassword);
@@ -230,9 +238,10 @@ where TUser : class, IDatabaseEntity, IUser
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> GetAccessTokenForUserAsync(string login)
-        => await ValidateHeadersAndHandleErrorsAsync(login, async login =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(login, async login =>
         {
             _logger.LogInformation("GetAccessToken was called for {EntityType}.", EntityType);
+            PublishStatistics("GetAccessToken");
 
             if (login.IsEmpty())
                 return NotFound();
@@ -251,9 +260,10 @@ where TUser : class, IDatabaseEntity, IUser
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> VerifyAccessTokenAsync()
-        => await ValidateHeadersAndHandleErrorsAsync(async () =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(async () =>
         {
             _logger.LogInformation("VerifyAccessToken was called for {EntityType}.", EntityType);
+            PublishStatistics("VerifyAccessToken");
 
             return Ok();
         });

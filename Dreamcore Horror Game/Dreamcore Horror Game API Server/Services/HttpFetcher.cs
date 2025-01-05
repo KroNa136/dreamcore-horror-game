@@ -23,7 +23,7 @@ public class HttpFetcher : IHttpFetcher
         };
 
         _httpClient.DefaultRequestHeaders.Add(HeaderNames.Accept, MediaTypeNames.Application.Json);
-        _httpClient.DefaultRequestHeaders.Add(CorsHeaders.ApiServer, CorsHeaders.RequiredHeaderValue);
+        _httpClient.DefaultRequestHeaders.Add(RequestSenders.ApiServer, RequestSenders.RequiredHeaderValue);
     }
 
     public async Task<HttpResponseMessage?> GetAsync(string host, int port, string path)

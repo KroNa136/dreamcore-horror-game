@@ -12,11 +12,8 @@ public static class IEnumerableExtensions
 
     public static IEnumerable<TSource> ForEach<TSource>(this IEnumerable<TSource> source, Action<TSource> action)
     {
-        if (source is null)
-            throw new ArgumentNullException(nameof(source));
-
-        if (action == null)
-            throw new ArgumentNullException(nameof(action));
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(action);
 
         foreach (var item in source)
             action(item);
@@ -44,11 +41,8 @@ public static class IEnumerableExtensions
 
     public static async Task<TSource?> FirstOrDefaultWithAsyncPredicate<TSource>(this IEnumerable<TSource> source, Func<TSource, Task<bool>> predicateTask)
     {
-        if (source is null)
-            throw new ArgumentNullException(nameof(source));
-
-        if (predicateTask is null)
-            throw new ArgumentNullException(nameof(predicateTask));
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(predicateTask);
 
         foreach (var item in source)
             if (await predicateTask(item))

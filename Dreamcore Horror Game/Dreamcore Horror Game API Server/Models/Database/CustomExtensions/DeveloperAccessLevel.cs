@@ -6,6 +6,8 @@ public partial class DeveloperAccessLevel : IDatabaseEntity, IEquatable<Develope
 {
     [NotMapped]
     public string DisplayName => Name;
+    [NotMapped]
+    public static string DatabaseTableName => "developer_access_levels";
 
     public bool Equals(DeveloperAccessLevel? other)
     {

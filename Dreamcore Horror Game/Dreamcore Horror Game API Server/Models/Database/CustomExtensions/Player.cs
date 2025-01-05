@@ -10,6 +10,8 @@ public partial class Player : IDatabaseEntity, IUser, IEquatable<Player>
     [JsonInclude]
     public string DisplayName => Username;
     [NotMapped]
+    public static string DatabaseTableName => "players";
+    [NotMapped]
     public string Login => Email;
     [NotMapped]
     public string Role => AuthenticationRoles.Player;

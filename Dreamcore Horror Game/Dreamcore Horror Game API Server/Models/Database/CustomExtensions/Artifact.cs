@@ -6,6 +6,8 @@ public partial class Artifact : IDatabaseEntity, IEquatable<Artifact>
 {
     [NotMapped]
     public string DisplayName => AssetName;
+    [NotMapped]
+    public static string DatabaseTableName => "artifacts";
 
     public bool Equals(Artifact? other)
     {

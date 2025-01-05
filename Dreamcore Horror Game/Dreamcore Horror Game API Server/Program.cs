@@ -117,6 +117,7 @@ public class Program
         builder.Services.AddSingleton<IJsonSerializerOptionsProvider, JsonSerializerOptionsProvider>();
         builder.Services.AddSingleton<ITokenService, TokenService>();
         builder.Services.AddSingleton<IPropertyPredicateValidator, PropertyPredicateValidator>();
+        builder.Services.AddScoped<IRabbitMqProducer, RabbitMqProducer>();
         builder.Services.AddScoped<IHttpFetcher, HttpFetcher>();
         builder.Services.AddScoped<IPasswordHasher<Developer>, PasswordHasher<Developer>>();
         builder.Services.AddScoped<IPasswordHasher<Player>, PasswordHasher<Player>>();
@@ -137,9 +138,9 @@ public class Program
                     HeaderNames.Host,
                     HeaderNames.Origin,
                     HeaderNames.XXSSProtection,
-                    CorsHeaders.GameClient,
-                    CorsHeaders.GameServer,
-                    CorsHeaders.ApplicationForDevelopers
+                    RequestSenders.GameClient,
+                    RequestSenders.GameServer,
+                    RequestSenders.ApplicationForDevelopers
                 );
             });
         });

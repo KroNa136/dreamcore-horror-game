@@ -6,6 +6,8 @@ public partial class XpLevel : IDatabaseEntity, IEquatable<XpLevel>
 {
     [NotMapped]
     public string DisplayName => Number.ToString();
+    [NotMapped]
+    public static string DatabaseTableName => "xp_levels";
 
     public bool Equals(XpLevel? other)
     {

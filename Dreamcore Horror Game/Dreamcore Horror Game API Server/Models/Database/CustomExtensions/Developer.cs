@@ -7,6 +7,8 @@ public partial class Developer : IDatabaseEntity, IUser, IEquatable<Developer>
     [NotMapped]
     public string DisplayName => Login;
     [NotMapped]
+    public static string DatabaseTableName => "developers";
+    [NotMapped]
     public string Role => DeveloperAccessLevel?.Name ?? string.Empty;
 
     public bool Equals(Developer? other)

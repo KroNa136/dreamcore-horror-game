@@ -6,6 +6,8 @@ public partial class GameMode : IDatabaseEntity, IEquatable<GameMode>
 {
     [NotMapped]
     public string DisplayName => AssetName;
+    [NotMapped]
+    public static string DatabaseTableName => "game_modes";
 
     public bool Equals(GameMode? other)
     {

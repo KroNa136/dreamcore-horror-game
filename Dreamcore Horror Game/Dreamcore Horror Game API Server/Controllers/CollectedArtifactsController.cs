@@ -17,13 +17,17 @@ public class CollectedArtifactsController
 (
     DreamcoreHorrorGameContext context,
     IPropertyPredicateValidator propertyPredicateValidator,
-    ILogger<CollectedArtifactsController> logger
+    ILogger<CollectedArtifactsController> logger,
+    IJsonSerializerOptionsProvider jsonSerializerOptionsProvider,
+    IRabbitMqProducer rabbitMqProducer
 )
 : DatabaseEntityController<CollectedArtifact>
 (
     context: context,
     propertyPredicateValidator: propertyPredicateValidator,
     logger: logger,
+    jsonSerializerOptionsProvider: jsonSerializerOptionsProvider,
+    rabbitMqProducer: rabbitMqProducer,
     orderBySelectorExpression: collectedArtifact => collectedArtifact.CollectionTimestamp,
     orderByComparer: null,
     getAllWithFirstLevelRelationsFunction: async (context) =>
@@ -63,37 +67,37 @@ public class CollectedArtifactsController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetCountAsync();
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAll(int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetAllEntitiesAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAllWithRelations(int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetAllEntitiesWithRelationsAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public override async Task<IActionResult> Get(Guid? id)
-        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.ApplicationForDevelopers)
             .GetEntityAsync(id);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public override async Task<IActionResult> GetWithRelations(Guid? id)
-        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.ApplicationForDevelopers)
             .GetEntityWithRelationsAsync(id);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetWhere(PropertyPredicate[] predicateCollection, int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetEntitiesWhereAsync(predicateCollection, page, showBy);
 
     [HttpPost]
@@ -104,7 +108,7 @@ public class CollectedArtifactsController
         nameof(CollectedArtifact.ArtifactId),
         nameof(CollectedArtifact.CollectionTimestamp)
     )] CollectedArtifact collectedArtifact)
-        => await RequireHeaders(CorsHeaders.GameServer, CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.GameServer, RequestSenders.ApplicationForDevelopers)
             .CreateEntityAsync(collectedArtifact);
 
     [HttpPut]
@@ -115,12 +119,12 @@ public class CollectedArtifactsController
         nameof(CollectedArtifact.ArtifactId),
         nameof(CollectedArtifact.CollectionTimestamp)
     )] CollectedArtifact collectedArtifact)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .EditEntityAsync(id, collectedArtifact);
 
     [HttpDelete]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public override async Task<IActionResult> Delete(Guid? id)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .DeleteEntityAsync(id);
 }

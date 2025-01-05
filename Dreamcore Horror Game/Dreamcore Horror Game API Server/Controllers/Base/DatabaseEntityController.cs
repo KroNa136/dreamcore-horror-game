@@ -2,6 +2,7 @@
 using DreamcoreHorrorGameApiServer.Extensions;
 using DreamcoreHorrorGameApiServer.Models;
 using DreamcoreHorrorGameApiServer.Models.Database;
+using DreamcoreHorrorGameApiServer.Models.DTO;
 using DreamcoreHorrorGameApiServer.PropertyPredicates;
 using DreamcoreHorrorGameApiServer.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +12,7 @@ using System.Data;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 
 namespace DreamcoreHorrorGameApiServer.Controllers.Base;
 
@@ -20,6 +22,8 @@ public abstract class DatabaseEntityController<TEntity>
     DreamcoreHorrorGameContext context,
     IPropertyPredicateValidator propertyPredicateValidator,
     ILogger<DatabaseEntityController<TEntity>> logger,
+    IJsonSerializerOptionsProvider jsonSerializerOptionsProvider,
+    IRabbitMqProducer rabbitMqProducer,
     Expression<Func<TEntity, object?>> orderBySelectorExpression,
     IComparer<object?>? orderByComparer,
     Func<DreamcoreHorrorGameContext, Task<IQueryable<TEntity>>> getAllWithFirstLevelRelationsFunction,
@@ -28,9 +32,13 @@ public abstract class DatabaseEntityController<TEntity>
 : ControllerBase
 where TEntity : class, IDatabaseEntity
 {
+    private event Action<DateTime> RequestSenderValidated = (requestReceptionDateTime) => { };
+
     protected readonly DreamcoreHorrorGameContext _context = context;
     protected readonly IPropertyPredicateValidator _propertyPredicateValidator = propertyPredicateValidator;
     protected readonly ILogger<DatabaseEntityController<TEntity>> _logger = logger;
+    protected readonly IJsonSerializerOptionsProvider _jsonSerializerOptionsProvider = jsonSerializerOptionsProvider;
+    protected readonly IRabbitMqProducer _rabbitMqProducer = rabbitMqProducer;
 
     protected readonly Func<string, Exception?, string> _customLoggingFormatter = (message, exception) =>
     {
@@ -47,7 +55,8 @@ where TEntity : class, IDatabaseEntity
         return sb.ToString();
     };
 
-    protected readonly List<string> _requiredRequestHeaders = [];
+    protected readonly List<string> _allowedRequestSenders = [];
+    protected string? _requestSender = null;
 
     protected readonly Expression<Func<TEntity, object?>> _orderBySelectorExpression = orderBySelectorExpression;
     protected readonly IComparer<object?>? _orderByComparer = orderByComparer;
@@ -60,14 +69,14 @@ where TEntity : class, IDatabaseEntity
 
     //private readonly Func<DreamcoreHorrorGameContext, DatabaseController<TEntity>> _derivedClassConstructor;
 
+    protected string EntityType => typeof(TEntity).Name;
+
     protected string AuthorizationToken
         => HttpContext.Request.Headers[HeaderNames.Authorization]
             .ToString()
             .Replace("Bearer ", string.Empty);
 
     protected bool InvalidModelState => ModelState.IsValid is false;
-
-    protected string EntityType => typeof(TEntity).Name;
 
     // POST note:
     // To protect from overposting attacks, enable the specific properties you want to bind to.
@@ -85,24 +94,25 @@ where TEntity : class, IDatabaseEntity
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
-    public virtual DatabaseEntityController<TEntity> RequireHeaders(params string[] headers)
+    public virtual DatabaseEntityController<TEntity> AllowRequestSenders(params string[] headers)
     {
-        SetRequiredRequestHeaders(headers);
+        SetAllowedRequestSenders(headers);
         return this;
     }
 
-    protected void SetRequiredRequestHeaders(IEnumerable<string> fromCollection)
+    protected void SetAllowedRequestSenders(IEnumerable<string> fromCollection)
     {
-        _requiredRequestHeaders.Clear();
-        _requiredRequestHeaders.AddRange(fromCollection);
+        _allowedRequestSenders.Clear();
+        _allowedRequestSenders.AddRange(fromCollection);
     }
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> GetCountAsync()
-        => await ValidateHeadersAndHandleErrorsAsync(async () =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(async () =>
         {
             _logger.LogInformation("GetCount was called for {EntityType}.", EntityType);
+            PublishStatistics("GetCount");
 
             return Ok(_context.Set<TEntity>().Count());
         });
@@ -110,9 +120,10 @@ where TEntity : class, IDatabaseEntity
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> GetAllEntitiesAsync(int page, int showBy)
-        => await ValidateHeadersAndHandleErrorsAsync(async () =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(async () =>
         {
             _logger.LogInformation("GetAll was called for {EntityType}.", EntityType);
+            PublishStatistics("GetAll");
 
             var entities = await _context.Set<TEntity>()
                 .OrderBy(_orderBySelectorExpression)
@@ -124,9 +135,10 @@ where TEntity : class, IDatabaseEntity
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> GetAllEntitiesWithRelationsAsync(int page, int showBy)
-        => await ValidateHeadersAndHandleErrorsAsync(async () =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(async () =>
         {
             _logger.LogInformation("GetAllWithRelations was called for {EntityType}.", EntityType);
+            PublishStatistics("GetAllWithRelations");
 
             var entities = await (await _getAllWithFirstLevelRelations(_context))
                 .OrderBy(_orderBySelectorExpression)
@@ -138,9 +150,10 @@ where TEntity : class, IDatabaseEntity
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> GetEntityAsync(Guid? id)
-        => await ValidateHeadersAndHandleErrorsAsync(id, async id =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(id, async id =>
         {
             _logger.LogInformation("Get was called for {EntityType}.", EntityType);
+            PublishStatistics("Get");
 
             if (id is null)
                 return NotFound();
@@ -156,10 +169,11 @@ where TEntity : class, IDatabaseEntity
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
-    public IActionResult GetEntity(Func<TEntity, bool> predicate)
-        => ValidateHeadersAndHandleErrors(predicate, predicate =>
+    public async Task<IActionResult> GetEntity(Func<TEntity, bool> predicate)
+        => await ValidateRequestSenderAndHandleErrorsAsync(predicate, async predicate =>
         {
             _logger.LogInformation("Get (with predicate) was called for {EntityType}.", EntityType);
+            PublishStatistics("Get");
 
             var entity = _context.Set<TEntity>()
                 .AsQueryable()
@@ -175,9 +189,10 @@ where TEntity : class, IDatabaseEntity
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> GetEntityWithRelationsAsync(Guid? id)
-        => await ValidateHeadersAndHandleErrorsAsync(id, async id =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(id, async id =>
         {
             _logger.LogInformation("GetWithRelations was called for {EntityType}.", EntityType);
+            PublishStatistics("GetWithRelations");
 
             if (id is null)
                 return NotFound();
@@ -194,9 +209,10 @@ where TEntity : class, IDatabaseEntity
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> GetEntityWithRelationsAsync(Func<TEntity, bool> predicate)
-        => await ValidateHeadersAndHandleErrorsAsync(predicate, async predicate =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(predicate, async predicate =>
         {
             _logger.LogInformation("GetWithRelations (with predicate) was called for {EntityType}.", EntityType);
+            PublishStatistics("GetWithRelations");
 
             var entity = (await _getAllWithFirstLevelRelations(_context))
                 .AsForceParallel()
@@ -216,9 +232,10 @@ where TEntity : class, IDatabaseEntity
         int page,
         int showBy
     )
-        => await ValidateHeadersAndHandleErrorsAsync(propertyPredicateCollection, async propertyPredicateCollection =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(propertyPredicateCollection, async propertyPredicateCollection =>
         {
             _logger.LogInformation("GetWhere was called for {EntityType}.", EntityType);
+            PublishStatistics("GetWhere");
 
             var entities = (await _getAllWithFirstLevelRelations(_context))
                 .AsForceParallel();
@@ -332,9 +349,10 @@ where TEntity : class, IDatabaseEntity
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public virtual async Task<IActionResult> CreateEntityAsync(TEntity entity)
-        => await ValidateHeadersAndHandleErrorsAsync(entity, async entity =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(entity, async entity =>
         {
             _logger.LogInformation("Create was called for {EntityType}.", EntityType);
+            PublishStatistics("Create");
 
             if (InvalidModelState)
                 return ValidationProblem();
@@ -367,9 +385,10 @@ where TEntity : class, IDatabaseEntity
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> EditEntityAsync(Guid? id, TEntity entity)
-        => await ValidateHeadersAndHandleErrorsAsync(id, entity, async (id, entity) =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(id, entity, async (id, entity) =>
         {
             _logger.LogInformation("Edit was called for {EntityType}.", EntityType);
+            PublishStatistics("Edit");
 
             if (id is null)
                 return NotFound();
@@ -413,9 +432,10 @@ where TEntity : class, IDatabaseEntity
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> DeleteEntityAsync(Guid? id)
-        => await ValidateHeadersAndHandleErrorsAsync(id, async id =>
+        => await ValidateRequestSenderAndHandleErrorsAsync(id, async id =>
         {
             _logger.LogInformation("Delete was called for {EntityType}.", EntityType);
+            PublishStatistics("Delete");
 
             if (id is null)
                 return NotFound();
@@ -457,87 +477,35 @@ where TEntity : class, IDatabaseEntity
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> ExecuteAsync(Func<Task<IActionResult>> function)
-        => await ValidateHeadersAndHandleErrorsAsync(function());
+        => await ValidateRequestSenderAndHandleErrorsAsync(function());
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> ExecuteAsync<T>(T arg, Func<T, Task<IActionResult>> function)
-        => await ValidateHeadersAndHandleErrorsAsync(arg, async arg => await function(arg));
+        => await ValidateRequestSenderAndHandleErrorsAsync(arg, async arg => await function(arg));
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
     public async Task<IActionResult> ExecuteAsync<T1, T2>(T1 arg1, T2 arg2, Func<T1, T2, Task<IActionResult>> function)
-        => await ValidateHeadersAndHandleErrorsAsync(arg1, arg2, async (arg1, arg2) => await function(arg1, arg2));
+        => await ValidateRequestSenderAndHandleErrorsAsync(arg1, arg2, async (arg1, arg2) => await function(arg1, arg2));
 
-    protected IActionResult ValidateHeadersAndHandleErrors<T>(T arg, Func<T, IActionResult> function)
-        => ValidateHeadersAndHandleErrors(() => function(arg));
+    protected async Task<IActionResult> ValidateRequestSenderAndHandleErrorsAsync(Func<Task<IActionResult>> function)
+        => await ValidateRequestSenderAndHandleErrorsAsync(function());
 
-    protected IActionResult ValidateHeadersAndHandleErrors<T1, T2>(T1 arg1, T2 arg2, Func<T1, T2, IActionResult> function)
-        => ValidateHeadersAndHandleErrors(() => function(arg1, arg2));
+    protected async Task<IActionResult> ValidateRequestSenderAndHandleErrorsAsync<T>(T arg, Func<T, Task<IActionResult>> function)
+        => await ValidateRequestSenderAndHandleErrorsAsync(function(arg));
 
-    protected IActionResult ValidateHeadersAndHandleErrors(Func<IActionResult> function)
+    protected async Task<IActionResult> ValidateRequestSenderAndHandleErrorsAsync<T1, T2>(T1 arg1, T2 arg2, Func<T1, T2, Task<IActionResult>> function)
+        => await ValidateRequestSenderAndHandleErrorsAsync(function(arg1, arg2));
+
+    protected async Task<IActionResult> ValidateRequestSenderAndHandleErrorsAsync(Task<IActionResult> task)
     {
-        if (NoValidRequestHeader())
+        _requestSender = GetRequestSenderOrDefault();
+
+        if (_allowedRequestSenders.Count is > 0 && string.Equals(_requestSender, default))
             return this.Forbidden(ErrorMessages.CorsHeaderMissing);
 
-        try
-        {
-            return function();
-        }
-        catch (InvalidConstraintException ex)
-        {
-            _logger.Log
-            (
-                logLevel: LogLevel.Error,
-                eventId: new EventId("ValidateHeadersAndHandleErrors".GetHashCode() + ex.GetType().GetHashCode()),
-                exception: ex,
-                state: "Invalid constraint exception was caught while handling general errors.",
-                formatter: _customLoggingFormatter
-            );
-
-            return UnprocessableEntity(ErrorMessages.RelatedEntityDoesNotExist);
-        }
-        catch (DbUpdateException ex)
-        {
-            _logger.Log
-            (
-                logLevel: LogLevel.Error,
-                eventId: new EventId("ValidateHeadersAndHandleErrors".GetHashCode() + ex.GetType().GetHashCode()),
-                exception: ex,
-                state: "Database update exception was caught while handling general errors.",
-                formatter: _customLoggingFormatter
-            );
-
-            return UnprocessableEntity(ErrorMessages.UnknownDatabaseError);
-        }
-        catch (Exception ex)
-        {
-            _logger.Log
-            (
-                logLevel: LogLevel.Error,
-                eventId: new EventId("ValidateHeadersAndHandleErrors".GetHashCode() + ex.GetType().GetHashCode()),
-                exception: ex,
-                state: "General exception was caught while handling general errors.",
-                formatter: _customLoggingFormatter
-            );
-
-            return this.InternalServerError(ErrorMessages.UnknownServerError);
-        }
-    }
-
-    protected async Task<IActionResult> ValidateHeadersAndHandleErrorsAsync(Func<Task<IActionResult>> function)
-        => await ValidateHeadersAndHandleErrorsAsync(function());
-
-    protected async Task<IActionResult> ValidateHeadersAndHandleErrorsAsync<T>(T arg, Func<T, Task<IActionResult>> function)
-        => await ValidateHeadersAndHandleErrorsAsync(function(arg));
-
-    protected async Task<IActionResult> ValidateHeadersAndHandleErrorsAsync<T1, T2>(T1 arg1, T2 arg2, Func<T1, T2, Task<IActionResult>> function)
-        => await ValidateHeadersAndHandleErrorsAsync(function(arg1, arg2));
-
-    protected async Task<IActionResult> ValidateHeadersAndHandleErrorsAsync(Task<IActionResult> task)
-    {
-        if (NoValidRequestHeader())
-            return this.Forbidden(ErrorMessages.CorsHeaderMissing);
+        RequestSenderValidated.Invoke(DateTime.Now);
 
         try
         {
@@ -548,7 +516,7 @@ where TEntity : class, IDatabaseEntity
             _logger.Log
             (
                 logLevel: LogLevel.Error,
-                eventId: new EventId("ValidateHeadersAndHandleErrorsAsync".GetHashCode() + ex.GetType().GetHashCode()),
+                eventId: new EventId("ValidateRequestSenderAndHandleErrorsAsync".GetHashCode() + ex.GetType().GetHashCode()),
                 exception: ex,
                 state: "Invalid constraint exception was caught while handling general errors.",
                 formatter: _customLoggingFormatter
@@ -561,7 +529,7 @@ where TEntity : class, IDatabaseEntity
             _logger.Log
             (
                 logLevel: LogLevel.Error,
-                eventId: new EventId("ValidateHeadersAndHandleErrorsAsync".GetHashCode() + ex.GetType().GetHashCode()),
+                eventId: new EventId("ValidateRequestSenderAndHandleErrorsAsync".GetHashCode() + ex.GetType().GetHashCode()),
                 exception: ex,
                 state: "Database update exception was caught while handling general errors.",
                 formatter: _customLoggingFormatter
@@ -574,7 +542,7 @@ where TEntity : class, IDatabaseEntity
             _logger.Log
             (
                 logLevel: LogLevel.Error,
-                eventId: new EventId("ValidateHeadersAndHandleErrorsAsync".GetHashCode() + ex.GetType().GetHashCode()),
+                eventId: new EventId("ValidateRequestSenderAndHandleErrorsAsync".GetHashCode() + ex.GetType().GetHashCode()),
                 exception: ex,
                 state: "General exception was caught while handling general errors.",
                 formatter: _customLoggingFormatter
@@ -584,19 +552,73 @@ where TEntity : class, IDatabaseEntity
         }
     }
 
-    protected bool NoValidRequestHeader()
+    protected string? GetRequestSenderOrDefault()
     {
-        if (_requiredRequestHeaders.IsEmpty())
-            return false;
-
         if (HttpContext is null || HttpContext.Request is null || HttpContext.Request.Headers is null)
-            return true;
+            return default;
 
-        var currentRequestHeaders = HttpContext.Request.Headers;
+        var headers = HttpContext.Request.Headers;
 
-        var validHeaders = currentRequestHeaders.Where(header => _requiredRequestHeaders.Contains(header.Key.ToLower())
-            && header.Value.Equals(CorsHeaders.RequiredHeaderValue));
+        var validRequestSenderHeaders = headers.Where(header => _allowedRequestSenders.Contains(header.Key.ToLower())
+            && header.Value.Equals(RequestSenders.RequiredHeaderValue));
 
-        return validHeaders.IsEmpty();
+        if (validRequestSenderHeaders.IsEmpty())
+        {
+            _logger.LogWarning
+            (
+                eventId: new EventId("GetRequestSender".GetHashCode() + 1),
+                message: "Detected a request attempt with no valid request sender headers."
+            );
+
+            return default;
+        }
+
+        if (validRequestSenderHeaders.Count() > 1)
+        {
+            _logger.LogWarning
+            (
+                eventId: new EventId("GetRequestSender".GetHashCode() + 2),
+                message: "Detected a request attempt with more than one valid request sender header."
+            );
+
+            return default;
+        }
+
+        return validRequestSenderHeaders.First().Key.ToLower();
+    }
+
+    protected void PublishStatistics(string methodName)
+    {
+        if (string.IsNullOrEmpty(_requestSender))
+            RequestSenderValidated += (requestReceptionDateTime) => StartPublishStatisticsTask(requestReceptionDateTime, methodName);
+        else
+            StartPublishStatisticsTask(DateTime.Now, methodName);
+    }
+
+    protected void StartPublishStatisticsTask(DateTime receptionDateTime, string methodName)
+        => Task.Run(async () => await PublishStatisticsAsync(receptionDateTime, methodName));
+
+    protected async Task PublishStatisticsAsync(DateTime receptionDateTime, string methodName)
+    {
+        string controllerFullName = GetType().Name;
+        string controllerName = controllerFullName[0..controllerFullName.LastIndexOf("Controller")];
+
+        RequestStatisticsDTO requestStatisticsDTO = new()
+        {
+            Id = Guid.Empty,
+            ReceptionTimestamp = receptionDateTime,
+            SenderName = _requestSender ?? string.Empty,
+            ControllerName = controllerName,
+            MethodName = methodName
+        };
+
+        string json = JsonSerializer.Serialize(requestStatisticsDTO, _jsonSerializerOptionsProvider.Default);
+        byte[] data = Encoding.UTF8.GetBytes(json);
+
+        bool success = await _rabbitMqProducer.PublishMessageAsync(exchange: RabbitMqExchangeNames.Statistics, message: data);
+
+        _logger.LogInformation("Completed publishing statistics.{newline}{sender} called {controllerName}/{methodName} at {receptionDateTime}.{newline}Status: {status}.",
+            Environment.NewLine, requestStatisticsDTO.SenderName, requestStatisticsDTO.ControllerName, requestStatisticsDTO.MethodName, requestStatisticsDTO.ReceptionTimestamp,
+            Environment.NewLine, success ? "success" : "fail");
     }
 }

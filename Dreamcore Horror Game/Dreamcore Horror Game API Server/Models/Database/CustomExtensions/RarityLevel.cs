@@ -6,6 +6,8 @@ public partial class RarityLevel : IDatabaseEntity, IEquatable<RarityLevel>
 {
     [NotMapped]
     public string DisplayName => AssetName;
+    [NotMapped]
+    public static string DatabaseTableName => "rarity_levels";
 
     public bool Equals(RarityLevel? other)
     {

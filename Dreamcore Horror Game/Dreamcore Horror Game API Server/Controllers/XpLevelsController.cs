@@ -16,13 +16,17 @@ public class XpLevelsController
 (
     DreamcoreHorrorGameContext context,
     IPropertyPredicateValidator propertyPredicateValidator,
-    ILogger<XpLevelsController> logger
+    ILogger<XpLevelsController> logger,
+    IJsonSerializerOptionsProvider jsonSerializerOptionsProvider,
+    IRabbitMqProducer rabbitMqProducer
 )
 : DatabaseEntityController<XpLevel>
 (
     context: context,
     propertyPredicateValidator: propertyPredicateValidator,
     logger: logger,
+    jsonSerializerOptionsProvider: jsonSerializerOptionsProvider,
+    rabbitMqProducer: rabbitMqProducer,
     orderBySelectorExpression: xpLevel => xpLevel.Number,
     orderByComparer: null,
     getAllWithFirstLevelRelationsFunction: async (context) =>
@@ -38,37 +42,37 @@ public class XpLevelsController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetCountAsync();
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAll(int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetAllEntitiesAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAllWithRelations(int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetAllEntitiesWithRelationsAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public override async Task<IActionResult> Get(Guid? id)
-        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.ApplicationForDevelopers)
             .GetEntityAsync(id);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayer)]
     public override async Task<IActionResult> GetWithRelations(Guid? id)
-        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.ApplicationForDevelopers)
             .GetEntityWithRelationsAsync(id);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetWhere(PropertyPredicate[] predicateCollection, int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetEntitiesWhereAsync(predicateCollection, page, showBy);
 
     [HttpPost]
@@ -78,7 +82,7 @@ public class XpLevelsController
         nameof(XpLevel.Number),
         nameof(XpLevel.RequiredXp)
     )] XpLevel xpLevel)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .CreateEntityAsync(xpLevel);
 
     [HttpPut]
@@ -88,12 +92,12 @@ public class XpLevelsController
         nameof(XpLevel.Number),
         nameof(XpLevel.RequiredXp)
     )] XpLevel xpLevel)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .EditEntityAsync(id, xpLevel);
 
     [HttpDelete]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public override async Task<IActionResult> Delete(Guid? id)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .DeleteEntityAsync(id);
 }

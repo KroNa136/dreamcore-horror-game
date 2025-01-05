@@ -19,6 +19,8 @@ public class PlayersController
     DreamcoreHorrorGameContext context,
     IPropertyPredicateValidator propertyPredicateValidator,
     ILogger<PlayersController> logger,
+    IJsonSerializerOptionsProvider jsonSerializerOptionsProvider,
+    IRabbitMqProducer rabbitMqProducer,
     ITokenService tokenService,
     IPasswordHasher<Player> passwordHasher
 )
@@ -27,6 +29,8 @@ public class PlayersController
     context: context,
     propertyPredicateValidator: propertyPredicateValidator,
     logger: logger,
+    jsonSerializerOptionsProvider: jsonSerializerOptionsProvider,
+    rabbitMqProducer: rabbitMqProducer,
     tokenService: tokenService,
     passwordHasher: passwordHasher,
     alreadyExistsErrorMessage: ErrorMessages.PlayerAlreadyExists,
@@ -69,37 +73,37 @@ public class PlayersController
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetCount()
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetCountAsync();
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAll(int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetAllEntitiesAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetAllWithRelations(int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetAllEntitiesWithRelationsAsync(page, showBy);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
     public override async Task<IActionResult> Get(Guid? id)
-        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.GameServer, RequestSenders.ApplicationForDevelopers)
             .GetEntityAsync(id);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.DeveloperOrPlayerOrServer)]
     public override async Task<IActionResult> GetWithRelations(Guid? id)
-        => await RequireHeaders(CorsHeaders.GameClient, CorsHeaders.GameServer, CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.GameServer, RequestSenders.ApplicationForDevelopers)
             .GetEntityWithRelationsAsync(id);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Developer)]
     public override async Task<IActionResult> GetWhere(PropertyPredicate[] predicateCollection, int page = 0, int showBy = 0)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .GetEntitiesWhereAsync(predicateCollection, page, showBy);
 
     [HttpPost]
@@ -118,7 +122,7 @@ public class PlayersController
         nameof(Player.AbilityPoints),
         nameof(Player.SpiritEnergyPoints)
     )] Player player)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .CreateEntityAsync(player);
 
     [HttpPut]
@@ -137,13 +141,13 @@ public class PlayersController
         nameof(Player.AbilityPoints),
         nameof(Player.SpiritEnergyPoints)
     )] Player player)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .EditEntityAsync(id, player);
 
     [HttpDelete]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.FullAccessDeveloper)]
     public override async Task<IActionResult> Delete(Guid? id)
-        => await RequireHeaders(CorsHeaders.ApplicationForDevelopers)
+        => await AllowRequestSenders(RequestSenders.ApplicationForDevelopers)
             .DeleteEntityAsync(id);
 
     [HttpPost]
@@ -162,10 +166,11 @@ public class PlayersController
         nameof(Player.AbilityPoints),
         nameof(Player.SpiritEnergyPoints)
     )] Player player)
-        => await RequireHeaders(CorsHeaders.GameClient)
+        => await AllowRequestSenders(RequestSenders.GameClient)
             .ExecuteAsync(player, async player =>
             {
                 _logger.LogInformation("Register was called for {EntityType}.", EntityType);
+                PublishStatistics("Register");
 
                 bool playerExists = await _getByLogin(_context, player.Login) is not null;
 
@@ -220,30 +225,30 @@ public class PlayersController
     [HttpPost]
     [AllowAnonymous]
     public override async Task<IActionResult> Login(LoginData loginData)
-        => await RequireHeaders(CorsHeaders.GameClient)
+        => await AllowRequestSenders(RequestSenders.GameClient)
             .LoginAsUserAsync(loginData);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
     public override async Task<IActionResult> Logout(string email)
-        => await RequireHeaders(CorsHeaders.GameClient)
+        => await AllowRequestSenders(RequestSenders.GameClient)
             .LogoutAsUserAsync(email);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
     public override async Task<IActionResult> ChangePassword(LoginData loginData, string newPassword)
-        => await RequireHeaders(CorsHeaders.GameClient)
+        => await AllowRequestSenders(RequestSenders.GameClient)
             .ChangeUserPasswordAsync(loginData, newPassword);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Refresh, Roles = AuthenticationRoles.Player)]
     public override async Task<IActionResult> GetAccessToken(string email)
-        => await RequireHeaders(CorsHeaders.GameClient)
+        => await AllowRequestSenders(RequestSenders.GameClient)
             .GetAccessTokenForUserAsync(email);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
     public override async Task<IActionResult> VerifyAccessToken()
-        => await RequireHeaders(CorsHeaders.GameClient)
+        => await AllowRequestSenders(RequestSenders.GameClient)
             .VerifyAccessTokenAsync();
 }

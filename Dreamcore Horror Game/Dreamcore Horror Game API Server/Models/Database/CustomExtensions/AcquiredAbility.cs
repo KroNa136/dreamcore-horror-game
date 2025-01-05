@@ -6,6 +6,8 @@ public partial class AcquiredAbility : IDatabaseEntity, IEquatable<AcquiredAbili
 {
     [NotMapped]
     public string DisplayName => $"{Ability?.DisplayName ?? "NULL"} у игрока {Player?.DisplayName ?? "NULL"}";
+    [NotMapped]
+    public static string DatabaseTableName => "acquired_abilities";
 
     public bool Equals(AcquiredAbility? other)
     {

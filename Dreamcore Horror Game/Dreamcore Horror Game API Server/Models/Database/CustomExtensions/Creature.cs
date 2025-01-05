@@ -6,6 +6,8 @@ public partial class Creature : IDatabaseEntity, IEquatable<Creature>
 {
     [NotMapped]
     public string DisplayName => AssetName;
+    [NotMapped]
+    public static string DatabaseTableName => "creatures";
 
     public bool Equals(Creature? other)
     {

@@ -6,6 +6,8 @@ public partial class CollectedArtifact : IDatabaseEntity, IEquatable<CollectedAr
 {
     [NotMapped]
     public string DisplayName => $"{Artifact?.DisplayName ?? "NULL"} у игрока {Player?.DisplayName ?? "NULL"}";
+    [NotMapped]
+    public static string DatabaseTableName => "collected_artifacts";
 
     public bool Equals(CollectedArtifact? other)
     {

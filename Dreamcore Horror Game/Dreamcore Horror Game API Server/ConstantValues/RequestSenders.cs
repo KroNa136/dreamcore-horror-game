@@ -1,6 +1,6 @@
 ﻿namespace DreamcoreHorrorGameApiServer.ConstantValues;
 
-public static class CorsHeaders
+public static class RequestSenders
 {
     public const string ApiServer = "api-server";
 

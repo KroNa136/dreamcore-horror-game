@@ -6,6 +6,8 @@ public partial class GameSession : IDatabaseEntity, IEquatable<GameSession>
 {
     [NotMapped]
     public string DisplayName => $"На сервере {Server?.DisplayName ?? "NULL"} {StartTimestamp}";
+    [NotMapped]
+    public static string DatabaseTableName => "game_sessions";
 
     public bool Equals(GameSession? other)
     {
