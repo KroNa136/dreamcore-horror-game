@@ -231,7 +231,7 @@ public class PlayersController
 
                 PublishVerificationEmailRequest(player.Email, player.EmailVerificationToken.Token);
 
-                return Ok(player.RefreshToken);
+                return Ok();
             });
 
     [HttpPost]
@@ -299,9 +299,9 @@ public class PlayersController
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
-    public async Task<IActionResult> VerifyEmail(string login, string emailVerificationToken)
+    public async Task<IActionResult> VerifyEmail(string login, string token)
         => await AllowRequestSenders(RequestSenders.PublicWebsite)
-            .ExecuteAsync(login, emailVerificationToken, async (login, emailVerificationToken) =>
+            .ExecuteAsync(login, token, async (login, token) =>
             {
                 _logger.LogInformation("VerifyEmail was called for {EntityType}.", EntityType);
                 PublishStatistics("VerifyEmail");
@@ -314,13 +314,16 @@ public class PlayersController
                 if (player is null)
                     return NotFound();
 
-                if (VerifyEmailVerificationToken(player, emailVerificationToken) is false)
+                if (player.EmailVerificationTokenId is null)
                     return Unauthorized();
 
                 var verificationToken = _context.EmailVerificationTokens
                     .FirstOrDefault(emailVerificationToken => emailVerificationToken.Id == player.EmailVerificationTokenId);
 
                 if (verificationToken is null)
+                    return Unauthorized();
+
+                if (verificationToken.Token.Equals(token) is false)
                     return Unauthorized();
 
                 if (await DeleteEmailVerificationTokenAsync(player, verificationToken) is false)
@@ -335,31 +338,31 @@ public class PlayersController
     [HttpPost]
     [AllowAnonymous]
     public override async Task<IActionResult> Login(LoginData loginData)
-        => await AllowRequestSenders(RequestSenders.GameClient)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.PublicWebsite)
             .LoginAsUserAsync(loginData);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
     public override async Task<IActionResult> Logout(string email)
-        => await AllowRequestSenders(RequestSenders.GameClient)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.PublicWebsite)
             .LogoutAsUserAsync(email);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
     public override async Task<IActionResult> ChangePassword(LoginData loginData, string newPassword)
-        => await AllowRequestSenders(RequestSenders.GameClient)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.PublicWebsite)
             .ChangeUserPasswordAsync(loginData, newPassword);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Refresh, Roles = AuthenticationRoles.Player)]
     public override async Task<IActionResult> GetAccessToken(string email)
-        => await AllowRequestSenders(RequestSenders.GameClient)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.PublicWebsite)
             .GetAccessTokenForUserAsync(email);
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Access, Roles = AuthenticationRoles.Player)]
     public override async Task<IActionResult> VerifyAccessToken()
-        => await AllowRequestSenders(RequestSenders.GameClient)
+        => await AllowRequestSenders(RequestSenders.GameClient, RequestSenders.PublicWebsite)
             .VerifyAccessTokenAsync();
 
     private async Task<bool> SetEmailVerificationTokenAsync(Player player, EmailVerificationToken token)
@@ -420,17 +423,6 @@ public class PlayersController
         return true;
     }
 
-    private bool VerifyEmailVerificationToken(Player player, string? emailVerificationToken)
-    {
-        if (player.EmailVerificationTokenId is null)
-            return false;
-
-        var verificationToken = _context.EmailVerificationTokens
-            .FirstOrDefault(emailVerificationToken => emailVerificationToken.Id == player.EmailVerificationTokenId);
-
-        return verificationToken is not null && verificationToken.Token.Equals(emailVerificationToken);
-    }
-
     private async Task<bool> SetEmailVerifiedAsync(Player player)
     {
         player.EmailVerified = true;
@@ -468,7 +460,7 @@ public class PlayersController
 
         bool success = await _rabbitMqProducer.PublishMessageAsync(exchange: RabbitMqExchangeNames.VerificationEmails, message: data);
 
-        _logger.LogInformation("Completed publishing verification email.{newline}Email intended for {email}.{newline}Status: {status}.",
+        _logger.LogInformation("Completed publishing verification email.{newline}Email intended for {recipient}.{newline}Status: {status}.",
             Environment.NewLine, verificationEmailDTO.To,
             Environment.NewLine, success ? "success" : "fail");
     }

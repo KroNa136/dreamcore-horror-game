@@ -16,7 +16,7 @@ public class TokenService : ITokenService
         return new EmailVerificationToken()
         {
             Id = Guid.NewGuid(),
-            Token = Convert.ToBase64String(randomBytes),
+            Token = Convert.ToBase64String(randomBytes).Replace('+', '_').Replace('/', '_'),
             ExpirationTimestamp = DateTime.UtcNow.Add(TimeSpan.FromDays(EmailVerificationTokenOptions.LifetimeDays))
         };
     }
