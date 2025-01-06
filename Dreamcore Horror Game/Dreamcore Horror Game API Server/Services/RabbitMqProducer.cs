@@ -1,4 +1,5 @@
-﻿using RabbitMQ.Client;
+﻿using DreamcoreHorrorGameApiServer.ConstantValues;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
 using System.Text;
 
@@ -34,10 +35,10 @@ public class RabbitMqProducer : IRabbitMqProducer
         _configuration = configuration;
         _logger = logger;
 
-        string? userName = _configuration.GetSection("RabbitMQ")["UserName"];
-        string? password = _configuration.GetSection("RabbitMQ")["Password"];
-        string? hostName = _configuration.GetSection("RabbitMQ")["HostName"];
-        string? portStr = _configuration.GetSection("RabbitMQ")["Port"];
+        string? userName = _configuration.GetSection(ConfigurationProperties.RabbitMQ)[ConfigurationProperties.RabbitMqUserName];
+        string? password = _configuration.GetSection(ConfigurationProperties.RabbitMQ)[ConfigurationProperties.RabbitMqPassword];
+        string? hostName = _configuration.GetSection(ConfigurationProperties.RabbitMQ)[ConfigurationProperties.RabbitMqHostName];
+        string? portStr = _configuration.GetSection(ConfigurationProperties.RabbitMQ)[ConfigurationProperties.RabbitMqPort];
 
         if (string.IsNullOrEmpty(userName))
             userName = "guest";
