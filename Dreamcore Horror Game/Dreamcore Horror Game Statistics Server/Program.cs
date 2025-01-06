@@ -59,21 +59,21 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        string? loggingDirectory = builder.Configuration[ConfigurationPropertyNames.LoggingDirectory];
-        string? loggingFileNameTemplate = builder.Configuration[ConfigurationPropertyNames.LoggingFileNameTemplate];
-        string? maxLoggingFileSizeStr = builder.Configuration[ConfigurationPropertyNames.MaxLoggingFileSize];
+        string? loggingDirectory = builder.Configuration[ConfigurationProperties.LoggingDirectory];
+        string? loggingFileNameTemplate = builder.Configuration[ConfigurationProperties.LoggingFileNameTemplate];
+        string? maxLoggingFileSizeStr = builder.Configuration[ConfigurationProperties.MaxLoggingFileSize];
 
         if (string.IsNullOrEmpty(loggingDirectory))
-            throw new SettingsPropertyNotFoundException(ConfigurationPropertyNames.LoggingDirectory);
+            throw new SettingsPropertyNotFoundException(ConfigurationProperties.LoggingDirectory);
 
         if (string.IsNullOrEmpty(loggingFileNameTemplate))
-            throw new SettingsPropertyNotFoundException(ConfigurationPropertyNames.LoggingFileNameTemplate);
+            throw new SettingsPropertyNotFoundException(ConfigurationProperties.LoggingFileNameTemplate);
 
         if (string.IsNullOrEmpty(maxLoggingFileSizeStr))
-            throw new SettingsPropertyNotFoundException(ConfigurationPropertyNames.MaxLoggingFileSize);
+            throw new SettingsPropertyNotFoundException(ConfigurationProperties.MaxLoggingFileSize);
 
         if (!long.TryParse(maxLoggingFileSizeStr, out long maxLoggingFileSize))
-            throw new FormatException(ConfigurationPropertyNames.MaxLoggingFileSize);
+            throw new FormatException(ConfigurationProperties.MaxLoggingFileSize);
 
         string loggingDirectoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, loggingDirectory);
 
@@ -124,10 +124,10 @@ public class Program
             });
         });
 
-        string? defaultConnectionString = builder.Configuration.GetConnectionString(ConfigurationPropertyNames.DefaultConnectionString);
+        string? defaultConnectionString = builder.Configuration.GetConnectionString(ConfigurationProperties.DefaultConnectionString);
 
         if (string.IsNullOrEmpty(defaultConnectionString))
-            throw new SettingsPropertyNotFoundException($"ConnectionStrings: {ConfigurationPropertyNames.DefaultConnectionString}");
+            throw new SettingsPropertyNotFoundException($"ConnectionStrings: {ConfigurationProperties.DefaultConnectionString}");
 
         builder.Services.AddDbContext<DreamcoreHorrorGameStatisticsContext>
         (

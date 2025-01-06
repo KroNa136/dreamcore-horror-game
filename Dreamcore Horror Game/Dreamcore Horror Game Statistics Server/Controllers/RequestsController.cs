@@ -1,6 +1,5 @@
 ﻿using DreamcoreHorrorGameStatisticsServer.ConstantValues;
 using DreamcoreHorrorGameStatisticsServer.Models;
-using DreamcoreHorrorGameStatisticsServer.Models.DTO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
