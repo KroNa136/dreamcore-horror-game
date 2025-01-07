@@ -172,7 +172,7 @@ public class ServersController
                     return UnprocessableEntity(ErrorMessages.UnacceptableParameterValue);
 
                 var server = await GetServersWithEnoughFreeSlots(slots)
-                    .FirstOrDefaultWithAsyncPredicate(async server => await HasWaitingSession(server, slots));
+                    .FirstOrDefaultWithAsyncPredicate(async server => await HasWaitingSessionAsync(server, slots));
 
                 return Ok(server?.IpAddress);
             });
@@ -189,7 +189,7 @@ public class ServersController
                 && playerSession.GameSession != null && playerSession.GameSession.ServerId == server.Id)
             .Count();
 
-    private async Task<bool> HasWaitingSession(Server server, int slots)
+    private async Task<bool> HasWaitingSessionAsync(Server server, int slots)
     {
         HttpResponseMessage? anyWaitingSessionsResponse = await _httpFetcher.GetAsync
         (
@@ -222,10 +222,10 @@ public class ServersController
             return false;
         }
 
-        return await CreateWaitingSession(server, slots);
+        return await CreateWaitingSessionAsync(server, slots);
     }
 
-    private async Task<bool> CreateWaitingSession(Server server, int slots)
+    private async Task<bool> CreateWaitingSessionAsync(Server server, int slots)
     {
         MediaTypeHeaderValue requestContentType = new(MediaTypeNames.Application.Json);
 

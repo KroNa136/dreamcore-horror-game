@@ -15,7 +15,7 @@ public class RabbitMqProducer : IRabbitMqProducer
     private IConnection _connection = null!;
     private IChannel _channel = null!;
 
-    protected readonly Func<string, Exception?, string> _customLoggingFormatter = (message, exception) =>
+    private readonly Func<string, Exception?, string> _customLoggingFormatter = (message, exception) =>
     {
         StringBuilder sb = new(message);
 
