@@ -92,9 +92,9 @@ where TEntity : class, IDatabaseEntity
     public abstract Task<IActionResult> Edit(Guid? id, TEntity entity);
     public abstract Task<IActionResult> Delete(Guid? id);
 
-    protected virtual DatabaseEntityController<TEntity> AllowRequestSenders(params string[] headers)
+    protected virtual DatabaseEntityController<TEntity> AllowRequestSenders(params string[] senders)
     {
-        SetAllowedRequestSenders(headers);
+        SetAllowedRequestSenders(senders);
         return this;
     }
 
