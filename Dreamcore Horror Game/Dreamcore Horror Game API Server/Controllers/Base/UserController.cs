@@ -54,9 +54,9 @@ where TUser : class, IDatabaseEntity, IUser
     public abstract Task<IActionResult> GetAccessToken(string login);
     public abstract Task<IActionResult> VerifyAccessToken();
 
-    protected override UserController<TUser> AllowRequestSenders(params string[] headers)
+    protected override UserController<TUser> AllowRequestSenders(params string[] senders)
     {
-        SetAllowedRequestSenders(headers);
+        SetAllowedRequestSenders(senders);
         return this;
     }
 
