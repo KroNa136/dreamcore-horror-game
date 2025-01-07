@@ -168,6 +168,9 @@ where TUser : class, IDatabaseEntity, IUser
             if (user is null)
                 return NotFound();
 
+            if (VerifyRefreshToken(user, AuthorizationToken) is false)
+                return Unauthorized();
+
             if (user.IsOnline is false)
                 return UnprocessableEntity(ErrorMessages.UserIsAlreadyLoggedOut);
 
