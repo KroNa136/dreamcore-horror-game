@@ -24,11 +24,11 @@ public class EmailBackgroundService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        ConfigureConsumer(cancellationToken);
+        ConfigureConsumerAsync(cancellationToken);
         return Task.CompletedTask;
     }
 
-    private async Task ConfigureConsumer(CancellationToken stoppingToken)
+    private async Task ConfigureConsumerAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("Initiated RabbitMQ consumer configuration for {type}", GetType().Name);
 

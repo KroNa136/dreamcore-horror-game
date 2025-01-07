@@ -19,7 +19,7 @@ public class RabbitMqConsumer : IRabbitMqConsumer
     private IChannel _channel = null!;
     private AsyncEventingBasicConsumer _consumer = null!;
 
-    protected readonly Func<string, Exception?, string> _customLoggingFormatter = (message, exception) =>
+    private readonly Func<string, Exception?, string> _customLoggingFormatter = (message, exception) =>
     {
         StringBuilder sb = new(message);
 
