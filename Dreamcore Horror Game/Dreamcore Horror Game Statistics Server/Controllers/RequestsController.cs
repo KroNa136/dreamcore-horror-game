@@ -176,7 +176,7 @@ public class RequestsController
 
         try
         {
-            request = await SetRelationsFromForeignKeys(request);
+            request = await SetRelationsFromForeignKeysAsync(request);
         }
         catch (InvalidConstraintException ex)
         {
@@ -231,7 +231,7 @@ public class RequestsController
 
         try
         {
-            request = await SetRelationsFromForeignKeys(request);
+            request = await SetRelationsFromForeignKeysAsync(request);
         }
         catch (InvalidConstraintException ex)
         {
@@ -313,7 +313,7 @@ public class RequestsController
     private async Task<bool> RequestExistsAsync(Guid id)
         => await _context.Requests.AnyAsync(request => request.Id == id);
 
-    private async Task<Request> SetRelationsFromForeignKeys(Request request)
+    private async Task<Request> SetRelationsFromForeignKeysAsync(Request request)
     {
         var sender = await _context.Senders
             .FindAsync(request.SenderId);
