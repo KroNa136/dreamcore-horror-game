@@ -167,7 +167,7 @@ where TEntity : class, IDatabaseEntity
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [NonAction]
-    public async Task<IActionResult> GetEntity(Func<TEntity, bool> predicate)
+    public async Task<IActionResult> GetEntityAsync(Func<TEntity, bool> predicate)
         => await ValidateRequestSenderAndHandleErrorsAsync(predicate, async predicate =>
         {
             _logger.LogInformation("Get (with predicate) was called for {EntityType}.", EntityType);
