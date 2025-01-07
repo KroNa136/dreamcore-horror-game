@@ -54,9 +54,7 @@ where TUser : class, IDatabaseEntity, IUser
     public abstract Task<IActionResult> GetAccessToken(string login);
     public abstract Task<IActionResult> VerifyAccessToken();
 
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [NonAction]
-    public override UserController<TUser> AllowRequestSenders(params string[] headers)
+    protected override UserController<TUser> AllowRequestSenders(params string[] headers)
     {
         SetAllowedRequestSenders(headers);
         return this;

@@ -92,9 +92,7 @@ where TEntity : class, IDatabaseEntity
     public abstract Task<IActionResult> Edit(Guid? id, TEntity entity);
     public abstract Task<IActionResult> Delete(Guid? id);
 
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [NonAction]
-    public virtual DatabaseEntityController<TEntity> AllowRequestSenders(params string[] headers)
+    protected virtual DatabaseEntityController<TEntity> AllowRequestSenders(params string[] headers)
     {
         SetAllowedRequestSenders(headers);
         return this;
