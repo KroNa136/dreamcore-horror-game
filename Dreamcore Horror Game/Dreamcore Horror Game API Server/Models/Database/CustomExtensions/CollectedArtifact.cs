@@ -1,14 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace DreamcoreHorrorGameApiServer.Models.Database;
+﻿namespace DreamcoreHorrorGameApiServer.Models.Database;
 
 public partial class CollectedArtifact : IDatabaseEntity, IEquatable<CollectedArtifact>
 {
-    [NotMapped]
-    public string DisplayName => $"{Artifact?.DisplayName ?? "NULL"} у игрока {Player?.DisplayName ?? "NULL"}";
-    [NotMapped]
-    public static string DatabaseTableName => "collected_artifacts";
-
     public bool Equals(CollectedArtifact? other)
     {
         if (other is null)

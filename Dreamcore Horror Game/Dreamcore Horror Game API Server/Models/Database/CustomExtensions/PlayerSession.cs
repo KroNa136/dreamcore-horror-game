@@ -1,14 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace DreamcoreHorrorGameApiServer.Models.Database;
+﻿namespace DreamcoreHorrorGameApiServer.Models.Database;
 
 public partial class PlayerSession : IDatabaseEntity, IEquatable<PlayerSession>
 {
-    [NotMapped]
-    public string DisplayName => $"У игрока {Player?.DisplayName ?? "NULL"} на сервере {GameSession?.Server?.DisplayName ?? "NULL"} {StartTimestamp}";
-    [NotMapped]
-    public static string DatabaseTableName => "player_sessions";
-
     public bool Equals(PlayerSession? other)
     {
         if (other is null)

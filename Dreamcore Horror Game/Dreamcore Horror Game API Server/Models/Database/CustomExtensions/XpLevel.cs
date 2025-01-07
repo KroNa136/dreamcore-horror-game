@@ -1,14 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace DreamcoreHorrorGameApiServer.Models.Database;
+﻿namespace DreamcoreHorrorGameApiServer.Models.Database;
 
 public partial class XpLevel : IDatabaseEntity, IEquatable<XpLevel>
 {
-    [NotMapped]
-    public string DisplayName => Number.ToString();
-    [NotMapped]
-    public static string DatabaseTableName => "xp_levels";
-
     public bool Equals(XpLevel? other)
     {
         if (other is null)

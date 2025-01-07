@@ -1,14 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace DreamcoreHorrorGameApiServer.Models.Database;
+﻿namespace DreamcoreHorrorGameApiServer.Models.Database;
 
 public partial class GameMode : IDatabaseEntity, IEquatable<GameMode>
 {
-    [NotMapped]
-    public string DisplayName => AssetName;
-    [NotMapped]
-    public static string DatabaseTableName => "game_modes";
-
     public bool Equals(GameMode? other)
     {
         if (other is null)

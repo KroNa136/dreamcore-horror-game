@@ -1,14 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace DreamcoreHorrorGameApiServer.Models.Database;
+﻿namespace DreamcoreHorrorGameApiServer.Models.Database;
 
 public partial class RarityLevel : IDatabaseEntity, IEquatable<RarityLevel>
 {
-    [NotMapped]
-    public string DisplayName => AssetName;
-    [NotMapped]
-    public static string DatabaseTableName => "rarity_levels";
-
     public bool Equals(RarityLevel? other)
     {
         if (other is null)

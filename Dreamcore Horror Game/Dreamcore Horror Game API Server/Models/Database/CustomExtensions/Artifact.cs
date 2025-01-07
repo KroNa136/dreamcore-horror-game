@@ -1,14 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace DreamcoreHorrorGameApiServer.Models.Database;
+﻿namespace DreamcoreHorrorGameApiServer.Models.Database;
 
 public partial class Artifact : IDatabaseEntity, IEquatable<Artifact>
 {
-    [NotMapped]
-    public string DisplayName => AssetName;
-    [NotMapped]
-    public static string DatabaseTableName => "artifacts";
-
     public bool Equals(Artifact? other)
     {
         if (other is null)
