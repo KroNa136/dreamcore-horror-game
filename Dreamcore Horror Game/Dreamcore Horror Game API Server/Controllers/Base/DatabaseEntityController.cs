@@ -463,6 +463,12 @@ where TEntity : class, IDatabaseEntity
                     // is accomplished - the entity doesn't exist anymore.
                     return Ok();
 
+                _logger.LogError
+                (
+                    eventId: new EventId("DeleteEntityAsync".GetHashCode() + ex.GetType().GetHashCode()),
+                    message: "Database conflict occured while deleting {EntityType} with id = {id}.", EntityType, entity.Id
+                );
+
                 return Conflict(ErrorMessages.DeleteConflict);
             }
 
