@@ -304,6 +304,12 @@ public class RequestsController
                 // is accomplished - the entity doesn't exist anymore.
                 return Ok();
 
+            _logger.LogError
+            (
+                eventId: new EventId("Delete".GetHashCode() + ex.GetType().GetHashCode()),
+                message: "Database conflict occured while deleting Request with id = {id}.", request.Id
+            );
+
             return Conflict(ErrorMessages.DeleteConflict);
         }
 

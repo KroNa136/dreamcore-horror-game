@@ -2,6 +2,7 @@
 using DreamcoreHorrorGameStatisticsServer.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace DreamcoreHorrorGameStatisticsServer.Controllers;
 
@@ -161,6 +162,12 @@ public class SendersController
                 // one right after the other, so it makes sense to return Ok here because the user's goal
                 // is accomplished - the entity doesn't exist anymore.
                 return Ok();
+
+            _logger.LogError
+            (
+                eventId: new EventId("Delete".GetHashCode() + ex.GetType().GetHashCode()),
+                message: "Database conflict occured while deleting Sender with id = {id}.", sender.Id
+            );
 
             return Conflict(ErrorMessages.DeleteConflict);
         }

@@ -162,6 +162,12 @@ public class MethodsController
                 // is accomplished - the entity doesn't exist anymore.
                 return Ok();
 
+            _logger.LogError
+            (
+                eventId: new EventId("Delete".GetHashCode() + ex.GetType().GetHashCode()),
+                message: "Database conflict occured while deleting Method with id = {id}.", method.Id
+            );
+
             return Conflict(ErrorMessages.DeleteConflict);
         }
 
